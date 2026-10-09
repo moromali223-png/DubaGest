@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(flutter test test/core 2>&1 | Select-String -Pattern \"\\\\[E\\\\]|Expected|Actual|All tests passed|Some tests failed\" -Context 0,2 | Select-Object -First 30 | ForEach-Object { $_.ToString\\(\\) })",
+      "PowerShell(flutter test test/core/database/migration_test.dart 2>&1 | Select-String -Pattern \"\\\\[E\\\\]|Expected|Actual|Which|Exception|All tests passed|Some tests failed\" -Context 0,3 | Select-Object -First 20 | ForEach-Object { $_.ToString\\(\\) })",
+      "PowerShell(flutter test test/app/traductions_test.dart 2>&1 | Select-String -Pattern \"\\\\[E\\\\]|Expected|Actual|Which|reason|All tests passed|Some tests failed\" -Context 0,4 | Select-Object -First 30 | ForEach-Object { $_.ToString\\(\\) })",
+      "PowerShell(flutter test test/widget/contacts_widgets_test.dart --plain-name \"fiche en arabe\" 2>&1)",
+      "PowerShell(flutter test test/widget/contacts_widgets_test.dart --plain-name \"doublon\" 2>&1)",
+      "Read(//c/Users/pc/AppData/Local/Temp/**)",
+      "Bash(npx supabase *)",
+      "Bash(supabase status *)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \"select role_code, string_agg\\(permission_code, ' ' order by permission_code\\) from roles_permissions where role_code<>'ADMINISTRATEUR' group by 1\" -c \"select plan_code, string_agg\\(module_code,' ' order by module_code\\) from plan_modules group by 1\" -c \"select code, categorie, permission_acces from modules order by ordre\" -c \"select code from modes_paiement\")",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -Atc \"select conname, pg_get_constraintdef\\(oid\\) from pg_constraint where conrelid='public.engagements'::regclass\" -c \"select conname from pg_constraint where conrelid='public.perimetres'::regclass and contype='u'\" -c \"select pg_get_functiondef\\('app.activite_du_perimetre'::regproc\\)\")",
+      "Bash(timeout 300 flutter test test/widget/produit_form_widgets_test.dart --timeout 40s --plain-name \"libellés\")",
+      "PowerShell(flutter test test/widget/navigation_test.dart test/features/navigation)",
+      "PowerShell(supabase db reset --local 2>&1)",
+      "Bash(grep -avE \"^\\\\s*$|package:flutter_test/|dart:async|package:stack_trace|^[0-9:]+ \\\\+\")",
+      "PowerShell($log = \"C:\\\\Users\\\\pc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-pc-Desktop-projet-1-dubagest\\\\89093f63-15e9-4d68-8e33-26da989060ff\\\\scratchpad\\\\integ.txt\"; \\(Get-Item $log\\).Length; supabase status 2>&1 | Select-String \"DB_URL|Stopped\" | Select-Object -First 2)"
+    ]
+  }
+}

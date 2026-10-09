@@ -1,0 +1,13 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # ISO-8601 en texte : précision et fuseau conservés sur toutes les plateformes.
+          store_date_time_values_as_text: true
+          # Migrations versionnées : `dart run drift_dev make-migrations` fige
+          # chaque version du schéma et génère les tests de migration.
+          databases:
+            app: lib/core/database/app_database.dart
+          schema_dir: drift_schemas/
+          test_dir: test/drift/

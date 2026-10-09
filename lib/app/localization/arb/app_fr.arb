@@ -1,0 +1,2236 @@
+{
+  "@@locale": "fr",
+  "appTitle": "DubaGest",
+  "commonRetry": "Réessayer",
+  "commonCancel": "Annuler",
+  "commonSave": "Enregistrer",
+  "commonCreate": "Créer",
+  "commonDelete": "Supprimer",
+  "commonClose": "Fermer",
+  "commonConfirm": "Confirmer",
+  "commonLoading": "Chargement…",
+  "commonActive": "Actif",
+  "commonInactive": "Inactif",
+  "commonOptional": "Facultatif",
+  "languageLabel": "Langue",
+  "languageFrench": "Français",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "authLoginTitle": "Connexion",
+  "authLoginSubtitle": "Accédez à l'espace de votre entreprise",
+  "authEmail": "Adresse e-mail",
+  "authPassword": "Mot de passe",
+  "authSignIn": "Se connecter",
+  "authSignOut": "Se déconnecter",
+  "authSignOutPendingTitle": "Modifications non synchronisées",
+  "authSignOutPendingMessage": "{count, plural, =1{1 modification sera envoyée} other{{count} modifications seront envoyées}} lors de votre prochaine connexion sur cet appareil. Se déconnecter quand même ?",
+  "@authSignOutPendingMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "authForgotPassword": "Mot de passe oublié ?",
+  "authForgotPasswordTitle": "Réinitialiser le mot de passe",
+  "authForgotPasswordHelp": "Saisissez votre adresse e-mail. Vous recevrez un lien pour choisir un nouveau mot de passe.",
+  "authSendResetLink": "Envoyer le lien",
+  "authResetLinkSent": "Si un compte existe pour cette adresse, un e-mail vient d'être envoyé.",
+  "authBackToLogin": "Retour à la connexion",
+  "authChangePassword": "Changer le mot de passe",
+  "authNewPassword": "Nouveau mot de passe",
+  "authConfirmPassword": "Confirmer le mot de passe",
+  "authPasswordChanged": "Mot de passe modifié.",
+  "authSessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+  "validationRequired": "Champ obligatoire",
+  "validationEmail": "Adresse e-mail invalide",
+  "validationPasswordLength": "Au moins {min} caractères",
+  "@validationPasswordLength": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "validationPasswordsMismatch": "Les mots de passe ne correspondent pas",
+  "errorNetwork": "Connexion impossible. Vérifiez votre réseau.",
+  "errorInvalidCredentials": "E-mail ou mot de passe incorrect.",
+  "errorEmailNotConfirmed": "Adresse e-mail non confirmée.",
+  "errorRateLimited": "Trop de tentatives. Réessayez dans quelques minutes.",
+  "errorSessionExpired": "Votre session a expiré.",
+  "errorForbidden": "Vous n'avez pas l'autorisation d'effectuer cette action.",
+  "errorNotFound": "Élément introuvable.",
+  "errorConflict": "Cet élément a été modifié par quelqu'un d'autre.",
+  "errorDuplicate": "Un élément portant ce nom existe déjà.",
+  "errorServer": "Le service est momentanément indisponible.",
+  "errorLocalStorage": "Erreur de stockage sur l'appareil.",
+  "errorUnknown": "Une erreur inattendue est survenue.",
+  "ruleSubscriptionInactive": "L'abonnement de votre entreprise n'est pas actif.",
+  "ruleActivityNotAllowed": "Votre abonnement {plan} n'inclut pas cette activité.",
+  "@ruleActivityNotAllowed": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleActivityInactive": "Cette activité n'est pas activée pour votre entreprise.",
+  "ruleActivitiesLimit": "Votre abonnement {plan} autorise au maximum {max, plural, =1{1 activité} other{{max} activités}}.",
+  "@ruleActivitiesLimit": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "ruleUsersLimit": "Votre abonnement {plan} autorise au maximum {max, plural, =1{1 utilisateur} other{{max} utilisateurs}}.",
+  "@ruleUsersLimit": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "ruleRoleLimit": "Votre abonnement {plan} autorise au maximum {max} « {role} ».",
+  "@ruleRoleLimit": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "max": {
+        "type": "int"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "rulePerimetresLimit": "Votre abonnement {plan} autorise au maximum {max, plural, =1{1 site} other{{max} sites}} pour l'activité {activity}.",
+  "@rulePerimetresLimit": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "max": {
+        "type": "int"
+      },
+      "activity": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleRoleNotAllowed": "Ce rôle n'est pas disponible avec votre abonnement {plan}.",
+  "@ruleRoleNotAllowed": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleRoleActivityInactive": "Ce rôle nécessite une activité qui n'est pas activée.",
+  "ruleModuleNotInPlan": "Ce module n'est pas inclus dans votre abonnement.",
+  "rulePermissionDenied": "Votre rôle ne permet pas cette action.",
+  "rulePerimetreDenied": "Vous n'êtes pas affecté à ce site.",
+  "ruleLastAdmin": "L'entreprise doit conserver au moins un administrateur.",
+  "ruleAssignmentNotNeeded": "Ce rôle accède déjà à tous les sites.",
+  "ruleAssignmentActivityMismatch": "Ce site n'appartient pas à l'activité du rôle.",
+  "ruleImmutable": "Cette information ne peut plus être modifiée.",
+  "contextLoading": "Préparation de votre espace…",
+  "contextLoadError": "Impossible de charger votre espace de travail.",
+  "contextOfflineCache": "Hors ligne — données enregistrées sur l'appareil.",
+  "contextNoEntrepriseTitle": "Aucune entreprise",
+  "contextNoEntrepriseMessage": "Votre compte n'est rattaché à aucune entreprise. Contactez votre administrateur.",
+  "contextMemberSuspendedTitle": "Accès suspendu",
+  "contextMemberSuspendedMessage": "Votre accès à {entreprise} est suspendu. Contactez votre administrateur.",
+  "@contextMemberSuspendedMessage": {
+    "placeholders": {
+      "entreprise": {
+        "type": "String"
+      }
+    }
+  },
+  "contextEntrepriseSuspendedTitle": "Entreprise suspendue",
+  "contextEntrepriseSuspendedMessage": "L'accès à {entreprise} est momentanément suspendu.",
+  "@contextEntrepriseSuspendedMessage": {
+    "placeholders": {
+      "entreprise": {
+        "type": "String"
+      }
+    }
+  },
+  "navHome": "Accueil",
+  "navAdministration": "Administration",
+  "navSettings": "Paramètres",
+  "homeGreeting": "Bonjour {name}",
+  "@homeGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetingAnonymous": "Bonjour",
+  "homeNoModules": "Aucun module n'est disponible pour votre rôle.",
+  "homeSubscriptionInactive": "Les modules sont indisponibles tant que l'abonnement n'est pas actif.",
+  "moduleComingSoonTitle": "Bientôt disponible",
+  "moduleComingSoonMessage": "Ce module sera disponible dans une prochaine version.",
+  "accessDeniedTitle": "Accès refusé",
+  "accessDeniedBackHome": "Retour à l'accueil",
+  "activityCommerce": "Commerce",
+  "activityServices": "Services",
+  "activityImmobilier": "Immobilier",
+  "roleAdministrateur": "Administrateur",
+  "roleSuperviseur": "Superviseur",
+  "roleGestionnaireStock": "Gestionnaire stock",
+  "roleVendeur": "Vendeur",
+  "planNormal": "Normal",
+  "planMoyen": "Moyen",
+  "planPro": "Pro",
+  "moduleAdminEntreprise": "Entreprise",
+  "moduleAdminUtilisateurs": "Utilisateurs",
+  "moduleAdminPerimetres": "Boutiques et sites",
+  "moduleAdminAbonnement": "Abonnement",
+  "moduleCommerceProduits": "Produits",
+  "moduleCommerceStock": "Stock",
+  "moduleCommerceVentes": "Ventes",
+  "moduleCommerceAchats": "Achats",
+  "moduleCommunContacts": "Contacts",
+  "moduleCommerceFournisseurs": "Fournisseurs",
+  "moduleFinancesCreances": "À recevoir / À payer",
+  "moduleFinancesCreancesCourt": "Dettes",
+  "moduleCommunContactsClients": "Clients",
+  "moduleFinancesPaiements": "Paiements",
+  "moduleFinancesCaisse": "Caisse",
+  "moduleFinancesDepenses": "Dépenses",
+  "moduleServicesServices": "Catalogue",
+  "moduleServicesPrestations": "Prestations",
+  "moduleServicesPlanning": "Planning",
+  "moduleServicesDevis": "Devis",
+  "moduleServicesFacturation": "Factures & Reçus",
+  "moduleServicesRapports": "Rapports",
+  "moduleImmobilierBiens": "Biens",
+  "moduleImmobilierProprietaires": "Propriétaires",
+  "moduleImmobilierLocataires": "Locataires",
+  "moduleImmobilierLocations": "Locations",
+  "moduleImmobilierContrats": "Contrats",
+  "moduleImmobilierLoyers": "Loyers",
+  "perimetreTypeBoutique": "Boutique",
+  "perimetreTypeAgence": "Agence",
+  "perimetreTypeSite": "Site",
+  "perimetreTypeUnite": "Unité",
+  "perimetresEmpty": "Aucun site pour le moment.",
+  "perimetreAdd": "Ajouter",
+  "perimetreNew": "Nouveau site",
+  "perimetreEdit": "Modifier le site",
+  "perimetreName": "Nom",
+  "perimetreCode": "Code",
+  "perimetreActivity": "Activité",
+  "perimetreType": "Type",
+  "perimetreDeleteTitle": "Supprimer ce site ?",
+  "perimetreDeleteMessage": "« {name} » ne sera plus accessible.",
+  "@perimetreDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "usersEmpty": "Aucun utilisateur.",
+  "usersInvite": "Ajouter un utilisateur",
+  "usersInviteComingSoon": "L'invitation d'utilisateurs sera disponible dans une prochaine version.",
+  "usersYou": "Vous",
+  "usersAssignments": "Sites affectés",
+  "usersAllPerimetres": "Tous les sites",
+  "usersNoPerimetre": "Aucun site affecté",
+  "usersOnlineOnly": "Cette action nécessite une connexion.",
+  "subscriptionPlan": "Formule",
+  "subscriptionStatus": "Statut",
+  "subscriptionStatusEssai": "Essai",
+  "subscriptionStatusActif": "Actif",
+  "subscriptionStatusSuspendu": "Suspendu",
+  "subscriptionStatusExpire": "Expiré",
+  "subscriptionStatusAnnule": "Annulé",
+  "subscriptionSince": "Depuis le {date}",
+  "@subscriptionSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionUntil": "Jusqu'au {date}",
+  "@subscriptionUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionNone": "Aucun abonnement.",
+  "subscriptionActivities": "Activités",
+  "subscriptionUsage": "Consommation",
+  "subscriptionUsers": "Utilisateurs",
+  "subscriptionUsageValue": "{used} / {max}",
+  "@subscriptionUsageValue": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "entrepriseInfo": "Informations",
+  "entrepriseName": "Nom",
+  "entrepriseCountry": "Pays",
+  "entrepriseCurrency": "Devise",
+  "entrepriseRole": "Votre rôle",
+  "syncUpToDate": "Données à jour",
+  "syncPending": "{count, plural, =1{1 modification en attente} other{{count} modifications en attente}}",
+  "@syncPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncSyncing": "Synchronisation…",
+  "syncError": "Échec de synchronisation",
+  "syncOffline": "Hors ligne",
+  "syncOfflineBanner": "Mode hors ligne : vos modifications seront envoyées au retour de la connexion.",
+  "syncLastSynced": "Dernière synchronisation : {time}",
+  "@syncLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "syncNow": "Synchroniser maintenant",
+  "syncRecordPending": "En attente d'envoi",
+  "syncRecordError": "Non synchronisé",
+  "syncRecordConflict": "Modifié ailleurs — version serveur conservée",
+  "settingsAccount": "Compte",
+  "settingsEntreprise": "Entreprise",
+  "settingsSync": "Synchronisation",
+  "settingsAppearance": "Apparence",
+  "authRegisterTitle": "Créer votre compte",
+  "authRegisterSubtitle": "Gratuit, en moins d'une minute.",
+  "authFirstName": "Prénom",
+  "authLastName": "Nom",
+  "authCreateAccount": "Créer mon compte",
+  "authNoAccount": "Pas encore de compte ?",
+  "authHaveAccount": "Déjà un compte ?",
+  "authSignInLink": "Se connecter",
+  "authRegisterLink": "Créer un compte",
+  "authContinueWithGoogle": "Continuer avec Google",
+  "authOr": "ou",
+  "authCheckEmailTitle": "Vérifiez votre e-mail",
+  "authCheckEmailMessage": "Un lien de confirmation a été envoyé à {email}. Ouvrez-le, puis connectez-vous.",
+  "@authCheckEmailMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authResetPasswordTitle": "Nouveau mot de passe",
+  "errorAccountExists": "Ce compte existe déjà. Connectez-vous.",
+  "errorWeakPassword": "Mot de passe trop faible.",
+  "errorOauthUnavailable": "La connexion avec Google n'est pas disponible pour le moment.",
+  "onboardingWelcome": "Bienvenue {name}",
+  "@onboardingWelcome": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingWelcomeAnonymous": "Bienvenue",
+  "onboardingQuestion": "Que souhaitez-vous faire ?",
+  "onboardingCreateTitle": "Créer mon entreprise",
+  "onboardingCreateSubtitle": "Vous en serez l'administrateur.",
+  "onboardingJoinTitle": "Rejoindre une entreprise",
+  "onboardingJoinSubtitle": "Avec l'invitation reçue de votre responsable.",
+  "companyName": "Nom de l'entreprise",
+  "companyPlan": "Formule",
+  "companyActivities": "Activités",
+  "companyActivitiesHint": "{max, plural, =1{Choisissez 1 activité} other{Jusqu'à {max} activités}}",
+  "@companyActivitiesHint": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "companyTrialInfo": "Essai gratuit de 14 jours. Vous serez l'administrateur de l'entreprise.",
+  "companyCreateButton": "Créer l'entreprise",
+  "joinCodeLabel": "Code d'invitation",
+  "joinCodeHelp": "Collez le code ou ouvrez le lien reçu.",
+  "joinCheck": "Vérifier",
+  "joinInvitedTo": "Invitation à rejoindre {entreprise}",
+  "@joinInvitedTo": {
+    "placeholders": {
+      "entreprise": {
+        "type": "String"
+      }
+    }
+  },
+  "joinRole": "Rôle : {role}",
+  "@joinRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "joinForEmail": "Destinée à {email}",
+  "@joinForEmail": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "joinExpires": "Valable jusqu'au {date}",
+  "@joinExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "joinAccept": "Accepter l'invitation",
+  "joinIgnore": "Ignorer",
+  "joinSignInToAccept": "Connectez-vous ou créez un compte avec l'adresse invitée pour accepter.",
+  "ruleInvitationInvalid": "Cette invitation est invalide.",
+  "ruleInvitationExpired": "Cette invitation a expiré.",
+  "ruleInvitationUsed": "Cette invitation a déjà été utilisée.",
+  "ruleInvitationCancelled": "Cette invitation a été annulée.",
+  "ruleInvitationOtherEmail": "Cette invitation est destinée à une autre adresse e-mail.",
+  "ruleInvitationNotCancellable": "Cette invitation ne peut plus être annulée.",
+  "ruleEmailNotConfirmed": "Confirmez d'abord votre adresse e-mail.",
+  "ruleAlreadyMember": "Cette personne fait déjà partie de l'entreprise.",
+  "ruleCompanyAlreadyCreated": "Vous avez déjà créé une entreprise.",
+  "rulePlanInvalid": "Cette formule n'est pas disponible.",
+  "ruleActivityRequired": "Choisissez au moins une activité.",
+  "ruleNameInvalid": "Le nom est trop court.",
+  "rulePerimetreRequired": "Choisissez au moins un site pour ce rôle.",
+  "inviteTitle": "Inviter un utilisateur",
+  "inviteRole": "Rôle",
+  "invitePerimetres": "Sites autorisés",
+  "inviteSend": "Créer l'invitation",
+  "inviteNoRole": "Aucun rôle disponible avec votre abonnement.",
+  "inviteCreatedTitle": "Invitation créée",
+  "inviteCreatedMessage": "Partagez ce lien avec {email}. Il est valable jusqu'au {date} et ne sert qu'une fois.",
+  "@inviteCreatedMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteCopyLink": "Copier le lien",
+  "inviteCopyCode": "Copier le code",
+  "inviteCopied": "Copié",
+  "inviteCancel": "Annuler l'invitation",
+  "invitationsTitle": "Invitations",
+  "invitationStatusPending": "En attente",
+  "invitationStatusAccepted": "Acceptée",
+  "invitationStatusExpired": "Expirée",
+  "invitationStatusCancelled": "Annulée",
+  "navSell": "Vendre",
+  "navStock": "Stock",
+  "navFinances": "Finances",
+  "navAccount": "Compte",
+  "financesComingSoon": "Le tableau de bord financier (chiffre d'affaires, encaissements, dépenses, impayés) arrive avec les modules Ventes et Caisse.",
+  "menuActivities": "Mes activités",
+  "menuPreferences": "Préférences",
+  "menuSeeSubscription": "Voir l'abonnement",
+  "activityStatusActive": "Active",
+  "activityActivate": "Activer",
+  "activityActivateTitle": "Activer {activity} ?",
+  "@activityActivateTitle": {
+    "placeholders": {
+      "activity": {
+        "type": "String"
+      }
+    }
+  },
+  "activityActivateMessage": "Les modules de cette activité seront ajoutés à votre entreprise. Créez ensuite son premier site.",
+  "activityActivated": "Activité activée.",
+  "homeToday": "Aujourd'hui",
+  "homeWatch": "À surveiller",
+  "homeKpiPending": "Les chiffres s'afficheront dès les premières ventes enregistrées.",
+  "kpiRevenue": "Chiffre d'affaires",
+  "kpiCollected": "Encaissé",
+  "kpiExpenses": "Dépenses",
+  "kpiUnpaid": "Impayés clients",
+  "homeTrialDaysLeft": "{days, plural, =0{Votre essai se termine aujourd'hui} =1{Essai : 1 jour restant} other{Essai : {days} jours restants}}",
+  "@homeTrialDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTrialHint": "Choisissez votre formule pour continuer sans interruption.",
+  "roleCaissier": "Caissier",
+  "roleGestionnaireImmobilier": "Gestionnaire immobilier",
+  "subscriptionUsageUnlimited": "{used} · illimité",
+  "@subscriptionUsageUnlimited": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "companyPlanPrice": "{price} / mois",
+  "@companyPlanPrice": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "entrepriseIdentity": "Identité",
+  "entrepriseContact": "Coordonnées",
+  "entrepriseLegal": "Informations légales",
+  "entreprisePreferences": "Préférences",
+  "entreprisePhone": "Téléphone",
+  "entrepriseAddress": "Adresse",
+  "entrepriseCity": "Ville",
+  "entrepriseTaxId": "Identifiant fiscal (NIF)",
+  "entrepriseTradeRegister": "Registre du commerce (RCCM)",
+  "entrepriseDocLanguage": "Langue des documents",
+  "entrepriseSaved": "Informations enregistrées.",
+  "entrepriseLogoLater": "Le logo pourra être ajouté avec les pièces jointes (prochaine étape).",
+  "moduleAdminAudit": "Journal d'activité",
+  "auditEmpty": "Aucune activité enregistrée pour le moment.",
+  "auditSystem": "Système",
+  "auditActionCreation": "Création",
+  "auditActionModification": "Modification",
+  "auditActionArchivage": "Archivage",
+  "auditActionRestauration": "Restauration",
+  "auditActionSuppression": "Suppression",
+  "auditEntityEntreprise": "Entreprise",
+  "auditEntityActivite": "Activité",
+  "auditEntityAbonnement": "Abonnement",
+  "auditEntityMembre": "Membre",
+  "auditEntityAffectation": "Affectation à un site",
+  "auditEntitySite": "Site",
+  "auditEntityInvitation": "Invitation",
+  "auditOtherFields": "{count, plural, =1{1 autre information} other{{count} autres informations}}",
+  "@auditOtherFields": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "espaceTitle": "Espace de travail",
+  "espaceGlobal": "Vue globale",
+  "espaceActivity": "Activité",
+  "espaceSite": "Boutique / site",
+  "commonClear": "Effacer",
+  "ruleTextTooLong": "Texte trop long ({max} caractères au maximum).",
+  "@ruleTextTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "homeCommonTools": "Outils communs",
+  "contactRelationClient": "Client",
+  "contactRelationFournisseur": "Fournisseur",
+  "contactRelationLocataire": "Locataire",
+  "contactRelationProprietaire": "Propriétaire",
+  "contactRelationPrestataire": "Prestataire",
+  "contactTypePersonne": "Personne",
+  "contactTypeOrganisation": "Organisation",
+  "contactsSearchHint": "Nom, téléphone, e-mail, ville…",
+  "contactsFilterAll": "Tous",
+  "contactsShowArchived": "Archivés",
+  "contactsEmpty": "Aucun contact pour le moment. Ajoutez vos clients, fournisseurs, locataires…",
+  "contactsNoResult": "Aucun contact ne correspond à la recherche.",
+  "contactAdd": "Nouveau contact",
+  "contactNew": "Nouveau contact",
+  "contactEdit": "Modifier le contact",
+  "contactDetailTitle": "Fiche contact",
+  "contactNotFound": "Ce contact n'existe pas ou n'est plus accessible.",
+  "contactSaved": "Contact enregistré.",
+  "contactArchived": "Archivé",
+  "contactArchive": "Archiver",
+  "contactRestore": "Réactiver",
+  "contactArchiveTitle": "Archiver ce contact ?",
+  "contactArchiveMessage": "« {name} » n'apparaîtra plus dans les listes. Son historique est conservé et vous pourrez le réactiver.",
+  "@contactArchiveMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contactRelationsNone": "Aucune relation indiquée",
+  "contactFieldNom": "Nom",
+  "contactFieldRaisonSociale": "Raison sociale",
+  "contactFieldPrenom": "Prénom",
+  "contactFieldTelephone": "Téléphone",
+  "contactFieldWhatsapp": "WhatsApp",
+  "contactWhatsappHint": "À remplir seulement si différent du téléphone",
+  "contactFieldEmail": "E-mail",
+  "contactFieldAdresse": "Adresse",
+  "contactFieldVille": "Ville",
+  "contactFieldRemarque": "Remarque",
+  "contactFieldRelations": "Relation avec l'entreprise",
+  "contactCall": "Appeler",
+  "contactWhatsapp": "WhatsApp",
+  "contactEmailAction": "E-mail",
+  "contactActionUnavailable": "Action impossible sur cet appareil.",
+  "contactHistoryTitle": "Historique",
+  "contactHistoryEmpty": "Les ventes, paiements et loyers de ce contact apparaîtront ici dès que ces modules seront disponibles.",
+  "contactDuplicateTitle": "Ce contact existe peut-être déjà",
+  "contactDuplicateMessage": "{count, plural, =1{Une fiche a le même nom ou le même téléphone.} other{{count} fiches ont le même nom ou le même téléphone.}} Utilisez la fiche existante pour garder un historique unique.",
+  "@contactDuplicateMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contactDuplicateOpen": "Ouvrir la fiche",
+  "contactDuplicateAddRelation": "Ajouter la relation",
+  "contactDuplicateCreateAnyway": "Créer quand même",
+  "contactHistoryNone": "Aucune somme due ni aucun paiement pour ce contact.",
+  "contactOwesUs": "Nous doit",
+  "contactWeOwe": "Nous lui devons",
+  "commonEdit": "Modifier",
+  "homeSeeFinances": "Voir les finances",
+  "validationAmount": "Saisissez un montant supérieur à zéro",
+  "validationAmountMax": "Au maximum {max}",
+  "@validationAmountMax": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentModeCash": "Espèces",
+  "paymentModeMobileMoney": "Mobile money",
+  "paymentModeCard": "Carte",
+  "paymentModeTransfer": "Virement",
+  "paymentModeCheque": "Chèque",
+  "paymentModeOther": "Autre",
+  "debtStateUnpaid": "À encaisser",
+  "debtStateToPay": "À payer",
+  "debtStatePartial": "Partiel",
+  "debtStateOverdue": "En retard",
+  "debtStatePaid": "Soldé",
+  "debtStateCancelled": "Annulé",
+  "cashMoveCollection": "Encaissement",
+  "cashMoveDisbursement": "Décaissement",
+  "cashMoveDeposit": "Dépôt",
+  "cashMoveWithdrawal": "Retrait",
+  "financeRejectedTitle": "Refusé par le serveur",
+  "financeRejectedMessage": "Cette opération n'a pas été enregistrée (droits, caisse fermée ou montant dépassé). Elle n'est comptée dans aucun total.",
+  "financeRejectedRemove": "Retirer",
+  "financeRejectedShort": "Refusé",
+  "financeNoContact": "Sans contact",
+  "financeContact": "Contact",
+  "financeInCash": "En caisse",
+  "financeToReceive": "À recevoir",
+  "financeToPay": "À payer",
+  "financeOverdueAmount": "{amount} en retard",
+  "@financeOverdueAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "financeNotFound": "Élément introuvable ou inaccessible.",
+  "financeSite": "Boutique / agence",
+  "financeAllSites": "Toute l'entreprise",
+  "financePendingSync": "Enregistré sur l'appareil, en attente d'envoi",
+  "debtNewReceivable": "Nouvelle somme à recevoir",
+  "debtNewPayable": "Nouvelle somme à payer",
+  "debtShowSettled": "Afficher les soldés",
+  "debtEmptyReceivable": "Personne ne vous doit d'argent.",
+  "debtEmptyPayable": "Vous ne devez rien pour le moment.",
+  "debtDueOn": "Échéance {date}",
+  "@debtDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "debtDetailTitle": "Somme due",
+  "debtRemaining": "Reste dû",
+  "debtPaid": "Déjà réglé",
+  "debtTotal": "Montant total",
+  "debtDate": "Date",
+  "debtDueDate": "Échéance",
+  "debtNoDueDate": "Sans échéance",
+  "debtCancelReason": "Motif d'annulation",
+  "debtCollect": "Encaisser",
+  "debtPay": "Payer",
+  "debtCancel": "Annuler",
+  "debtPayments": "Paiements",
+  "debtNoPayment": "Aucun paiement pour le moment.",
+  "debtCancelTitle": "Annuler cette somme due ?",
+  "debtCancelMessage": "Elle ne sera plus comptée. Elle reste visible dans l'historique.",
+  "debtEdit": "Modifier la somme due",
+  "debtWhoOwes": "Qui doit payer ?",
+  "debtOwedTo": "À qui devez-vous ?",
+  "debtLabel": "Objet",
+  "debtLabelHint": "Ex. : marchandises livrées à crédit",
+  "debtAlreadyPaid": "Déjà réglé : {amount}. Le total ne peut pas être inférieur.",
+  "@debtAlreadyPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentNew": "Encaisser",
+  "paymentsEmpty": "Aucun paiement enregistré.",
+  "paymentCancellation": "Annulation de paiement",
+  "paymentIn": "Encaissement",
+  "paymentOut": "Paiement versé",
+  "paymentCancelled": "Annulé",
+  "paymentSaved": "Paiement enregistré.",
+  "paymentNewIn": "Encaisser",
+  "paymentNewOut": "Payer",
+  "paymentFrom": "Payé par",
+  "paymentTo": "Payé à",
+  "paymentAmount": "Montant",
+  "paymentMode": "Mode de paiement",
+  "paymentCashRegister": "Caisse",
+  "paymentNoCashRegister": "Hors caisse",
+  "paymentNoOpenRegister": "Aucune caisse ouverte : le paiement sera enregistré hors caisse.",
+  "paymentSettlesReceivables": "Règle les sommes dues",
+  "paymentSettlesPayables": "Règle les dettes",
+  "paymentRemainingOf": "Reste {amount}",
+  "@paymentRemainingOf": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentUnallocated": "{amount} non affecté (avance)",
+  "@paymentUnallocated": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentReference": "Référence",
+  "paymentReferenceHint": "N° de transaction, de chèque…",
+  "paymentNote": "Note",
+  "paymentConfirmIn": "Encaisser {amount}",
+  "@paymentConfirmIn": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentConfirmOut": "Payer {amount}",
+  "@paymentConfirmOut": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentDetailTitle": "Paiement",
+  "paymentDate": "Date",
+  "paymentCancelsPayment": "Annule le paiement",
+  "paymentOpenOriginal": "Voir le paiement d'origine",
+  "paymentCancelledBy": "Annulé le",
+  "paymentCancel": "Annuler ce paiement",
+  "paymentCancelHint": "Un paiement n'est jamais effacé : son annulation est enregistrée et les sommes dues redeviennent dues.",
+  "paymentCancelTitle": "Annuler ce paiement ?",
+  "paymentCancelMessage": "Un paiement inverse de {amount} sera enregistré, et la caisse sera ajustée s'il s'agissait d'espèces.",
+  "@paymentCancelMessage": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cashNew": "Nouvelle caisse",
+  "cashEmptyAdmin": "Aucune caisse. Créez une caisse pour chaque boutique ou agence qui manipule des espèces.",
+  "cashEmpty": "Aucune caisse accessible.",
+  "cashOpenState": "Ouverte",
+  "cashClosedState": "Fermée",
+  "cashOpenSince": "Ouverte depuis {date}",
+  "@cashOpenSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cashBalance": "Solde en caisse",
+  "cashOpeningBalance": "Fond de caisse : {amount}",
+  "@cashOpeningBalance": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cashOpen": "Ouvrir la caisse",
+  "cashClose": "Clôturer la caisse",
+  "cashMovements": "Mouvements",
+  "cashNoMovement": "Aucun mouvement depuis l'ouverture.",
+  "cashHistory": "Clôtures précédentes",
+  "cashClosingPending": "Clôture en attente d'envoi",
+  "cashClosingSummary": "Attendu {expected} · compté {counted}",
+  "@cashClosingSummary": {
+    "placeholders": {
+      "expected": {
+        "type": "String"
+      },
+      "counted": {
+        "type": "String"
+      }
+    }
+  },
+  "cashNoGap": "Aucun écart",
+  "cashOpeningAmount": "Fond de caisse",
+  "cashMoveReason": "Motif",
+  "cashExpected": "Montant attendu : {amount}",
+  "@cashExpected": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cashCounted": "Montant compté",
+  "cashGap": "Écart : {amount}",
+  "@cashGap": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cashClosingNote": "Commentaire (facultatif)",
+  "cashName": "Nom de la caisse",
+  "cashDefaultName": "Caisse {site}",
+  "@cashDefaultName": {
+    "placeholders": {
+      "site": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleLabelInvalid": "Indiquez l'objet (200 caractères au maximum).",
+  "ruleCommitmentCancelled": "Cette somme due a été annulée.",
+  "ruleCommitmentPaid": "Des paiements ont déjà été enregistrés : annulez-les d'abord.",
+  "ruleTotalBelowPaid": "Le total ne peut pas être inférieur à ce qui est déjà réglé ({amount}).",
+  "@ruleTotalBelowPaid": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleAmountAboveRemaining": "Montant supérieur au reste dû ({amount}).",
+  "@ruleAmountAboveRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleAllocationAbovePayment": "La répartition dépasse le montant du paiement.",
+  "ruleAllocationWrongDirection": "Un encaissement ne peut régler qu'une somme à recevoir, un paiement versé qu'une somme à payer.",
+  "ruleAllocationOtherContact": "Cette somme due concerne un autre contact.",
+  "rulePaymentAlreadyCancelled": "Ce paiement est déjà annulé.",
+  "ruleModeWithoutCash": "Seules les espèces passent par la caisse.",
+  "ruleDateInvalid": "Date de paiement invalide.",
+  "ruleCashClosed": "La caisse est fermée : ouvrez-la d'abord.",
+  "ruleCashOpenSession": "Clôturez d'abord la caisse.",
+  "ruleCashAlreadyOpen": "Cette caisse est déjà ouverte.",
+  "ruleCashInactive": "Cette caisse est désactivée.",
+  "ruleCashInsufficient": "Espèces insuffisantes en caisse (solde : {amount}).",
+  "@ruleCashInsufficient": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleFinanceInconsistent": "Opération impossible : données incohérentes. Actualisez puis réessayez.",
+  "financeExpensesMonth": "Dépenses du mois",
+  "debtOpenExpense": "Voir la dépense",
+  "expenseCatRent": "Loyer",
+  "expenseCatEnergy": "Électricité",
+  "expenseCatTransport": "Transport",
+  "expenseCatSalaries": "Salaires",
+  "expenseCatSupplies": "Fournitures",
+  "expenseCatCommunication": "Communication et publicité",
+  "expenseCatMaintenance": "Entretien",
+  "expenseCatTaxes": "Impôts et taxes",
+  "expenseCatOther": "Autre",
+  "expenseNew": "Nouvelle dépense",
+  "expenseSaved": "Dépense enregistrée.",
+  "expenseCategories": "Catégories",
+  "expensesEmpty": "Aucune dépense enregistrée.",
+  "expenseCancelled": "Annulée",
+  "expenseToPay": "À payer",
+  "expenseDetailTitle": "Dépense",
+  "expenseDate": "Date de la dépense",
+  "expenseSettlement": "Règlement",
+  "expensePaidWith": "Payée · {mode}",
+  "@expensePaidWith": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "expenseToPayRemaining": "À payer : {amount}",
+  "@expenseToPayRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "expenseSupplier": "Fournisseur (facultatif)",
+  "expenseCancel": "Annuler la dépense",
+  "expenseEdit": "Modifier la dépense",
+  "expenseLabel": "Description",
+  "expenseLabelHint": "Ex. : taxi pour la livraison",
+  "expenseCategory": "Catégorie",
+  "expenseAmountLocked": "Le montant ne se modifie pas : annulez la dépense puis ressaisissez-la.",
+  "expenseCancelTitle": "Annuler cette dépense ?",
+  "expenseCancelMessagePaid": "Le paiement sera annulé (et la caisse réajustée pour des espèces), puis la dépense. Rien n'est effacé de l'historique.",
+  "expenseCancelMessage": "La somme à payer liée sera annulée. Rien n'est effacé de l'historique.",
+  "expenseCategoryNew": "Nouvelle catégorie",
+  "expenseCategoryName": "Nom de la catégorie",
+  "expenseCategoriesHint": "Une catégorie désactivée n'est plus proposée ; les dépenses déjà saisies la conservent.",
+  "expensePaidNow": "Payée maintenant",
+  "expensePayLater": "À payer plus tard",
+  "expenseReferenceHint": "N° de facture, de reçu…",
+  "ruleCommitmentLinked": "Cette somme est liée à une dépense : modifiez ou annulez la dépense.",
+  "ruleCategoryInvalid": "Choisissez une catégorie active.",
+  "ruleExpensePaid": "Cette dépense est payée : annulez d'abord son paiement.",
+  "ruleExpenseCancelled": "Cette dépense est annulée.",
+  "moduleCommunDocuments": "Documents",
+  "docTypeReceipt": "Reçu",
+  "docTypeInvoice": "Facture",
+  "docTypeQuote": "Devis",
+  "docTypeCreditNote": "Avoir",
+  "docSearchHint": "N° de document ou nom…",
+  "docEmpty": "Aucun document émis. Les reçus s'émettent depuis la fiche d'un paiement.",
+  "docIssueReceipt": "Émettre le reçu",
+  "docOpenReceipt": "Voir le reçu {numero}",
+  "@docOpenReceipt": {
+    "placeholders": {
+      "numero": {
+        "type": "String"
+      }
+    }
+  },
+  "docReceiptTitle": "REÇU",
+  "docDate": "Date",
+  "docReceivedFrom": "Reçu de",
+  "docPaymentMode": "Mode de paiement",
+  "docReference": "Référence",
+  "docAmountReceived": "Montant reçu",
+  "docSettles": "Règlement de",
+  "docColumnLabel": "Objet",
+  "docColumnAmount": "Payé",
+  "docColumnRemaining": "Reste dû",
+  "docIssuedBy": "Émis par {name}",
+  "@docIssuedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "docGeneratedBy": "Document généré par DubaGest",
+  "docCancelledStamp": "ANNULÉ",
+  "docPhone": "Tél. : {value}",
+  "@docPhone": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "docTaxId": "N° fiscal : {value}",
+  "@docTaxId": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "docTradeRegister": "RCCM : {value}",
+  "@docTradeRegister": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleDocumentExists": "Un reçu a déjà été émis pour ce paiement.",
+  "ruleDocumentOriginInvalid": "Un reçu ne s'émet que pour un encaissement valide.",
+  "ruleDocumentNumbersExhausted": "Plus de numéro de reçu disponible sur cet appareil. Connectez-vous à internet un instant pour en réserver.",
+  "ruleDocumentNumberInvalid": "Numéro de document invalide. Actualisez puis réessayez.",
+  "moduleCommunAgenda": "Agenda",
+  "agendaTypeReminder": "Rappel",
+  "agendaTypeMeeting": "Rendez-vous",
+  "agendaTypeTask": "Tâche",
+  "agendaTypeFollowUp": "Relance",
+  "agendaNew": "Nouvelle échéance",
+  "agendaEdit": "Modifier l'échéance",
+  "agendaMine": "Mes tâches",
+  "agendaEmpty": "Rien de prévu. Ajoutez un rappel, une tâche ou une relance.",
+  "agendaOverdue": "En retard",
+  "agendaToday": "Aujourd'hui",
+  "agendaNextDays": "7 prochains jours",
+  "agendaLater": "Plus tard",
+  "agendaAssignedTo": "Confié à {name}",
+  "@agendaAssignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "agendaMarkDone": "Marquer comme fait",
+  "agendaReopen": "Remettre à faire",
+  "agendaCancel": "Annuler l'échéance",
+  "agendaDueToReceive": "Échéance d'encaissement",
+  "agendaDueToPay": "Échéance de paiement",
+  "agendaReminderBefore": "Rappel {delay} avant",
+  "@agendaReminderBefore": {
+    "placeholders": {
+      "delay": {
+        "type": "String"
+      }
+    }
+  },
+  "agendaOpenDebt": "Voir la somme due",
+  "agendaStatusTodo": "À faire",
+  "agendaStatusDone": "Fait",
+  "agendaStatusCancelled": "Annulé",
+  "agendaTitle": "Titre",
+  "agendaTitleHint": "Ex. : appeler Amadou pour le solde",
+  "agendaWhen": "Date et heure",
+  "agendaReminder": "Rappel",
+  "agendaNoReminder": "Aucun rappel",
+  "agendaAssignee": "Confier à",
+  "agendaNobody": "Personne en particulier",
+  "agendaMe": "Moi",
+  "agendaPlanFollowUp": "Planifier une relance",
+  "agendaFollowUpTitle": "Relancer {name}",
+  "@agendaFollowUpTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "agendaDelayMinutes": "{n} min",
+  "@agendaDelayMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "agendaDelayHours": "{n, plural, =1{1 heure} other{{n} heures}}",
+  "@agendaDelayHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "agendaDelayDays": "{n, plural, =1{1 jour} other{{n} jours}}",
+  "@agendaDelayDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationsTitle": "Notifications",
+  "notificationsMarkAllRead": "Tout marquer lu",
+  "notificationsEmpty": "Rien à signaler.",
+  "notificationsToHandle": "À traiter",
+  "notificationsReceived": "Messages",
+  "notifOverdue": "En retard",
+  "notifDueSoon": "Bientôt",
+  "notifDebtsOverdue": "{n, plural, =1{1 somme à recevoir en retard} other{{n} sommes à recevoir en retard}}",
+  "@notifDebtsOverdue": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifCashOpenLong": "{name} ouverte depuis plus de 24 h",
+  "@notifCashOpenLong": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifRejected": "{n, plural, =1{1 opération refusée par le serveur} other{{n} opérations refusées par le serveur}}",
+  "@notifRejected": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "notifRejectedHint": "Ouvrez-la pour lire le motif et la retirer.",
+  "notifAssigned": "{name} vous a confié une tâche",
+  "@notifAssigned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifDone": "{name} a terminé une tâche",
+  "@notifDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleAssigneeInvalid": "Cette personne n'est pas un membre actif de l'entreprise.",
+  "ruleTargetInvalid": "La fiche liée n'existe plus.",
+  "dashboardTitle": "Tableau de bord",
+  "dashboard7Days": "7 jours",
+  "dashboard30Days": "30 jours",
+  "dashboardMonth": "Ce mois",
+  "dashboardEmpty": "Aucune opération sur cette période pour cet espace.",
+  "dashboardFlows": "Encaissé et versé par jour",
+  "dashboardExpensesByCategory": "Dépenses par catégorie",
+  "dashboardTopDebtors": "Qui vous doit le plus",
+  "dashboardCollected": "Encaissé",
+  "dashboardPaidOut": "Versé",
+  "dashboardNet": "Solde de la période",
+  "dashboardExpenses": "Dépenses",
+  "dashboardOtherCategories": "Autres catégories",
+  "dashboardSeeAll": "Tout voir",
+  "searchHint": "Rechercher un contact, un reçu, un paiement…",
+  "searchIntro": "Nom, téléphone, montant, n° de reçu… La recherche fonctionne aussi hors-ligne.",
+  "searchNoResult": "Aucun résultat.",
+  "searchDebts": "Sommes dues",
+  "moduleCommunRapports": "Rapports",
+  "reportCashJournal": "Journal de trésorerie",
+  "reportCashJournalHint": "Tous les encaissements et paiements versés de la période.",
+  "reportExpenses": "Dépenses par catégorie",
+  "reportExpensesHint": "Nombre et total des dépenses de la période, par catégorie.",
+  "reportAgedReceivables": "Balance âgée des créances",
+  "reportAgedReceivablesHint": "Ce que chaque client doit encore, selon l'ancienneté du retard.",
+  "reportCashClosings": "Clôtures de caisse",
+  "reportCashClosingsHint": "Solde attendu, montant compté et écart de chaque clôture.",
+  "reportPeriod": "Du {start} au {end}",
+  "@reportPeriod": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "reportAtDate": "Situation au {date}",
+  "@reportAtDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTotal": "Total",
+  "reportNet": "Solde : {amount}",
+  "@reportNet": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCount": "Nombre",
+  "reportNotDue": "Non échu",
+  "reportDaysRange": "{a} à {b} j",
+  "@reportDaysRange": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      }
+    }
+  },
+  "reportDaysOver": "Plus de {n} j",
+  "@reportDaysOver": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "reportClosedOn": "Clôturée le",
+  "reportExpected": "Attendu",
+  "reportGap": "Écart",
+  "reportNone": "Aucun rapport disponible avec vos droits.",
+  "reportEmpty": "Aucune donnée pour cette période.",
+  "reportExportPdf": "Exporter en PDF",
+  "reportGeneratedOn": "Édité le {date} — DubaGest",
+  "@reportGeneratedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "notesTitle": "Notes et pièces jointes",
+  "notesAddHint": "Ajouter une note…",
+  "notesAdd": "Ajouter la note",
+  "attachmentsTitle": "Pièces jointes",
+  "attachTakePhoto": "Prendre une photo",
+  "attachChooseFile": "Joindre un fichier",
+  "attachOnlineHint": "Photo ou PDF, 10 Mo au plus. L'envoi d'un fichier demande une connexion.",
+  "attachFileTypes": "Images et PDF",
+  "attachSizeKb": "{n} Ko",
+  "@attachSizeKb": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "attachSizeMb": "{value} Mo",
+  "@attachSizeMb": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "entrepriseLogoHint": "Le logo apparaît en tête des reçus (PNG, JPEG ou WEBP, 2 Mo au plus).",
+  "entrepriseLogoChange": "Changer le logo",
+  "entrepriseLogoSaved": "Logo enregistré.",
+  "entrepriseLogoTypes": "Images",
+  "ruleFileTypeInvalid": "Format non accepté : photo (JPEG, PNG, WEBP) ou PDF uniquement.",
+  "ruleFileTooLarge": "Fichier trop volumineux ({max} Mo au plus).",
+  "@ruleFileTooLarge": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCompanyProfile": "Fiche de l'entreprise",
+  "settingsPayments": "Paiements et reçus",
+  "settingsPaymentsHint": "Modes de paiement proposés, mention des reçus",
+  "settingsExpenseCategories": "Catégories de dépenses",
+  "settingsPaymentModes": "Modes de paiement proposés",
+  "settingsPaymentModesHint": "Seuls les modes activés sont proposés à la saisie. Les paiements déjà enregistrés ne changent pas.",
+  "settingsPaymentModeCash": "Passe par la caisse",
+  "settingsReceiptFooter": "Mention en bas des reçus",
+  "settingsReceiptFooterHint": "Ex. : Merci de votre confiance.",
+  "settingsReceiptFooterNote": "Imprimée sur les prochains reçus ; les reçus déjà émis ne changent pas.",
+  "settingsSaved": "Paramètres enregistrés.",
+  "rulePaymentModesInvalid": "Choisissez au moins un mode de paiement de la liste.",
+  "rulePaymentModeDisabled": "Ce mode de paiement n'est plus proposé par l'entreprise. Choisissez-en un autre.",
+  "comStatusInStock": "En stock",
+  "comStatusLow": "Stock faible",
+  "comStatusOut": "Rupture",
+  "comAllShops": "Toutes les boutiques",
+  "comChooseShop": "Choisir la boutique",
+  "comShop": "Boutique",
+  "comShopRequired": "Choisissez une boutique",
+  "comBefore": "Avant",
+  "comAfter": "Après",
+  "comQuantity": "Quantité",
+  "comQuantityInvalid": "Entrez une quantité valable",
+  "comFractionNotAllowed": "Ce produit se compte en {unite} entiers",
+  "@comFractionNotAllowed": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comFractionStep": "Par pas de {pas} {unite}",
+  "@comFractionStep": {
+    "placeholders": {
+      "pas": {
+        "type": "String"
+      },
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comScan": "Scanner un code-barres",
+  "comScanTitle": "Scanner",
+  "comTorch": "Lampe",
+  "comScanUnavailable": "La caméra n'est pas disponible. Saisissez le code à la main.",
+  "comScanHint": "Placez le code-barres dans le cadre",
+  "comBarcodeUnknown": "Ce code n'est lié à aucun produit",
+  "comChooseProduct": "Choisir un produit",
+  "comSearchHint": "Nom, référence ou code-barres…",
+  "comAllCategories": "Toutes",
+  "comNoProductFound": "Aucun produit trouvé",
+  "comNoProductFoundHint": "Essayez un autre mot, ou ajoutez ce produit.",
+  "comAddProduct": "Ajouter un produit",
+  "comUsualProducts": "Produits habituels",
+  "comAllProducts": "Tous les produits",
+  "comProduct": "Produit",
+  "comFrom": "De",
+  "comTo": "Vers",
+  "comNewEntry": "Nouvelle entrée",
+  "comSaveEntry": "Enregistrer l'entrée",
+  "comNewExit": "Nouvelle sortie",
+  "comConfirmExit": "Confirmer la sortie",
+  "comTransferStock": "Transférer du stock",
+  "comConfirmTransfer": "Confirmer le transfert",
+  "comInventory": "Inventaire",
+  "comValidateInventory": "Valider l'inventaire",
+  "comConfirmExitTitle": "Confirmer la sortie ?",
+  "comConfirmTransferTitle": "Confirmer le transfert ?",
+  "comConfirmInventoryTitle": "Valider l'inventaire ?",
+  "comCurrentStock": "Stock actuel : {quantite}",
+  "@comCurrentStock": {
+    "placeholders": {
+      "quantite": {
+        "type": "String"
+      }
+    }
+  },
+  "comHowMany": "Combien ?",
+  "comCountedQuantity": "Combien en avez-vous compté ?",
+  "comWhy": "Pourquoi cet écart ?",
+  "comReason": "Motif",
+  "comNoteOptional": "Note (facultatif)",
+  "comAddNote": "Ajouter une note",
+  "comStockPreview": "Votre stock",
+  "comStockInsufficientInline": "Stock insuffisant · Disponible : {disponible}",
+  "@comStockInsufficientInline": {
+    "placeholders": {
+      "disponible": {
+        "type": "String"
+      }
+    }
+  },
+  "comInventoryNoGap": "Aucun écart : le stock est juste",
+  "comInventoryGap": "Écart : {ecart}",
+  "@comInventoryGap": {
+    "placeholders": {
+      "ecart": {
+        "type": "String"
+      }
+    }
+  },
+  "comStockUpdated": "Stock mis à jour",
+  "comTransferDone": "{quantite} transférés vers {boutique}",
+  "@comTransferDone": {
+    "placeholders": {
+      "quantite": {
+        "type": "String"
+      },
+      "boutique": {
+        "type": "String"
+      }
+    }
+  },
+  "comReasonPurchase": "Achat",
+  "comReasonReturn": "Retour",
+  "comReasonAdjustment": "Ajustement",
+  "comReasonSale": "Vente",
+  "comReasonLoss": "Perte",
+  "comReasonBreakage": "Casse",
+  "comReasonTransfer": "Transfert",
+  "comReasonCountError": "Erreur de comptage",
+  "comReasonMissing": "Produit manquant",
+  "comReasonOther": "Autre",
+  "ruleStockInsufficient": "Stock insuffisant : il reste {disponible}.",
+  "@ruleStockInsufficient": {
+    "placeholders": {
+      "disponible": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleQuantityInvalid": "La quantité doit être supérieure à zéro.",
+  "ruleFractionInvalid": "Quantité non valable : ce produit se vend par {pas} {unite}.",
+  "@ruleFractionInvalid": {
+    "placeholders": {
+      "pas": {
+        "type": "String"
+      },
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "ruleUnitInvalid": "Vérifiez les unités : chaque unité a un nom différent et contient au moins une unité de base.",
+  "ruleBarcodeExists": "Ce code-barres est déjà utilisé par un autre produit.",
+  "ruleTransferSameShop": "Choisissez deux boutiques différentes.",
+  "ruleShopRequired": "Choisissez la boutique.",
+  "ruleLinesInvalid": "Ajoutez au moins un produit avec une quantité.",
+  "ruleReceptionAbove": "Impossible de recevoir plus que commandé (reste : {reste}).",
+  "@ruleReceptionAbove": {
+    "placeholders": {
+      "reste": {
+        "type": "String"
+      }
+    }
+  },
+  "rulePurchaseReceived": "Cet achat a déjà été reçu : il ne peut plus être modifié ni annulé.",
+  "rulePurchasePaid": "Cet achat est déjà payé : annulez d'abord le paiement.",
+  "rulePurchaseCancelled": "Cet achat est annulé.",
+  "ruleSaleCancelled": "Cette vente est déjà annulée.",
+  "ruleSalePaid": "Cette vente est encaissée : annulez d'abord le paiement dans Finances.",
+  "ruleCustomerRequired": "Pour une vente à crédit, choisissez le client.",
+  "comProductsTitle": "Produits",
+  "comCategories": "Catégories",
+  "comManageCategories": "Gérer les catégories",
+  "comGridView": "Affichage en grille",
+  "comListView": "Affichage en liste",
+  "comEmptyProductsTitle": "Aucun produit",
+  "comEmptyProductsMessage": "Ajoutez vos produits pour commencer à gérer votre stock et vos ventes.",
+  "comProductsCount": "{count, plural, =0{Aucun produit} =1{1 produit} other{{count} produits}}",
+  "@comProductsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comNoProductInCategory": "Aucun produit dans {categorie}",
+  "@comNoProductInCategory": {
+    "placeholders": {
+      "categorie": {
+        "type": "String"
+      }
+    }
+  },
+  "comAddProductHere": "Ajouter un produit ici",
+  "comSeeProduct": "Voir",
+  "comAddToStock": "+ Stock",
+  "comSell": "Vendre",
+  "comCreateProduct": "Créer le produit",
+  "comBarcodeUnknownHint": "Voulez-vous créer un produit avec ce code ?",
+  "comArchived": "Archivé",
+  "comShowArchived": "Produits archivés",
+  "comSortBy": "Trier",
+  "comSortName": "Nom",
+  "comSortStock": "Stock le plus bas",
+  "comSortPrice": "Prix",
+  "comSortBestSellers": "Plus vendus",
+  "comNewProduct": "Nouveau produit",
+  "comEditProduct": "Modifier le produit",
+  "comStepIdentity": "Le produit",
+  "comStepUnits": "Unités et prix",
+  "comStepStock": "Stock",
+  "comStepOptions": "Plus d'options",
+  "comStepOf": "Étape {etape} sur {total}",
+  "@comStepOf": {
+    "placeholders": {
+      "etape": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "comNext": "Suivant",
+  "comPrevious": "Précédent",
+  "comSaveProduct": "Enregistrer le produit",
+  "comProductSaved": "Produit enregistré",
+  "comAddPhoto": "Ajouter une photo",
+  "comTakePhoto": "Prendre une photo",
+  "comChooseFromGallery": "Choisir dans la galerie",
+  "comPhotoHint": "Une photo aide vos vendeurs à reconnaître le produit.",
+  "comMainPhoto": "Photo principale",
+  "comSetMainPhoto": "Mettre en premier",
+  "comRemovePhoto": "Retirer la photo",
+  "comProductName": "Nom du produit",
+  "comProductNameHint": "Ex. : Carreau 40×40",
+  "comNameRequired": "Donnez un nom au produit",
+  "comCategory": "Catégorie",
+  "comSubCategory": "Sous-catégorie",
+  "comNoCategory": "Sans catégorie",
+  "comNewCategory": "Nouvelle catégorie",
+  "comNewSubCategory": "Nouvelle sous-catégorie",
+  "comCategoryName": "Nom de la catégorie",
+  "comReference": "Référence (facultatif)",
+  "comBarcode": "Code-barres (facultatif)",
+  "comCountedIn": "Je compte ce produit en…",
+  "comOtherUnit": "Autre…",
+  "comUnitName": "Nom de l'unité",
+  "comUnitNameHint": "Ex. : botte, seau, fût",
+  "comSalePrice": "Prix de vente",
+  "comSalePricePer": "Prix de vente par {unite}",
+  "@comSalePricePer": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comWholesalePricePer": "Prix de gros par {unite}",
+  "@comWholesalePricePer": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comPurchasePricePer": "Prix d'achat par {unite} (facultatif)",
+  "@comPurchasePricePer": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comSellWholesale": "Je vends aussi en gros",
+  "comRetail": "Détail",
+  "comWholesale": "Gros",
+  "comPurchase": "Achat",
+  "comPackagings": "Emballages",
+  "comPackagingsHint": "Vous achetez ou vendez par carton, paquet, sac… ? Ajoutez-les : l'application fera les calculs.",
+  "comAddPackaging": "Ajouter un emballage",
+  "comCopyUnits": "Copier d'un autre produit",
+  "comOneUnitContains": "1 {unite} contient",
+  "@comOneUnitContains": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comContains": "contient",
+  "comFactorRequired": "Combien de {unite} ?",
+  "@comFactorRequired": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comCalculated": "calculé",
+  "comPriceSetByYou": "prix fixé par vous",
+  "comDiscountOf": "remise de {pourcent} %",
+  "@comDiscountOf": {
+    "placeholders": {
+      "pourcent": {
+        "type": "String"
+      }
+    }
+  },
+  "comMarkupOf": "{pourcent} % plus cher que le détail",
+  "@comMarkupOf": {
+    "placeholders": {
+      "pourcent": {
+        "type": "String"
+      }
+    }
+  },
+  "comPriceHigherWarning": "Attention : ce lot coûte plus cher que les unités vendues séparément.",
+  "comBackToCalculated": "Revenir au prix calculé",
+  "comProfitPer": "Bénéfice : {montant} par {unite}",
+  "@comProfitPer": {
+    "placeholders": {
+      "montant": {
+        "type": "String"
+      },
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comUnitsSummary": "Résumé",
+  "comInitialStock": "Stock de départ",
+  "comInitialStockHint": "Combien en avez-vous aujourd'hui ? (facultatif)",
+  "comInitialStockNote": "Stock de départ",
+  "comAlertThreshold": "Prévenez-moi quand il reste moins de…",
+  "comAlertThresholdHint": "Le produit passera en « Stock faible ».",
+  "comSellFractions": "Vente au détail en morceaux",
+  "comSellFractionsHint": "Ex. : ½ bidon, 2,5 mètres, 0,25 kg",
+  "comMinimumStep": "Plus petite quantité vendue",
+  "comCharacteristics": "Caractéristiques",
+  "comAddCharacteristic": "Ajouter une caractéristique",
+  "comCharacteristicName": "Nom (ex. : garantie)",
+  "comMainSupplier": "Fournisseur principal",
+  "comChooseSupplier": "Choisir un fournisseur",
+  "comDescription": "Description (facultatif)",
+  "comNone": "Aucun",
+  "comAttrMarque": "Marque",
+  "comAttrModele": "Modèle",
+  "comAttrCouleur": "Couleur",
+  "comAttrDimensions": "Dimensions",
+  "comAttrFinition": "Finition",
+  "comAttrVolume": "Volume",
+  "comAttrType": "Type",
+  "comAttrSection": "Section",
+  "comAttrLongueur": "Longueur",
+  "comAttrTaille": "Taille",
+  "comAttrPoids": "Poids",
+  "comAttrEmplacement": "Emplacement",
+  "comUnitPiece": "Pièce",
+  "comUnitCarton": "Carton",
+  "comUnitPaquet": "Paquet",
+  "comUnitSac": "Sac",
+  "comUnitBidon": "Bidon",
+  "comUnitBouteille": "Bouteille",
+  "comUnitSachet": "Sachet",
+  "comUnitBoite": "Boîte",
+  "comUnitRouleau": "Rouleau",
+  "comUnitMetre": "Mètre",
+  "comUnitKg": "Kg",
+  "comUnitLitre": "Litre",
+  "comUnitDouzaine": "Douzaine",
+  "comUnitLot": "Lot",
+  "comUnitPalette": "Palette",
+  "comUnitTonne": "Tonne",
+  "comProductNotFound": "Ce produit n'existe plus.",
+  "comChooseCustomer": "Choisir un client",
+  "comNewSupplier": "Nouveau fournisseur",
+  "comNewCustomer": "Nouveau client",
+  "comSearchContact": "Nom ou téléphone…",
+  "comNoContact": "Aucun contact trouvé",
+  "comStockCard": "Stock",
+  "comDistribution": "Répartition",
+  "comEntry": "Entrée",
+  "comExit": "Sortie",
+  "comTransfer": "Transfert",
+  "comBuy": "Acheter",
+  "comPricesAndUnits": "Prix et unités",
+  "comUnit": "Unité",
+  "comProfit": "Bénéfice",
+  "comLastMovements": "Derniers mouvements",
+  "comSeeAll": "Tout voir",
+  "comNoMovement": "Aucun mouvement pour le moment",
+  "comSuppliers": "Fournisseurs",
+  "comArchive": "Archiver",
+  "comRestore": "Réactiver",
+  "comArchiveConfirm": "Archiver ce produit ? Il ne sera plus proposé à la vente ni à l'achat. Son historique est conservé.",
+  "comBarcodeShort": "Code-barres",
+  "comReferenceShort": "Référence",
+  "comMinimumAlert": "Alerte sous {quantite}",
+  "@comMinimumAlert": {
+    "placeholders": {
+      "quantite": {
+        "type": "String"
+      }
+    }
+  },
+  "comToCheck": "Stock à vérifier",
+  "comPendingSend": "En attente d'envoi",
+  "comCategoriesTitle": "Catégories",
+  "comCategoriesEmptyTitle": "Organisez vos produits",
+  "comCategoriesEmptyMessage": "Choisissez un modèle adapté à votre commerce, ou créez vos propres catégories.",
+  "comUseTemplate": "Utiliser un modèle",
+  "comChooseSector": "Quel est votre commerce ?",
+  "comTemplateApplied": "Catégories créées",
+  "comAddSubCategory": "Ajouter une sous-catégorie",
+  "comDisable": "Masquer",
+  "comEnable": "Afficher",
+  "comSectorHardware": "Quincaillerie",
+  "comSectorGrocery": "Boutique / alimentation",
+  "comSectorSupermarket": "Supermarché",
+  "comSectorTextile": "Vêtements et chaussures",
+  "comSectorCosmetics": "Cosmétique",
+  "comSectorElectronics": "Téléphonie et électronique",
+  "comCatOutils": "Outils",
+  "comCatMateriaux": "Matériaux",
+  "comCatPeinture": "Peinture",
+  "comCatPeintureInterieur": "Intérieur",
+  "comCatPeintureExterieur": "Extérieur",
+  "comCatPeinturePrimaire": "Primaire",
+  "comCatPeintureVernis": "Vernis",
+  "comCatPlomberie": "Plomberie",
+  "comCatElectricite": "Électricité",
+  "comCatVisserie": "Visserie",
+  "comCatMenuiserie": "Menuiserie",
+  "comCatAccessoires": "Accessoires",
+  "comCatCarrelage": "Carrelage",
+  "comCatBoissons": "Boissons",
+  "comCatEpicerie": "Épicerie",
+  "comCatFrais": "Produits frais",
+  "comCatBoulangerie": "Boulangerie",
+  "comCatHygiene": "Hygiène",
+  "comCatMenage": "Entretien de la maison",
+  "comCatCosmetique": "Beauté",
+  "comCatVetements": "Vêtements",
+  "comCatChaussures": "Chaussures",
+  "comCatTelephonie": "Téléphones",
+  "comCatElectronique": "Électronique",
+  "comCatPapeterie": "Papeterie",
+  "comMovementsTitle": "Mouvements",
+  "comFamilyAll": "Tous",
+  "comFamilyEntries": "Entrées",
+  "comFamilyExits": "Sorties",
+  "comFamilyTransfers": "Transferts",
+  "comFamilyAdjustments": "Ajustements",
+  "comFamilyLosses": "Pertes",
+  "comToday": "Aujourd'hui",
+  "comYesterday": "Hier",
+  "comBy": "par {nom}",
+  "@comBy": {
+    "placeholders": {
+      "nom": {
+        "type": "String"
+      }
+    }
+  },
+  "comTypeEntry": "Entrée",
+  "comTypeExit": "Sortie",
+  "comTypeTransferOut": "Transfert envoyé",
+  "comTypeTransferIn": "Transfert reçu",
+  "comTypeInventory": "Inventaire",
+  "comMovementRejected": "Refusé par le serveur",
+  "comEmptyMovementsTitle": "Aucun mouvement",
+  "comEmptyMovementsMessage": "Les entrées, sorties et transferts apparaîtront ici.",
+  "comRemoveRejected": "Retirer",
+  "comPeriodAll": "Toutes les dates",
+  "comPeriodToday": "Aujourd'hui",
+  "comPeriodWeek": "7 derniers jours",
+  "comPeriodMonth": "30 derniers jours",
+  "comStockTitle": "Stock",
+  "comStockSubtitle": "Suivez vos produits, vos quantités et vos mouvements.",
+  "comKpiProducts": "Produits",
+  "comKpiLow": "Stock faible",
+  "comKpiOut": "Ruptures",
+  "comKpiMovesToday": "Mouvements du jour",
+  "comOrder": "Commander",
+  "comStockEmptyTitle": "Votre stock est encore vide",
+  "comStockEmptyMessage": "Commencez par ajouter votre premier produit.",
+  "comNothingToReport": "Rien à signaler : tout est en stock.",
+  "comToWatch": "À surveiller",
+  "comSeeMovements": "Voir les mouvements",
+  "comStockActions": "Que voulez-vous faire ?",
+  "comWatchLow": "{count, plural, =1{1 produit en stock faible} other{{count} produits en stock faible}}",
+  "@comWatchLow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comWatchOut": "{count, plural, =1{1 produit en rupture} other{{count} produits en rupture}}",
+  "@comWatchOut": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comPurchasesTitle": "Achats",
+  "comNewPurchase": "Nouvel achat",
+  "comEditPurchase": "Modifier l'achat",
+  "comPurchaseEmptyTitle": "Aucun achat",
+  "comPurchaseEmptyMessage": "Enregistrez vos achats chez vos fournisseurs : le stock augmente à la réception.",
+  "comFilterToReceive": "À recevoir",
+  "comFilterReceived": "Reçus",
+  "comFilterCancelled": "Annulés",
+  "comStatusOrdered": "Commandé",
+  "comStatusPartlyReceived": "Reçu en partie",
+  "comStatusReceived": "Reçu",
+  "comStatusCancelled": "Annulé",
+  "comSupplier": "Fournisseur",
+  "comNoSupplierChosen": "Choisir le fournisseur (facultatif)",
+  "comPurchaseDate": "Date",
+  "comSupplierReference": "N° de facture / bon (facultatif)",
+  "comProducts": "Produits",
+  "comAddLine": "Ajouter un produit",
+  "comUnitPrice": "Prix par {unite}",
+  "@comUnitPrice": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comLastPrice": "Dernier prix : {montant}",
+  "@comLastPrice": {
+    "placeholders": {
+      "montant": {
+        "type": "String"
+      }
+    }
+  },
+  "comTotal": "Total",
+  "comSave": "Enregistrer",
+  "comSaveAndReceive": "Enregistrer et réceptionner",
+  "comPurchaseSaved": "Achat enregistré",
+  "comReceive": "Réceptionner",
+  "comReceiveTitle": "Réception de la marchandise",
+  "comReceivedToday": "Reçu aujourd'hui",
+  "comOrdered": "Commandé",
+  "comAlreadyReceived": "Déjà reçu",
+  "comRemaining": "Reste",
+  "comReceiveAll": "Tout reçu",
+  "comNothingReceived": "Rien",
+  "comConfirmReception": "Valider la réception",
+  "comReceptionDone": "Marchandise reçue : stock mis à jour",
+  "comStockImpact": "Effet sur le stock",
+  "comReceptions": "Réceptions",
+  "comCancelPurchase": "Annuler l'achat",
+  "comCancelPurchaseConfirm": "Annuler cet achat ? La dette fournisseur sera annulée.",
+  "comDebt": "Reste à payer",
+  "comPaid": "Payé",
+  "comPaySupplier": "Payer le fournisseur",
+  "comFullyPaid": "Entièrement payé",
+  "comLinesCount": "{count, plural, =1{1 produit} other{{count} produits}}",
+  "@comLinesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comPurchaseOf": "Achat du {date}",
+  "@comPurchaseOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "comNoSupplier": "Sans fournisseur",
+  "comEditLine": "Modifier la ligne",
+  "comRemoveLine": "Retirer",
+  "comApply": "Valider",
+  "comSuppliersTitle": "Fournisseurs",
+  "comSuppliersEmptyTitle": "Aucun fournisseur",
+  "comSuppliersEmptyMessage": "Ajoutez les personnes ou sociétés auprès de qui vous achetez.",
+  "comAddSupplier": "Ajouter un fournisseur",
+  "comTotalBought": "Total acheté",
+  "comLastPurchase": "Dernier achat",
+  "comSuppliedProducts": "Produits fournis",
+  "comPurchaseHistory": "Historique des achats",
+  "comCall": "Appeler",
+  "comOpenContact": "Fiche contact",
+  "comNeverBought": "Aucun achat pour le moment",
+  "comPurchasesCount": "{count, plural, =0{Aucun achat} =1{1 achat} other{{count} achats}}",
+  "@comPurchasesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comSalesTitle": "Vendre",
+  "comSalesHistory": "Ventes",
+  "comCart": "Panier",
+  "comCartEmpty": "Touchez un produit pour l'ajouter au panier.",
+  "comCartCount": "{count, plural, =1{1 article} other{{count} articles}}",
+  "@comCartCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "comCheckout": "Encaisser",
+  "comBestSellers": "Plus vendus",
+  "comPayment": "Paiement",
+  "comPayNow": "Payé maintenant",
+  "comOnCredit": "À crédit",
+  "comCustomer": "Client",
+  "comCustomerOptional": "Client (facultatif)",
+  "comDiscount": "Remise",
+  "comToPay": "À payer",
+  "comSaleDone": "Vente enregistrée : {montant}",
+  "@comSaleDone": {
+    "placeholders": {
+      "montant": {
+        "type": "String"
+      }
+    }
+  },
+  "comConfirmSale": "Valider la vente",
+  "comCashOpen": "L'argent entre dans la caisse ouverte.",
+  "comNoCashOpen": "Aucune caisse ouverte : le paiement est enregistré sans caisse.",
+  "comAvailable": "Disponible : {quantite}",
+  "@comAvailable": {
+    "placeholders": {
+      "quantite": {
+        "type": "String"
+      }
+    }
+  },
+  "comSalesEmptyTitle": "Aucune vente",
+  "comSalesEmptyMessage": "Vos ventes apparaîtront ici.",
+  "comSaleOf": "Vente du {date}",
+  "@comSaleOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "comCancelSale": "Annuler la vente",
+  "comCancelSaleConfirm": "Annuler cette vente ? Les produits reviennent en stock.",
+  "comCancelReason": "Motif (facultatif)",
+  "comSaleCancelledDone": "Vente annulée",
+  "comCancelled": "Annulée",
+  "comSalesToday": "Ventes du jour",
+  "comNoShopAllowed": "Vous n'avez pas de boutique pour vendre.",
+  "comClearCart": "Vider le panier",
+  "comChangeUnit": "Quantité et unité",
+  "comPrice": "Prix",
+  "comSeller": "Vendeur",
+  "comNewSale": "Nouvelle vente",
+  "comStepProductUnits": "Produit et unités",
+  "comStepPricesStock": "Prix et stock",
+  "comProductInfo": "Le produit",
+  "comProductInfoHint": "Une photo et un nom clair aident vos vendeurs à le reconnaître.",
+  "comPhotoShort": "Photo",
+  "comHowCounted": "Comment comptez-vous ce produit ?",
+  "comHowCountedHint": "Choisissez la plus petite quantité que vous vendez : une pièce, un sac, un litre…",
+  "comPackagingTitle": "Vendez-vous aussi par carton, paquet, sac… ?",
+  "comPackagingHint2": "Ajoutez l'emballage et ce qu'il contient : les prix et le stock seront calculés pour vous.",
+  "comPackagingName": "Nom de l'emballage",
+  "comPackagingContains": "Nombre de {unite} dans 1 emballage",
+  "@comPackagingContains": {
+    "placeholders": {
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comRetailPrice": "Prix de vente au détail",
+  "comRetailPriceHint": "Le prix habituel pour un client. Choisissez l'unité de ce prix.",
+  "comWholesalePrice": "Prix de vente en gros",
+  "comWholesalePriceHint": "Le prix pour les gros acheteurs, souvent par carton.",
+  "comPurchasePrice": "Prix d'achat (facultatif)",
+  "comPurchasePriceHint": "Ce que vous payez au fournisseur : pour voir votre bénéfice.",
+  "comPricePer": "Prix pour 1 :",
+  "comEquivalentPrice": "Soit {montant} par {unite}",
+  "@comEquivalentPrice": {
+    "placeholders": {
+      "montant": {
+        "type": "String"
+      },
+      "unite": {
+        "type": "String"
+      }
+    }
+  },
+  "comPriceSummary": "Vos prix, calculés pour chaque unité",
+  "comAmountHint": "Montant",
+  "comSaveChanges": "Enregistrer les modifications",
+  "comStockAndAlert": "Stock et alerte",
+  "comSupplierNone": "Aucun fournisseur choisi",
+  "comReferenceHint": "Ex. : CAR-0012",
+  "comGenerateReference": "Proposer une référence",
+  "comChooseCategory": "Choisir une catégorie",
+  "comBarcodeLabel": "Code-barres",
+  "comBarcodeHint": "Scannez ou tapez le code (facultatif)",
+  "comUnitPieceHelp": "Ex. : carreau, ampoule",
+  "rcpTitle": "Reçus",
+  "rcpSaleReceipt": "REÇU DE VENTE",
+  "rcpNumberPending": "Numéro attribué à la synchronisation",
+  "rcpSaleSaved": "Vente enregistrée",
+  "rcpView": "Voir le reçu",
+  "rcpShare": "Partager",
+  "rcpPrint": "Imprimer",
+  "rcpPdf": "PDF",
+  "rcpNewSale": "Nouvelle vente",
+  "rcpCounterCustomer": "Client comptoir",
+  "rcpSelectCustomer": "Sélectionner",
+  "rcpAddName": "Ajouter un nom",
+  "rcpCustomerName": "Nom du client",
+  "rcpPhoneOptional": "Téléphone (facultatif)",
+  "rcpCreditNeedsCustomer": "Vente à crédit : choisissez ou ajoutez le client.",
+  "rcpDeposit": "Payé maintenant (facultatif)",
+  "rcpDepositHint": "Laissez vide si le client ne paie rien aujourd'hui.",
+  "rcpSubtotal": "Sous-total",
+  "rcpPaid": "Montant payé",
+  "rcpRemaining": "Reste",
+  "rcpRemainingToPay": "RESTE À PAYER",
+  "rcpShop": "Boutique",
+  "rcpDate": "Date",
+  "rcpTime": "Heure",
+  "rcpThanks": "Merci pour votre confiance.",
+  "rcpTagline": "La gestion simple de votre activité",
+  "rcpProduct": "Produit",
+  "rcpQty": "Qté",
+  "rcpPrice": "Prix",
+  "rcpLineTotal": "Total",
+  "rcpStatus": "Statut",
+  "rcpStatusValid": "Validé",
+  "rcpStatusCancelled": "Annulé",
+  "rcpStatusCredit": "À crédit",
+  "rcpStatusPartial": "Partiellement payé",
+  "rcpCancelledStamp": "ANNULÉ",
+  "rcpCancelledInfo": "Annulé le {date} par {nom}",
+  "@rcpCancelledInfo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "nom": {
+        "type": "String"
+      }
+    }
+  },
+  "rcpEmptyTitle": "Aucun reçu pour le moment",
+  "rcpEmptyMessage": "Vos reçus apparaîtront ici après vos premières ventes.",
+  "rcpCreateSale": "Créer une vente",
+  "rcpNoResultTitle": "Aucun reçu trouvé",
+  "rcpNoResultMessage": "Essayez un autre numéro, client ou date.",
+  "rcpSearchHint": "N° de reçu, client, téléphone, produit…",
+  "rcpPeriodToday": "Aujourd'hui",
+  "rcpPeriodYesterday": "Hier",
+  "rcpPeriodWeek": "Cette semaine",
+  "rcpPeriodMonth": "Ce mois",
+  "rcpPeriodCustom": "Période…",
+  "rcpPeriodAll": "Tout",
+  "rcpAllSellers": "Tous les vendeurs",
+  "rcpAllPayments": "Tous les paiements",
+  "rcpAllStatuses": "Tous les statuts",
+  "rcpCredit": "Crédit",
+  "rcpSales": "Ventes",
+  "rcpShops": "Boutiques",
+  "rcpLatest": "Dernières ventes",
+  "rcpSeeAll": "Voir tous les reçus",
+  "rcpFilters": "Filtres",
+  "rcpReset": "Effacer les filtres",
+  "rcpTraceability": "Historique",
+  "rcpCreatedBy": "Vente enregistrée par {nom}",
+  "@rcpCreatedBy": {
+    "placeholders": {
+      "nom": {
+        "type": "String"
+      }
+    }
+  },
+  "rcpOnDevice": "Enregistrée sur l'appareil, en attente d'envoi",
+  "rcpCount": "{count, plural, =0{Aucun reçu} =1{1 reçu} other{{count} reçus}}",
+  "@rcpCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "expenseCatFuel": "Carburant",
+  "expenseCatWater": "Eau",
+  "expenseCatInternet": "Téléphone et internet",
+  "expenseCatRepair": "Réparation",
+  "expenseCatCleaning": "Nettoyage",
+  "expenseCatSecurity": "Gardiennage",
+  "expenseCatDelivery": "Livraison",
+  "expenseCatBankFees": "Frais bancaires",
+  "expenseCatInsurance": "Assurance",
+  "cashNatureContribution": "Apport",
+  "cashNatureWithdrawal": "Retrait",
+  "cashNatureTransfer": "Transfert",
+  "cashNatureRefund": "Remboursement",
+  "cashNatureAdjustment": "Ajustement",
+  "cashNatureOpeningBalance": "Solde initial",
+  "cashNatureOther": "Autre",
+  "cashGapReasonChange": "Erreur de rendu monnaie",
+  "cashGapReasonUnrecorded": "Dépense non enregistrée",
+  "cashGapReasonCounting": "Erreur de comptage",
+  "cashGapReasonOther": "Autre",
+  "cashGapJustify": "Un écart de {amount} a été constaté. Indiquez sa cause.",
+  "cashGapNoteRequired": "Justification (obligatoire)",
+  "cashOperationReason": "Motif",
+  "cashTransferTitle": "Transfert",
+  "cashTransferFrom": "Depuis",
+  "cashTransferTo": "Vers",
+  "cashTransferSame": "La source et la destination doivent être différentes.",
+  "cashTransferDone": "Transfert enregistré",
+  "cashTransferCancel": "Annuler le transfert",
+  "cashCompanyLevel": "Entreprise (sans boutique)",
+  "@cashGapJustify": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cashIn": "Entrée d'argent",
+  "cashOut": "Sortie d'argent",
+  "cashSite": "Boutique / site",
+  "cashScreenSubtitle": "Suivez vos entrées, vos sorties et votre solde.",
+  "cashAllShops": "Toutes les boutiques",
+  "cashAvailable": "Solde disponible",
+  "cashShowAmounts": "Afficher les montants",
+  "cashHideAmounts": "Masquer les montants",
+  "cashCashOnHand": "Espèces en caisse",
+  "cashIncoming": "Entrées",
+  "cashOutgoing": "Sorties",
+  "cashNet": "Variation",
+  "cashOperationsCount": "{count, plural, =0{Aucune opération} =1{1 opération} other{{count} opérations}}",
+  "@cashOperationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cashAddOperation": "Ajouter une opération",
+  "cashBalanceTrend": "Évolution du solde",
+  "cashInBreakdown": "D'où vient l'argent",
+  "cashOutBreakdown": "Où part l'argent",
+  "cashByMode": "Moyens d'argent",
+  "cashComparison": "Comparaison",
+  "cashPreviousPeriod": "Période précédente",
+  "cashByShop": "Par boutique",
+  "cashOperationsHistory": "Opérations",
+  "cashSearchHint": "Rechercher une opération…",
+  "cashFilterAll": "Tout",
+  "cashReadyTitle": "Votre caisse est prête",
+  "cashReadyMessage": "Les ventes, paiements et dépenses apparaîtront automatiquement ici.",
+  "cashNoDataPeriod": "Aucune donnée pour cette période.",
+  "cashBalanced": "Équilibrée",
+  "cashGapLarge": "Écart important",
+  "periodToday": "Aujourd'hui",
+  "periodYesterday": "Hier",
+  "periodThisWeek": "Cette semaine",
+  "periodThisMonth": "Ce mois",
+  "periodThisYear": "Cette année",
+  "periodAll": "Tout",
+  "periodCustom": "Personnalisé",
+  "period7Days": "7 j",
+  "period30Days": "30 j",
+  "period3Months": "3 mois",
+  "cashSrcSale": "Vente",
+  "cashSrcCustomerPayment": "Paiement client",
+  "cashSrcService": "Prestation",
+  "cashSrcRent": "Loyer",
+  "cashSrcPurchase": "Achat",
+  "cashSrcSupplierPayment": "Paiement fournisseur",
+  "cashSrcExpense": "Dépense",
+  "cashAlertGap": "Écart de {amount} à la dernière clôture de {register}.",
+  "@cashAlertGap": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "register": {
+        "type": "String"
+      }
+    }
+  },
+  "cashAlertOutflowsUp": "Sorties en hausse de {percent} % par rapport à la semaine précédente.",
+  "@cashAlertOutflowsUp": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "cashDetailDate": "Date et heure",
+  "cashDetailSource": "Source",
+  "cashDetailReference": "Référence",
+  "cashDetailContact": "Client / fournisseur",
+  "cashDetailOpen": "Voir le détail",
+  "cashCancelOperation": "Annuler l'opération",
+  "cashCancelReason": "Motif de l'annulation",
+  "cashPending": "En attente d'envoi",
+  "financeManage": "Gérer vos finances",
+  "periodDay": "Jour",
+  "periodMonth": "Mois",
+  "periodYear": "Année",
+  "periodDates": "Dates",
+  "periodPrevious": "Précédent",
+  "periodNext": "Suivant",
+  "periodChooseDates": "Choisir les dates",
+  "expenseTotalPeriod": "Total de la période",
+  "expensesCount": "{count, plural, =0{Aucune dépense} =1{1 dépense} other{{count} dépenses}}",
+  "@expensesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "servicesTitle": "Services & Prestations",
+  "servicesSubtitle": "La gestion simple de vos interventions et devis",
+  "prestationsTitle": "Prestations",
+  "planningServicesTitle": "Planning des interventions",
+  "catalogueServicesTitle": "Catalogue des prestations",
+  "devisServicesTitle": "Devis de services",
+  "statutAFaire": "À faire",
+  "statutPlanifiee": "Planifiée",
+  "statutEnCours": "En cours",
+  "statutTerminee": "Terminée",
+  "statutLivree": "Livrée",
+  "statutAnnulee": "Annulée",
+  "prioriteFaible": "Faible / À venir",
+  "prioriteAttentionJ2": "Attention (J-2)",
+  "prioriteUrgentJ1": "Urgent (J-1)",
+  "prioriteAujourdhui": "À faire aujourd'hui",
+  "prioriteEnRetard": "En retard",
+  "nouvellePrestation": "Nouvelle prestation",
+  "nouveauDevisService": "Nouveau devis",
+  "nouveauServiceCatalogue": "Nouveau service",
+  "convertirDevisEnPrestation": "Convertir en prestation",
+  "demarrerTravail": "Démarrer",
+  "terminerTravail": "Terminer",
+  "livrerPrestation": "Livrer au client",
+  "reporterEcheance": "Reporter l'échéance",
+  "motifReport": "Motif du report",
+  "uniteForfait": "Forfait",
+  "uniteHeure": "Par heure",
+  "uniteJour": "Par jour",
+  "uniteM2": "Par m²",
+  "uniteKm": "Par km",
+  "unitePiece": "Par pièce",
+  "statutDevisBrouillon": "Brouillon",
+  "statutDevisEmis": "Émis",
+  "statutDevisAccepte": "Accepté",
+  "statutDevisRefuse": "Refusé",
+  "statutDevisConverti": "Converti en prestation",
+  "rapportsServicesTitle": "Rapports & Rentabilité Services",
+  "performanceFinanciere": "Performance Financière",
+  "totalFacture": "Total Facturé",
+  "totalEncaisse": "Total Encaissé",
+  "aRecouvrer": "À Recouvrer",
+  "tauxRecouvrement": "Taux de recouvrement",
+  "ventilationMainOeuvrePieces": "Ventilation de la Valeur Facturée",
+  "mainOeuvre": "Main d'œuvre / Prestations",
+  "piecesStock": "Pièces stock",
+  "transformationDevis": "Transformation Devis",
+  "bonPriseEnCharge": "Bon de prise en charge",
+  "rappelClient": "Rappeler le client",
+  "envoyerWhatsApp": "Envoyer WhatsApp"
+}
+

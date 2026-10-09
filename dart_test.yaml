@@ -1,0 +1,7 @@
+tags:
+  # Tests contre Supabase Local (ignorés automatiquement s'il n'est pas lancé).
+  #   flutter test --tags integration --concurrency=1 : uniquement ceux-ci,
+  #     un fichier à la fois (ils partagent la même base locale et la nettoient)
+  #   flutter test --exclude-tags integration : sans serveur
+  integration:
+    timeout: 2x
