@@ -1,0 +1,13 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/vitrine/index.html"
+    },
+    {
+      "source": "/((?!vitrine/).*)",
+      "destination": "/vitrine/$1"
+    }
+  ]
+}
