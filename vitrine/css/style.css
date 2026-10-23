@@ -1342,3 +1342,46 @@ img, svg {
     text-align: center;
   }
 }
+
+/* Optimisation tactile spécifique Smartphones (<580px) */
+@media (max-width: 580px) {
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  .hero-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 52px;
+    font-size: 1.02rem;
+  }
+  .download-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  .download-buttons .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .hero-title {
+    font-size: 2.05rem;
+    line-height: 1.22;
+  }
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  .modal-box {
+    width: 95%;
+    max-height: 85vh;
+    border-radius: var(--radius-lg);
+  }
+  .pwa-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .section {
+    padding: 60px 0;
+  }
+}
+

@@ -158,6 +158,23 @@
       return;
     }
 
+    // Adaptation proactive des boutons selon le terminal détecté
+    if (isIOS()) {
+      if (heroInstallBtn) {
+        const span = heroInstallBtn.querySelector('span');
+        if (span) span.textContent = 'Installer sur iPhone (Safari)';
+      }
+      if (navInstallBtn) {
+        const span = navInstallBtn.querySelector('span');
+        if (span) span.textContent = 'iPhone PWA';
+      }
+    } else if (isAndroid()) {
+      if (heroInstallBtn) {
+        const span = heroInstallBtn.querySelector('span');
+        if (span) span.textContent = 'Installer sur Android';
+      }
+    }
+
     // 2. Écoute de l'événement natif Android / Desktop Chromium
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
