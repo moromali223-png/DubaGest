@@ -59,6 +59,12 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, a, button {
+  overflow-wrap: break-word;
 }
 
 html {
@@ -193,7 +199,8 @@ img, svg {
   transition: all var(--transition-smooth);
   text-align: center;
   user-select: none;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
 }
 
 .btn-icon {
@@ -401,6 +408,7 @@ img, svg {
 .hero-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 8px 18px;
   border-radius: var(--radius-pill);
@@ -410,6 +418,9 @@ img, svg {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--color-dark);
+  max-width: 100%;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .hero-badge-dot {

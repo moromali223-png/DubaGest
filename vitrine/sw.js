@@ -1,14 +1,14 @@
 /**
- * Service Worker pour la Vitrine DubaGest
- * Assure le chargement instantané et la consultation hors-ligne du portail.
+ * Service Worker pour la Vitrine DubaGest v2.1.0
+ * Stratégie Network-First pour styles et scripts pour garantir les mises à jour immédiates.
  */
-const CACHE_NAME = 'dubagest-vitrine-v1.0.0';
+const CACHE_NAME = 'dubagest-vitrine-v2.1.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './css/style.css',
-  './js/config.js',
-  './js/app.js',
+  './css/style.css?v=2.1',
+  './js/config.js?v=2.1',
+  './js/app.js?v=2.1',
   './manifest.json',
   './favicon.png',
   './icons/Icon-192.png',
@@ -32,6 +32,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[SW] Suppression ancien cache :', key);
             return caches.delete(key);
           }
         })
@@ -41,34 +42,38 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Stratégie : Réseau en priorité pour index.html pour avoir les dernières mises à jour,
-  // avec repli immédiat sur le cache si hors-ligne.
-  if (event.request.mode === 'navigate') {
+  // Stratégie Network-First pour HTML, CSS et JS
+  const url = new URL(event.request.url);
+  const isCodeAsset = event.request.mode === 'navigate' || 
+                      url.pathname.endsWith('.css') || 
+                      url.pathname.endsWith('.js') || 
+                      url.pathname.endsWith('.html');
+
+  if (isCodeAsset) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('./index.html'))
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
     );
     return;
   }
 
-  // Pour les autres ressources (CSS, JS, images) : Cache First avec mise à jour en tâche de fond.
+  // Cache-First pour images et polices
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
+      return cachedResponse || fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
         return networkResponse;
       });
-    }).catch(() => {
-      // Si hors-ligne et ressource absente
-      return new Response('Hors-ligne', { status: 503, statusText: 'Service Unavailable' });
     })
   );
 });
