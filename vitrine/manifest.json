@@ -1,0 +1,37 @@
+{
+  "name": "DubaGest — Gestion d'Entreprise",
+  "short_name": "DubaGest",
+  "description": "Gestion Commerce, Services et Immobilier — mobile-first, 100% hors-ligne & synchronisé.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F4F7F5",
+  "theme_color": "#1E7E4E",
+  "categories": ["business", "finance", "productivity"],
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

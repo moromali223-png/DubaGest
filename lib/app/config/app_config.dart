@@ -25,8 +25,9 @@ class AppConfig {
 
   static const mobileRedirect = 'io.dubagest://auth-callback';
 
-  /// Clé publique de démonstration fournie par `supabase start` (PUBLISHABLE_KEY).
-  static const _localPublishableKey = 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
+  /// Clé publique par défaut du projet Supabase zqvfksqfjsdfrykokpsd.
+  static const _defaultPublishableKey = 'sb_publishable_7K7N1LDRynPSG0Lm8v27cg_Uj7Ttq_a';
+  static const _defaultSupabaseUrl = 'https://zqvfksqfjsdfrykokpsd.supabase.co';
   static const _localAppUrl = 'http://127.0.0.1:3000';
 
   factory AppConfig.fromEnvironment() {
@@ -38,27 +39,39 @@ class AppConfig {
     if (kReleaseMode && (url.isEmpty || key.isEmpty || appUrl.isEmpty)) {
       throw StateError('SUPABASE_URL, SUPABASE_KEY et APP_URL sont obligatoires en release.');
     }
+    final effectiveAppUrl = appUrl.isNotEmpty ? appUrl : (kIsWeb ? Uri.base.origin : _localAppUrl);
+
+    // Détermination de l'URL de retour OAuth :
+    // Sur Web, toujours l'origine courante du navigateur (ex: http://localhost:3000 ou https://dubagest.ml)
+    // et jamais le schéma mobile (io.dubagest://) qui ferait échouer la redirection navigateur.
+    final String? effectiveRedirect;
+    if (kIsWeb) {
+      if (redirect.isNotEmpty && !redirect.startsWith('io.dubagest://')) {
+        effectiveRedirect = redirect;
+      } else {
+        effectiveRedirect = Uri.base.origin;
+      }
+    } else {
+      effectiveRedirect = redirect.isNotEmpty ? redirect : _defaultRedirect(effectiveAppUrl);
+    }
+
     return AppConfig(
-      supabaseUrl: url.isNotEmpty ? url : _localUrl(),
-      supabaseKey: key.isNotEmpty ? key : _localPublishableKey,
-      publicAppUrl: appUrl.isNotEmpty ? appUrl : (kIsWeb ? Uri.base.origin : _localAppUrl),
-      authRedirectUrl: redirect.isNotEmpty ? redirect : _defaultRedirect(),
+      supabaseUrl: url.isNotEmpty ? url : _defaultSupabaseUrl,
+      supabaseKey: key.isNotEmpty ? key : _defaultPublishableKey,
+      publicAppUrl: effectiveAppUrl,
+      authRedirectUrl: effectiveRedirect,
     );
   }
 
-  static String? _defaultRedirect() {
+  static String? _defaultRedirect([String? fallbackUrl]) {
     if (kIsWeb) return Uri.base.origin;
     return switch (defaultTargetPlatform) {
       TargetPlatform.android || TargetPlatform.iOS => mobileRedirect,
-      // Desktop : pas de lien profond enregistré en V1 (URL du site par défaut).
+      TargetPlatform.windows || TargetPlatform.macOS || TargetPlatform.linux =>
+        fallbackUrl ?? _localAppUrl,
       _ => null,
     };
   }
-
-  /// L'émulateur Android joint la machine hôte via 10.0.2.2.
-  static String _localUrl() => !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-      ? 'http://10.0.2.2:54321'
-      : 'http://127.0.0.1:54321';
 
   String invitationLink(String token) =>
       Uri.parse(publicAppUrl).replace(path: '/join-company', queryParameters: {'token': token}).toString();
