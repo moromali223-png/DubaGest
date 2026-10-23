@@ -70,6 +70,9 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 body {
@@ -77,6 +80,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 a {
@@ -1308,30 +1313,85 @@ img, svg {
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+    max-width: 100vw;
+  }
+  .nav-container {
+    padding: 0 16px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand-link {
+    font-size: 1.2rem;
+    gap: 8px;
+  }
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .brand-badge {
+    display: none;
+  }
+  .nav-actions {
+    display: none !important;
+  }
+  .mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    color: var(--color-dark);
+    margin-left: auto;
+  }
   .nav-menu {
     position: fixed;
-    top: 74px;
+    top: 64px;
     left: 0;
     right: 0;
     background: #FFFFFF;
     flex-direction: column;
-    padding: 30px 24px;
-    gap: 20px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-    transform: translateY(-120%);
+    padding: 24px 20px;
+    gap: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    transform: translateY(-130%);
     transition: transform var(--transition-smooth);
+    z-index: 999;
   }
   .nav-menu.nav-open {
     transform: translateY(0);
   }
-  .mobile-toggle {
-    display: block;
+  .hero-section {
+    padding: 36px 0 56px 0;
   }
   .hero-title {
-    font-size: 2.4rem;
+    font-size: 2.1rem;
+    line-height: 1.22;
   }
   .section-title {
-    font-size: 1.85rem;
+    font-size: 1.7rem;
+  }
+  .hero-badge {
+    max-width: 100%;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    text-align: center;
+  }
+  .phone-mockup {
+    width: 100%;
+    max-width: 290px;
+    border-width: 8px;
+    border-radius: 36px;
+    margin: 0 auto;
+  }
+  .phone-notch {
+    width: 100px;
+    height: 16px;
   }
   .footer-grid {
     grid-template-columns: 1fr;
@@ -1366,11 +1426,17 @@ img, svg {
     justify-content: center;
   }
   .hero-title {
-    font-size: 2.05rem;
-    line-height: 1.22;
+    font-size: 1.95rem;
+    line-height: 1.2;
   }
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: 0.98rem;
+    margin-bottom: 24px;
+  }
+  .hero-guarantees {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
   .modal-box {
     width: 95%;
@@ -1381,7 +1447,7 @@ img, svg {
     grid-template-columns: 1fr;
   }
   .section {
-    padding: 60px 0;
+    padding: 48px 0;
   }
 }
 
