@@ -10,10 +10,10 @@ window.DUBAGEST_CONFIG = {
   
   // URL de l'application métier Flutter (PWA)
   // En local : 'http://localhost:3000'
-  // En production : 'https://app.dubagest.ml' ou '/app'
+  // En production : 'https://dubagest-app.pages.dev'
   appUrl: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
-    : '/app',
+    : 'https://dubagest-app.pages.dev',
     
   // URL directe de connexion
   get loginUrl() {
@@ -22,8 +22,8 @@ window.DUBAGEST_CONFIG = {
 
   // Téléchargement Android APK officiel
   android: {
-    // Remplacer par l'URL du fichier APK signé en production (ex: https://downloads.dubagest.ml/dubagest-release.apk)
-    apkUrl: '#telecharger-apk', 
+    // URL directe du fichier APK officiel
+    apkUrl: 'https://github.com/moromali223-png/DubaGest/releases/download/v1.0.0/dubagest-release.apk', 
     version: '1.0.0',
     taille: '18.4 Mo',
     datePublication: 'Octobre 2026',
