@@ -52,3 +52,7 @@ supabase/.temp
 /android/app/debug
 /android/app/profile
 /android/app/release
+*.jks
+*.keystore
+**/key.properties
+

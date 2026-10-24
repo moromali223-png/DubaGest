@@ -77,13 +77,18 @@
     // Boutons APK Android
     const apkButtons = document.querySelectorAll('.action-apk');
     apkButtons.forEach((btn) => {
-      const targetUrl = config.android.apkUrl || 'https://github.com/moromali223-png/DubaGest/releases/download/v1.0.0/dubagest-release.apk';
+      const targetUrl = config.android.apkUrl || '/downloads/DubaGest-Android.apk';
       btn.href = targetUrl;
-      btn.setAttribute('download', `DubaGest-v${config.android.version}.apk`);
-      btn.setAttribute('target', '_blank');
-      btn.setAttribute('rel', 'noopener noreferrer');
-      btn.addEventListener('click', () => {
-        showToast('Téléchargement de l\'APK officiel DubaGest (106.6 Mo) en cours...', 'info');
+      btn.setAttribute('download', config.android.nomFichier || 'DubaGest-Android.apk');
+      btn.removeAttribute('target');
+      btn.removeAttribute('rel');
+      btn.addEventListener('click', (e) => {
+        if (!config.android.estDisponible) {
+          e.preventDefault();
+          showToast('Le fichier APK est temporairement en cours de mise à jour. Veuillez réessayer dans quelques instants.', 'warning');
+          return;
+        }
+        showToast(`Téléchargement de l'APK officiel DubaGest (${config.android.taille || '39 Mo'}) en cours...`, 'info');
       });
     });
 

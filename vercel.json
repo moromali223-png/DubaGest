@@ -1,9 +1,31 @@
 {
   "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/downloads/(.*)\\.apk",
+      "headers": [
+        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
+        { "key": "Content-Disposition", "value": "attachment; filename=\"DubaGest-Android.apk\"" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/vitrine/downloads/(.*)\\.apk",
+      "headers": [
+        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
+        { "key": "Content-Disposition", "value": "attachment; filename=\"DubaGest-Android.apk\"" },
+        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/",
       "destination": "/vitrine/index.html"
+    },
+    {
+      "source": "/downloads/(.*)",
+      "destination": "/vitrine/downloads/$1"
     },
     {
       "source": "/((?!vitrine/).*)",
@@ -11,3 +33,4 @@
     }
   ]
 }
+
