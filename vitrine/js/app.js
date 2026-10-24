@@ -206,9 +206,11 @@
 
     // 4. Gestion du clic sur les boutons d'installation
     installBtns.forEach((btn) => {
+      btn.href = config.appUrl;
+      btn.setAttribute('target', '_blank');
+      btn.setAttribute('rel', 'noopener noreferrer');
       btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        handleInstallClick();
+        handleInstallClick(e);
       });
     });
   }
@@ -216,9 +218,24 @@
   /**
    * Action au clic sur le bouton principal d'installation
    */
-  function handleInstallClick() {
-    // A. Utilisateur sur iPhone ou iPad
+  function handleInstallClick(e) {
+    // A. Utilisateur avec invite native Chrome / Edge / Android
+    if (deferredInstallPrompt) {
+      if (e) e.preventDefault();
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('[DubaGest] L\'utilisateur a accepté l\'installation');
+          showToast('Installation en cours...', 'success');
+        }
+        deferredInstallPrompt = null;
+      });
+      return;
+    }
+
+    // B. Utilisateur sur iPhone ou iPad
     if (isIOS()) {
+      if (e) e.preventDefault();
       if (isIOSSafari()) {
         openModal('modal-ios-safari');
       } else {
@@ -227,31 +244,8 @@
       return;
     }
 
-    // B. Utilisateur avec invite native Chrome / Edge / Android
-    if (deferredInstallPrompt) {
-      deferredInstallPrompt.prompt();
-      deferredInstallPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('[DubaGest] L\'utilisateur a accepté l\'installation');
-          showToast('Installation en cours...', 'info');
-        } else {
-          console.log('[DubaGest] L\'utilisateur a refusé l\'installation');
-        }
-        deferredInstallPrompt = null;
-      });
-      return;
-    }
-
-    // C. Android sans invite native (ex. Samsung Internet, Firefox Mobile ou premier accès)
-    if (isAndroid()) {
-      showToast('Ouverture de DubaGest (PWA)...', 'info');
-      window.open(config.appUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    // D. Navigateur sur ordinateur (Chrome / Edge / Safari / Firefox)
+    // C. Sur ordinateur ou Android : navigation naturelle vers config.appUrl (pas de popup bloquée)
     showToast('Ouverture de DubaGest (PWA)...', 'info');
-    window.open(config.appUrl, '_blank', 'noopener,noreferrer');
   }
 
   /**
