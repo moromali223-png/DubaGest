@@ -25,7 +25,7 @@ window.DUBAGEST_CONFIG = {
     // URL directe du fichier APK officiel
     apkUrl: 'https://github.com/moromali223-png/DubaGest/releases/download/v1.0.0/dubagest-release.apk', 
     version: '1.0.0',
-    taille: '18.4 Mo',
+    taille: '106.6 Mo',
     datePublication: 'Octobre 2026',
     estDisponible: true,
     // Google Play Store (mettre l'URL dès publication)
