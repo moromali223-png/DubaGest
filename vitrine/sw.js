@@ -1,14 +1,14 @@
 /**
- * Service Worker pour la Vitrine DubaGest v2.1.0
+ * Service Worker pour la Vitrine DubaGest v2.2.0
  * Stratégie Network-First pour styles et scripts pour garantir les mises à jour immédiates.
  */
-const CACHE_NAME = 'dubagest-vitrine-v2.1.0';
+const CACHE_NAME = 'dubagest-vitrine-v2.2.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './css/style.css?v=2.1',
-  './js/config.js?v=2.1',
-  './js/app.js?v=2.1',
+  './css/style.css?v=2.2',
+  './js/config.js?v=2.2',
+  './js/app.js?v=2.2',
   './manifest.json',
   './favicon.png',
   './icons/Icon-192.png',

@@ -77,20 +77,14 @@
     // Boutons APK Android
     const apkButtons = document.querySelectorAll('.action-apk');
     apkButtons.forEach((btn) => {
-      if (config.android.apkUrl && config.android.apkUrl !== '#telecharger-apk') {
-        btn.href = config.android.apkUrl;
-        btn.setAttribute('download', `DubaGest-v${config.android.version}.apk`);
-      } else {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          showToast(
-            'L\'APK Android officiel v' +
-              config.android.version +
-              ' sera disponible au téléchargement dès la finalisation du déploiement.',
-            'info'
-          );
-        });
-      }
+      const targetUrl = config.android.apkUrl || 'https://github.com/moromali223-png/DubaGest/releases/download/v1.0.0/dubagest-release.apk';
+      btn.href = targetUrl;
+      btn.setAttribute('download', `DubaGest-v${config.android.version}.apk`);
+      btn.setAttribute('target', '_blank');
+      btn.setAttribute('rel', 'noopener noreferrer');
+      btn.addEventListener('click', () => {
+        showToast('Téléchargement de l\'APK officiel DubaGest (106.6 Mo) en cours...', 'info');
+      });
     });
 
     // Boutons Google Play
@@ -248,14 +242,16 @@
       return;
     }
 
-    // C. Android sans invite native (ex. Samsung Internet, Firefox Mobile ou délai)
+    // C. Android sans invite native (ex. Samsung Internet, Firefox Mobile ou premier accès)
     if (isAndroid()) {
-      openModal('modal-android-manual');
+      showToast('Ouverture de DubaGest (PWA)...', 'info');
+      window.open(config.appUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 
     // D. Navigateur sur ordinateur (Chrome / Edge / Safari / Firefox)
-    openModal('modal-desktop-install');
+    showToast('Ouverture de DubaGest (PWA)...', 'info');
+    window.open(config.appUrl, '_blank', 'noopener,noreferrer');
   }
 
   /**

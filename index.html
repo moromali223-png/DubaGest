@@ -112,13 +112,19 @@
           </p>
 
           <div class="hero-actions">
-            <button id="hero-install-btn" class="btn btn-primary btn-lg" aria-label="Installer DubaGest sur cet appareil">
+            <button id="hero-install-btn" class="btn btn-primary btn-lg" aria-label="Installer DubaGest PWA sur cet appareil">
               <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               <span>Installer DubaGest (PWA)</span>
             </button>
-            <a href="#se-connecter" class="btn btn-secondary btn-lg action-login" aria-label="Accéder à mon espace DubaGest">
+            <a href="https://github.com/moromali223-png/DubaGest/releases/download/v1.0.0/dubagest-release.apk" class="btn btn-primary btn-lg action-apk" download="DubaGest-v1.0.0.apk" target="_blank" rel="noopener noreferrer" aria-label="Télécharger l'APK Android">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Télécharger l'APK Android</span>
+            </a>
+            <a href="https://dubagest-app.pages.dev/login" class="btn btn-secondary btn-lg action-login" target="_blank" rel="noopener noreferrer" aria-label="Accéder à mon espace DubaGest">
               <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
@@ -557,18 +563,24 @@
             <div class="download-meta">
               <span>Version officielle <strong>1.0.0</strong></span>
               <span>•</span>
-              <span>Taille : <strong>18.4 Mo</strong></span>
+              <span>Taille : <strong>106.6 Mo</strong></span>
               <span>•</span>
               <span>Mise à jour : <strong>Octobre 2026</strong></span>
             </div>
           </div>
 
           <div class="download-actions-grid">
-            <a href="#telecharger-apk" class="btn btn-primary btn-lg action-apk">
+            <a href="https://github.com/moromali223-png/DubaGest/releases/download/v1.0.0/dubagest-release.apk" class="btn btn-primary btn-lg action-apk" download="DubaGest-v1.0.0.apk" target="_blank" rel="noopener noreferrer">
               <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              <span>Télécharger l'APK Android</span>
+              <span>Télécharger l'APK Android (106.6 Mo)</span>
+            </a>
+            <a href="https://dubagest-app.pages.dev" class="btn btn-secondary btn-lg action-login" target="_blank" rel="noopener noreferrer">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span>Installer la PWA (Web / iPhone / PC)</span>
             </a>
             <button class="btn btn-outline-white action-playstore">
               <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -580,7 +592,7 @@
               <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.78 1.06-1.85.94-2.94-.93.04-2.02.63-2.67 1.39-.58.67-1.09 1.76-.95 2.82 1.04.08 2.06-.5 2.68-1.27z"/>
               </svg>
-              <span>iPhone : Installer la PWA Safari</span>
+              <span>iPhone : Guide Safari</span>
             </button>
           </div>
         </div>
@@ -812,8 +824,11 @@
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="closeModal('modal-ios-safari')">J'ai compris</button>
+      <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+        <a href="https://dubagest-app.pages.dev" target="_blank" rel="noopener noreferrer" class="btn btn-primary action-login">
+          Ouvrir DubaGest dans Safari
+        </a>
+        <button class="btn btn-outline" onclick="closeModal('modal-ios-safari')">Fermer</button>
       </div>
     </div>
   </div>
@@ -835,8 +850,11 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="closeModal('modal-ios-other')">Compris</button>
+      <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+        <a href="https://dubagest-app.pages.dev" target="_blank" rel="noopener noreferrer" class="btn btn-primary action-login">
+          Accéder à DubaGest (PWA)
+        </a>
+        <button class="btn btn-outline" onclick="closeModal('modal-ios-other')">Fermer</button>
       </div>
     </div>
   </div>
@@ -864,8 +882,14 @@
           </li>
         </ul>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="closeModal('modal-android-manual')">Fermer</button>
+      <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+        <a href="https://dubagest-app.pages.dev" target="_blank" rel="noopener noreferrer" class="btn btn-primary action-login">
+          Ouvrir DubaGest PWA
+        </a>
+        <a href="https://github.com/moromali223-png/DubaGest/releases/download/v1.0.0/dubagest-release.apk" class="btn btn-secondary action-apk" download="DubaGest-v1.0.0.apk" target="_blank" rel="noopener noreferrer">
+          Télécharger l'APK (106.6 Mo)
+        </a>
+        <button class="btn btn-outline" onclick="closeModal('modal-android-manual')">Fermer</button>
       </div>
     </div>
   </div>
@@ -885,8 +909,8 @@
           Vous pouvez également accéder et utiliser DubaGest directement dans votre navigateur web sans rien installer de plus.
         </p>
       </div>
-      <div class="modal-footer">
-        <a href="#se-connecter" class="btn btn-primary action-login">Ouvrir l'application</a>
+      <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+        <a href="https://dubagest-app.pages.dev" target="_blank" rel="noopener noreferrer" class="btn btn-primary action-login">Ouvrir l'application DubaGest</a>
         <button class="btn btn-outline" onclick="closeModal('modal-desktop-install')">Fermer</button>
       </div>
     </div>
