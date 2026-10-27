@@ -415,10 +415,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get moduleServicesServices => 'Catalogue';
 
   @override
-  String get moduleServicesPrestations => 'Prestations';
+  String get moduleServicesPrestations => 'Contrats de service';
 
   @override
-  String get moduleServicesPlanning => 'Planning';
+  String get moduleServicesPlanning => 'Interventions';
 
   @override
   String get moduleServicesDevis => 'Devis';

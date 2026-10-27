@@ -7,6 +7,7 @@ import 'package:dubagest/features/documents/data/document_repository_impl.dart';
 import 'package:dubagest/features/documents/domain/entities/document.dart';
 import 'package:dubagest/features/documents/domain/usecases/gerer_documents.dart';
 import 'package:dubagest/features/documents/presentation/pdf/recu_pdf.dart';
+import 'package:dubagest/features/documents/presentation/pdf/document_pdf_generator.dart';
 import 'package:dubagest/features/entreprise/domain/entities/profil_entreprise.dart';
 import 'package:dubagest/features/finances/domain/entities/finances.dart';
 import 'package:dubagest/features/finances/domain/services/etat_finances.dart';
@@ -142,4 +143,114 @@ void main() {
     expect(String.fromCharCodes(pdfAr.take(5)), '%PDF-');
     expect(pdfAr.length, greaterThan(1000));
   });
+
+  test('EmettreDocument : facture émise hors-ligne avec son bloc et sa séquence', () async {
+    await local.ajouterBloc(NumeroBloc(
+      id: 'bloc-fac-1',
+      entrepriseId: entrepriseId,
+      userId: userId,
+      type: TypeDocument.facture,
+      prefixe: 'FAC',
+      annee: DateTime.now().year,
+      debut: 101,
+      fin: 105,
+      prochain: 101,
+    ));
+
+    final facture = await EmettreDocument(repo).call(
+      admin,
+      type: TypeDocument.facture,
+      origineType: 'PRESTATION',
+      origineId: 'prest-1',
+      montant: 45000,
+      appareilId: 'appareil-test',
+      contenu: {
+        'entreprise': {'nom': 'Alpha Services', 'devise': 'XOF'},
+        'contact': {'nom': 'Moussa Traoré', 'telephone': '+223 70 00 00 00'},
+        'titre': 'Réparation climatiseur',
+        'lignes': [
+          {'libelle': 'Diagnostic et recharge gaz', 'quantite': 1, 'prix_unitaire': 45000, 'montant': 45000}
+        ],
+        'paye': 15000,
+        'reste': 30000,
+      },
+    );
+
+    final annee = DateTime.now().year;
+    expect(facture.numero, 'FAC-$annee-00101');
+    expect(facture.type, TypeDocument.facture);
+    expect(facture.montant, 45000);
+    expect(facture.contactNom, 'Moussa Traoré');
+    expect(facture.titre, 'Réparation climatiseur');
+
+    // Test du générateur PDF universel
+    final pdfBytes = await genererDocumentPdf(facture);
+    expect(String.fromCharCodes(pdfBytes.take(5)), '%PDF-');
+    expect(pdfBytes.length, greaterThan(1500));
+  });
+
+  test('genererDocumentPdf : devis proforma avec tampon et arabe', () async {
+    final devisDoc = Document(
+      id: 'd-dev-1',
+      entrepriseId: entrepriseId,
+      type: TypeDocument.devis,
+      numero: 'DEV-2026-00001',
+      blocId: 'b-dev',
+      sequence: 1,
+      langue: 'fr',
+      date: DateTime.now(),
+      montant: 80000,
+      origineType: 'MANUEL',
+      contenu: {
+        'entreprise': {'nom': 'Alpha Services', 'devise': 'XOF'},
+        'contact': {'nom': 'Cabinet Conseil', 'telephone': '+223 60 00 00 00'},
+        'titre': 'Installation réseau',
+        'lignes': [
+          {'libelle': 'Câblage 4 postes', 'quantite': 4, 'prix_unitaire': 20000, 'montant': 80000}
+        ],
+        'conditions': 'Validité de l\'offre : 15 jours',
+      },
+    );
+
+    final pdfDevis = await genererDocumentPdf(devisDoc);
+    expect(String.fromCharCodes(pdfDevis.take(5)), '%PDF-');
+    expect(pdfDevis.length, greaterThan(1500));
+  });
+
+  test('genererDocumentPdf : bon de commande avec lignes et sans contact', () async {
+    final bcDoc = Document(
+      id: 'd-bc-1',
+      entrepriseId: 'e-1',
+      type: TypeDocument.bonCommande,
+      numero: 'BC-2026-00001',
+      blocId: 'b-bc',
+      sequence: 1,
+      langue: 'fr',
+      date: DateTime.now(),
+      montant: 300,
+      origineType: 'MANUEL',
+      contenu: {
+        'entreprise': {'nom': 'DubaGest Test', 'devise': 'XOF'},
+        'contact': null,
+        'titre': 'Bon de commande fournisseur',
+        'date_echeance': null,
+        'lignes': [
+          {'libelle': 'Article 1', 'quantite': 2.0, 'prix_unitaire': 100, 'montant': 200},
+          {'libelle': 'hhhh', 'quantite': 1.0, 'prix_unitaire': 100, 'montant': 100},
+        ],
+        'sous_total': 300,
+        'remise': 0,
+        'total': 300,
+        'acompte': 0,
+        'reste': 300,
+        'conditions': 'Règlement selon conditions habituelle',
+        'notes': null,
+      },
+    );
+
+    final pdfBc = await genererDocumentPdf(bcDoc);
+    expect(String.fromCharCodes(pdfBc.take(5)), '%PDF-');
+    expect(pdfBc.length, greaterThan(1500));
+  });
 }
+

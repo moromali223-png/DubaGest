@@ -37,7 +37,7 @@ class CardPerformanceBoutiques extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.storefront_rounded, size: 20, color: Color(0xFF01226C)),
+              Icon(Icons.storefront_rounded, size: 20, color: AppColors.green),
               SizedBox(width: 8),
               Text(
                 'Performance par boutique',

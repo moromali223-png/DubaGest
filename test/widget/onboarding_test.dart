@@ -41,4 +41,25 @@ void main() {
     expect(Directionality.of(tester.element(find.byType(OnboardingPage))), TextDirection.rtl);
     expect(find.text('إنشاء مؤسستي'), findsOneWidget);
   });
+
+  testWidgets('en format mobile (smartphone portrait)', (tester) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await pumpApp(
+      tester,
+      const OnboardingPage(),
+      overrides: [
+        contexteSessionProvider.overrideWith(() => _Contexte(contexte(avecEntreprise: false))),
+      ],
+    );
+    expect(find.text('Bienvenue Awa'), findsOneWidget);
+    expect(find.text('Que souhaitez-vous faire ?'), findsOneWidget);
+    expect(find.byKey(const Key('onboarding-create')), findsOneWidget);
+    expect(find.byKey(const Key('onboarding-join')), findsOneWidget);
+  });
 }

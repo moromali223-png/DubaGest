@@ -53,3 +53,5 @@ flutter:
   assets:
     # Polices des documents PDF (latin + arabe, hors-ligne) — licence OFL.
     - assets/fonts/
+    # Icônes et logos de marque DubaGest
+    - assets/icons/

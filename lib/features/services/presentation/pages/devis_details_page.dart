@@ -193,7 +193,7 @@ _${entrepriseNom}_
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 20,
-                                  color: Color(0xFF01226C),
+                                  color: AppColors.ink,
                                 ),
                               ),
                               if (devis.remise > 0)
@@ -250,7 +250,7 @@ _${entrepriseNom}_
                         children: [
                           FilledButton.icon(
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF01226C),
+                              backgroundColor: AppColors.green,
                               minimumSize: const Size(0, 40),
                             ),
                             icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
@@ -355,7 +355,7 @@ _${entrepriseNom}_
                           const Text('Total net du devis', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
                           Text(
                             montant(context, ref, devis.total),
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF01226C)),
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.ink),
                           ),
                         ],
                       ),

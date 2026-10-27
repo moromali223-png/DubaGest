@@ -73,8 +73,9 @@ void main() {
     expect(ModuleRoutes.path('admin.perimetres'), '/admin/perimetres');
     expect(ModuleRoutes.path('commerce.ventes'), '/commerce/ventes');
     expect(ModuleRoutes.path('commerce.fournisseurs'), '/commerce/fournisseurs');
+    expect(ModuleRoutes.path('services.devis'), '/services/devis');
     // Un module sans écran dédié ouvre la page « bientôt disponible ».
-    expect(ModuleRoutes.path('services.devis'), '/modules/services.devis');
+    expect(ModuleRoutes.path('inconnu.placeholder'), '/modules/inconnu.placeholder');
   });
 }
 

@@ -18,6 +18,7 @@ class NavigationBuilder {
         policy.canPerform(moduleCode: ModuleCodes.commerceVentes, permission: PermissionCodes.salesCreate).isAllowed;
     final isGestionnaireStock = ctx.membre?.roleCode == RoleCodes.gestionnaireStock &&
         policy.canPerform(moduleCode: ModuleCodes.commerceStock, permission: PermissionCodes.stockView).isAllowed;
+    final isSuperviseur = ctx.membre?.roleCode == RoleCodes.superviseur;
     final accessibles = policy.accessibleModules();
     bool dansLEspace(ActiviteCode a) => activite == null || activite == a;
 
@@ -105,6 +106,7 @@ class NavigationBuilder {
       activiteActive: targetActivite,
       isWorkspaceVendeur: isVendeur,
       isWorkspaceGestionnaireStock: isGestionnaireStock,
+      isWorkspaceSuperviseur: isSuperviseur,
     );
   }
 }

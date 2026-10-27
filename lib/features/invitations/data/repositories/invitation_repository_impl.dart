@@ -46,9 +46,26 @@ class InvitationRepositoryImpl implements InvitationRepository {
                   statut: InvitationStatut.parse(j['statut'] as String),
                   expiresAt: DateTime.parse(j['expires_at'] as String),
                   createdAt: DateTime.parse(j['created_at'] as String),
+                  perimetreIds: [
+                    for (final p in (j['invitation_perimetres'] as List? ?? const []).cast<Map<String, dynamic>>())
+                      p['perimetre_id'] as String,
+                  ],
                 ))
             .toList();
       });
+
+  @override
+  Future<InvitationCreee> renvoyer(String invitationId) => _guard(() async {
+        final json = await _remote.renvoyer(invitationId);
+        return InvitationCreee(
+          id: json['id'] as String,
+          token: json['token'] as String,
+          expiresAt: DateTime.parse(json['expires_at'] as String),
+        );
+      });
+
+  @override
+  Future<void> supprimer(String invitationId) => _guard(() => _remote.supprimer(invitationId));
 
   @override
   Future<void> annuler(String invitationId) => _guard(() => _remote.annuler(invitationId));

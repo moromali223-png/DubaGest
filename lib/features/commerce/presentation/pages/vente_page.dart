@@ -82,6 +82,17 @@ class _VentePageState extends ConsumerState<VentePage> {
     final autorisees = ref.read(droitsCommerceProvider).boutiquesVente;
     final courante = ref.read(boutiqueCouranteProvider);
     _boutique = autorisees.contains(courante) ? courante : autorisees.firstOrNull;
+    if (_boutique == null) {
+      final perimetres = ref.read(boutiquesProvider);
+      if (perimetres.length == 1) {
+        _boutique = perimetres.single.id;
+      }
+    }
+    if (_boutique != null && courante != _boutique) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) choisirBoutique(ref, _boutique);
+      });
+    }
   }
 
   void majPanier(VoidCallback f) => setState(f);
@@ -233,7 +244,7 @@ class _VentePageState extends ConsumerState<VentePage> {
           if (etatAsync.value case final etat?)
             BoutonScanner(
               onCode: (code) {
-                final p = etat.parCodeBarres(code);
+                final p = etat.parCodeBarres(code, boutiqueId: _boutique);
                 if (p == null) {
                   signalerErreur(context, l10n.comBarcodeUnknown);
                 } else {
@@ -256,6 +267,54 @@ class _VentePageState extends ConsumerState<VentePage> {
         onRetry: () => ref.invalidate(etatCommerceProvider),
         data: (etat) {
           if (_boutique == null) {
+            final boutiques = droits.boutiquesVente;
+            if (boutiques.isNotEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Card(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.storefront_rounded, size: 48, color: AppColors.primary),
+                          const SizedBox(height: AppSpacing.md),
+                          const Text(
+                            'Sélectionnez une boutique',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.ink),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          const Text(
+                            'Toute vente réelle doit être enregistrée dans une boutique précise pour la tenue du stock.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.muted, fontSize: 13),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              for (final bId in boutiques)
+                                ActionChip(
+                                  avatar: const Icon(Icons.store_rounded, size: 18, color: AppColors.primary),
+                                  label: Text(nomBoutique(ref, bId), style: const TextStyle(fontWeight: FontWeight.w700)),
+                                  onPressed: () {
+                                    setState(() => _boutique = bId);
+                                    choisirBoutique(ref, bId);
+                                  },
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
             return EtatVide(icone: Icons.storefront_outlined, titre: l10n.comNoShopAllowed, message: '');
           }
           if (etat.catalogueVide) {
@@ -306,10 +365,14 @@ class _VentePageState extends ConsumerState<VentePage> {
                     child: ChampBoutique(
                       valeur: _boutique,
                       autorisees: droits.boutiquesVente,
-                      onChanged: (v) => setState(() {
-                        _boutique = v;
-                        _panier.clear();
-                      }),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        choisirBoutique(ref, v);
+                        setState(() {
+                          _boutique = v;
+                          _panier.clear();
+                        });
+                      },
                     ),
                   )
                 else
@@ -394,7 +457,9 @@ class _VentePageState extends ConsumerState<VentePage> {
 
   Widget _grille(EtatCommerce etat) {
     final l10n = context.l10n;
-    final produits = _favoris && _recherche.isEmpty ? etat.plusVendus(limite: 60) : etat.rechercher(_recherche, categorieId: _categorie);
+    final produits = _favoris && _recherche.isEmpty
+        ? etat.plusVendus(limite: 60, boutiqueId: _boutique)
+        : etat.rechercher(_recherche, categorieId: _categorie, boutiqueId: _boutique);
     if (produits.isEmpty) {
       return EtatVide(icone: Icons.search_off_rounded, titre: l10n.comNoProductFound, message: l10n.comNoProductFoundHint);
     }
@@ -1166,7 +1231,10 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
                     children: [
                       Text(p.nom, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1183,7 +1251,6 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
                           Text(
                             l10n.comAvailable(quantiteLisible(context, p, widget.disponible.max(Qte.zero))),
                             style: const TextStyle(color: AppColors.muted, fontSize: 12),
@@ -1226,14 +1293,24 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Unité de mesure & vente', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                    const Spacer(),
+                    const Flexible(
+                      child: Text(
+                        'Unité de mesure & vente',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     TextButton.icon(
-                      style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       onPressed: _ajouterNouvelleUnite,
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('+ Autre unité (Carton, Kg, Litre...)', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.add_circle_outline, size: 16),
+                      label: const Text('Autre unité', style: TextStyle(fontSize: 12)),
                     ),
                   ],
                 ),
@@ -1266,6 +1343,7 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
               uniteInitiale: _u,
               quantiteInitiale: _q,
               autofocus: true,
+              afficherSelecteurUnites: false,
               onChanged: (q, u) => setState(() {
                 _q = q;
                 _u = u;
@@ -1294,15 +1372,22 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        widget.mode == ModeVente.gros ? 'Prix de gros unitaire (F CFA)' : 'Prix de détail unitaire (F CFA)',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      Flexible(
+                        child: Text(
+                          widget.mode == ModeVente.gros ? 'Prix de gros unitaire (F CFA)' : 'Prix de détail unitaire (F CFA)',
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      const Spacer(),
                       if (estPrixPerso)
                         TextButton(
-                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           onPressed: () {
                             setState(() {
                               _prixController.text = '$_prixCatalogue';

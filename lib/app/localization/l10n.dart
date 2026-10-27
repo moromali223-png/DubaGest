@@ -11,7 +11,6 @@ import '../../features/perimetres/domain/entities/perimetre.dart';
 import '../../features/roles/domain/entities/role.dart';
 import '../../features/services/domain/entities/prestation.dart';
 import '../../features/services/domain/entities/service_catalogue.dart';
-import '../../features/services/domain/services/moteur_echeances.dart';
 import 'generated/app_localizations.dart';
 
 export 'generated/app_localizations.dart';
@@ -34,13 +33,15 @@ extension AppLabels on AppLocalizations {
     return a == null ? (code?.toString() ?? '') : activite(a);
   }
 
-  String role(String code) => switch (code) {
+  String role(String code) => switch (code.toUpperCase()) {
         RoleCodes.administrateur => roleAdministrateur,
         RoleCodes.superviseur => roleSuperviseur,
         RoleCodes.gestionnaireStock => roleGestionnaireStock,
         RoleCodes.vendeur => roleVendeur,
         RoleCodes.caissier => roleCaissier,
         RoleCodes.gestionnaireImmobilier => roleGestionnaireImmobilier,
+        'GESTIONNAIRE_SERVICES' => 'Gestionnaire de services',
+        'PRESTATAIRE' => 'Prestataire de services',
         _ => code,
       };
 
@@ -140,6 +141,7 @@ extension AppLabels on AppLocalizations {
         'commerce.ventes' => moduleCommerceVentes,
         'commerce.achats' => moduleCommerceAchats,
         'commerce.fournisseurs' => moduleCommerceFournisseurs,
+        'commerce.intelligence' => 'Intelligence commerciale',
         'finances.creances' => moduleFinancesCreances,
         'finances.paiements' => moduleFinancesPaiements,
         'finances.caisse' => moduleFinancesCaisse,
@@ -162,6 +164,7 @@ extension AppLabels on AppLocalizations {
   /// Libellé court pour les tuiles (accueil, « Plus ») où la place manque.
   String moduleCourt(String code) => switch (code) {
         'finances.creances' => moduleFinancesCreancesCourt,
+        'commerce.intelligence' => 'Intelligence',
         _ => module(code),
       };
 
@@ -275,6 +278,8 @@ extension AppLabels on AppLocalizations {
       RuleCodes.salePaid => ruleSalePaid,
       RuleCodes.customerRequired => ruleCustomerRequired,
       RuleCodes.movementInvalid => ruleFinanceInconsistent,
+      RuleCodes.discrepancyJustificationRequired => 'Une note explicative est obligatoire pour tout écart d\'inventaire constaté.',
+      RuleCodes.productUsed => 'Ce produit ne peut pas être supprimé car il possède un historique d\'opérations (ventes, achats ou stock).',
       _ => errorUnknown,
     };
   }

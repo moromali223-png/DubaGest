@@ -787,13 +787,13 @@ abstract class AppLocalizations {
   /// No description provided for @moduleServicesPrestations.
   ///
   /// In fr, this message translates to:
-  /// **'Prestations'**
+  /// **'Contrats de service'**
   String get moduleServicesPrestations;
 
   /// No description provided for @moduleServicesPlanning.
   ///
   /// In fr, this message translates to:
-  /// **'Planning'**
+  /// **'Interventions'**
   String get moduleServicesPlanning;
 
   /// No description provided for @moduleServicesDevis.

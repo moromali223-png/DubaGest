@@ -10,6 +10,7 @@ import '../../../entreprise/domain/entities/profil_entreprise.dart';
 import '../../../finances/domain/entities/finances.dart';
 import '../../../finances/domain/services/etat_finances.dart';
 import '../../../modules/domain/entities/app_module.dart';
+import '../../../roles/domain/entities/role.dart';
 import '../entities/document.dart';
 import '../repositories/document_repository.dart';
 
@@ -155,3 +156,75 @@ class RetirerDocumentRefuse {
 
   Future<void> call(String id) => _repository.retirerRefuse(id);
 }
+
+/// Émetteur universel pour tout type de document métier (factures, devis, bons, quittances, contrats).
+class EmettreDocument {
+  const EmettreDocument(this._repository);
+  final DocumentRepository _repository;
+
+  Future<Document> call(
+    ContexteSession ctx, {
+    required TypeDocument type,
+    required String origineType,
+    String? origineId,
+    String? contactId,
+    String? perimetreId,
+    required int montant,
+    required Map<String, dynamic> contenu,
+    required String appareilId,
+    String? langue,
+  }) async {
+    final decision = ctx.accessPolicy().canPerform(
+      moduleCode: ModuleCodes.communDocuments,
+      permission: PermissionCodes.documentsCreate,
+      perimetreId: perimetreId,
+    );
+    if (decision case AccessDenied()) throw decision.toFailure();
+    if (type == TypeDocument.bonCommande && ctx.membre?.roleCode == RoleCodes.superviseur) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
+
+    final eid = ctx.entreprise!.id;
+    final maintenant = DateTime.now();
+    final langueDoc = langue ?? 'fr';
+
+    Document construire(NumeroBloc bloc, int sequence) => Document(
+          id: _uuid.v4(),
+          entrepriseId: eid,
+          type: type,
+          numero: formatNumero(bloc.prefixe, bloc.annee, sequence),
+          blocId: bloc.id,
+          sequence: sequence,
+          langue: langueDoc,
+          date: maintenant,
+          montant: montant,
+          origineType: origineType,
+          origineId: origineId,
+          perimetreId: perimetreId,
+          contactId: contactId,
+          contenu: contenu,
+          syncStatus: RecordSyncStatus.pendingSync,
+        );
+
+    Future<Document?> tenter() => _repository.emettre(
+          entrepriseId: eid,
+          userId: ctx.userId,
+          type: type,
+          annee: maintenant.year,
+          construire: construire,
+        );
+
+    final document = await tenter();
+    if (document != null) return document;
+
+    // Réserve immédiate si bloc épuisé sur l'appareil
+    try {
+      await _repository.reserverBloc(eid, type, appareilId: appareilId, taille: AssurerNumeros.taille);
+    } on Failure catch (f) {
+      if (f.kind == FailureKind.network) throw const Failure.rule(RuleCodes.documentNumbersExhausted);
+      rethrow;
+    }
+    return await tenter() ?? (throw const Failure.rule(RuleCodes.documentNumbersExhausted));
+  }
+}
+

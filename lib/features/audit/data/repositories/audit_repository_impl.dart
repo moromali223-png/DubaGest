@@ -10,13 +10,23 @@ class AuditRepositoryImpl implements AuditRepository {
   final SupabaseClient _client;
 
   @override
-  Future<List<EntreeAudit>> lister(String entrepriseId, {int limite = 100, int? avantId}) async {
+  Future<List<EntreeAudit>> lister(
+    String entrepriseId, {
+    int limite = 100,
+    int? avantId,
+    String? entiteType,
+    String? entiteId,
+  }) async {
     try {
       var requete = _client
           .from('audit_logs')
           .select('id, user_id, action, entite_type, entite_id, anciennes_valeurs, nouvelles_valeurs, created_at')
           .eq('entreprise_id', entrepriseId);
+
+      if (entiteType != null) requete = requete.eq('entite_type', entiteType);
+      if (entiteId != null) requete = requete.eq('entite_id', entiteId);
       if (avantId != null) requete = requete.lt('id', avantId);
+
       final rows = List<Map<String, dynamic>>.from(await requete.order('id', ascending: false).limit(limite));
 
       // Noms des auteurs (profils visibles par les membres de l'entreprise).

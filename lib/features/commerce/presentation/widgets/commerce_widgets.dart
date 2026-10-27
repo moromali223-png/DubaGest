@@ -181,12 +181,16 @@ class ProduitImage extends ConsumerWidget {
     super.key,
     required this.produit,
     this.taille = 56,
+    this.largeur,
+    this.hauteur,
     this.rayon = 12,
     this.chemin,
   });
 
   final Produit produit;
   final double taille;
+  final double? largeur;
+  final double? hauteur;
   final double rayon;
 
   /// Photo particulière (galerie) ; sinon la photo principale.
@@ -199,22 +203,24 @@ class ProduitImage extends ConsumerWidget {
     final categorie = etat?.racine(produit.categorieId) ?? etat?.categorie(produit.categorieId);
     final teinte = VisuelsCategories.couleur(categorie?.couleur ?? VisuelsCategories.couleurs.first);
 
+    final dimRef = taille > 0 ? taille : 56.0;
+
     Widget vignette() => Container(
           color: teinte.withValues(alpha: 0.12),
           alignment: Alignment.center,
-          child: taille < 48
-              ? Icon(VisuelsCategories.iconeDe(categorie), color: teinte, size: taille * 0.5)
+          child: dimRef < 48
+              ? Icon(VisuelsCategories.iconeDe(categorie), color: teinte, size: dimRef * 0.5)
               : Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(VisuelsCategories.iconeDe(categorie), color: teinte, size: taille * 0.34),
-                    SizedBox(height: taille * 0.04),
+                    Icon(VisuelsCategories.iconeDe(categorie), color: teinte, size: dimRef * 0.34),
+                    SizedBox(height: dimRef * 0.04),
                     Text(
                       _initiales(produit.nom),
                       style: TextStyle(
                         color: teinte,
                         fontWeight: FontWeight.w800,
-                        fontSize: (taille * 0.16).clamp(10, 22),
+                        fontSize: (dimRef * 0.16).clamp(10, 22),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -234,7 +240,11 @@ class ProduitImage extends ConsumerWidget {
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(rayon),
-      child: SizedBox(width: taille, height: taille, child: contenu),
+      child: SizedBox(
+        width: largeur ?? taille,
+        height: hauteur ?? taille,
+        child: contenu,
+      ),
     );
   }
 

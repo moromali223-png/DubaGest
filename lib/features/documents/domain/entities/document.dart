@@ -1,13 +1,18 @@
 import '../../../../core/sync/sync_models.dart';
 
 enum TypeDocument {
-  recu('RECU'),
-  facture('FACTURE'),
-  devis('DEVIS'),
-  avoir('AVOIR');
+  recu('RECU', 'REC'),
+  facture('FACTURE', 'FAC'),
+  devis('DEVIS', 'DEV'),
+  avoir('AVOIR', 'AV'),
+  bonCommande('BON_COMMANDE', 'BC'),
+  bonTravail('BON_TRAVAIL', 'BT'),
+  quittance('QUITTANCE', 'QUI'),
+  contrat('CONTRAT', 'CTR');
 
-  const TypeDocument(this.code);
+  const TypeDocument(this.code, this.prefixeParDefaut);
   final String code;
+  final String prefixeParDefaut;
 
   static TypeDocument parse(String? code) => values.firstWhere((t) => t.code == code, orElse: () => recu);
 }
@@ -88,4 +93,10 @@ class Document {
 
   /// Refusé par le serveur (ex. reçu déjà émis sur un autre appareil).
   bool get refuse => syncStatus == RecordSyncStatus.syncError && version == null;
+
+  String? get contactNom => (contenu['contact'] as Map?)?['nom'] as String?;
+  String? get contactTelephone => (contenu['contact'] as Map?)?['telephone'] as String?;
+  String? get titre => contenu['titre'] as String?;
+  String? get notes => contenu['notes'] as String?;
+  String? get conditions => contenu['conditions'] as String?;
 }

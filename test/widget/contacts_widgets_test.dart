@@ -104,6 +104,7 @@ void main() {
       tester,
       const ContactDetailPage(contactId: 'c-1'),
       locale: const Locale('ar'),
+      size: const Size(600, 1400),
       overrides: [
         contexteActifProvider.overrideWithValue(contexte()),
         contactRepositoryProvider.overrideWithValue(_FakeContacts()),
@@ -150,7 +151,7 @@ void main() {
     expect(find.text('Amadou Traoré'), findsOneWidget);
     expect(find.byKey(const Key('contact-duplicate-add-c-1')), findsOneWidget);
 
-    await tester.tap(find.text('Annuler'));
+    await tester.tap(find.text('Annuler').last);
     await tester.pumpAndSettle();
     expect(repo.crees, isEmpty);
   });

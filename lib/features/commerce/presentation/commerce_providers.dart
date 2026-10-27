@@ -12,6 +12,7 @@ import '../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../entreprise/presentation/providers/espace_providers.dart';
 import '../../modules/domain/entities/app_module.dart';
 import '../../perimetres/domain/entities/perimetre.dart';
+import '../../roles/domain/entities/role.dart';
 import '../data/commerce_local_data_source.dart';
 import '../data/commerce_repository_impl.dart';
 import '../data/photos_produits.dart';
@@ -111,6 +112,13 @@ class DroitsCommerce {
     this.voirProduits = false,
     this.creerProduits = false,
     this.modifierProduits = false,
+    this.peutModifierPrixVente = false,
+    this.peutModifierPrixAchat = false,
+    this.peutModifierPrixGros = false,
+    this.peutModifierConversions = false,
+    this.peutArchiverProduits = false,
+    this.peutDefinirPerimetreMultiBoutiques = false,
+    this.peutSaisirStockInitial = false,
     this.voirStock = false,
     this.boutiquesEntreeSortie = const [],
     this.boutiquesAjustement = const [],
@@ -133,16 +141,29 @@ class DroitsCommerce {
           for (final b in boutiques)
             if (politique.canPerform(moduleCode: module, permission: permission, perimetreId: b.id).isAllowed) b.id,
         ];
+    final estAdmin = ctx.membre?.roleCode == RoleCodes.administrateur ||
+        peut(ModuleCodes.adminEntreprise, PermissionCodes.entrepriseManage);
+    final estSuperviseur = ctx.membre?.roleCode == RoleCodes.superviseur;
+    final estAdminOuSuperviseur = estAdmin || estSuperviseur;
+
     return DroitsCommerce(
       voirProduits: peut(ModuleCodes.commerceProduits, PermissionCodes.productsView),
       creerProduits: peut(ModuleCodes.commerceProduits, PermissionCodes.productsCreate),
       modifierProduits: peut(ModuleCodes.commerceProduits, PermissionCodes.productsUpdate),
+      peutModifierPrixVente: peut(ModuleCodes.commerceProduits, PermissionCodes.productsUpdate) ||
+          peut(ModuleCodes.commerceProduits, PermissionCodes.productsCreate),
+      peutModifierPrixAchat: estAdmin,
+      peutModifierPrixGros: estAdminOuSuperviseur,
+      peutModifierConversions: estAdminOuSuperviseur,
+      peutArchiverProduits: estAdminOuSuperviseur,
+      peutDefinirPerimetreMultiBoutiques: estAdmin,
+      peutSaisirStockInitial: !estSuperviseur && peut(ModuleCodes.commerceStock, PermissionCodes.stockCreate),
       voirStock: peut(ModuleCodes.commerceStock, PermissionCodes.stockView),
       boutiquesEntreeSortie: ou(ModuleCodes.commerceStock, PermissionCodes.stockCreate),
       boutiquesAjustement: ou(ModuleCodes.commerceStock, PermissionCodes.stockUpdate),
       voirAchats: peut(ModuleCodes.commerceAchats, PermissionCodes.purchasesView),
-      boutiquesAchat: ou(ModuleCodes.commerceAchats, PermissionCodes.purchasesCreate),
-      boutiquesReception: ou(ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate),
+      boutiquesAchat: estSuperviseur ? const [] : ou(ModuleCodes.commerceAchats, PermissionCodes.purchasesCreate),
+      boutiquesReception: estSuperviseur ? const [] : ou(ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate),
       voirVentes: peut(ModuleCodes.commerceVentes, PermissionCodes.salesView),
       boutiquesVente: ou(ModuleCodes.commerceVentes, PermissionCodes.salesCreate),
       annulerVentes: peut(ModuleCodes.commerceVentes, PermissionCodes.salesUpdate),
@@ -156,6 +177,13 @@ class DroitsCommerce {
   final bool voirProduits;
   final bool creerProduits;
   final bool modifierProduits;
+  final bool peutModifierPrixVente;
+  final bool peutModifierPrixAchat;
+  final bool peutModifierPrixGros;
+  final bool peutModifierConversions;
+  final bool peutArchiverProduits;
+  final bool peutDefinirPerimetreMultiBoutiques;
+  final bool peutSaisirStockInitial;
   final bool voirStock;
   final List<String> boutiquesEntreeSortie;
   final List<String> boutiquesAjustement;

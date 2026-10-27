@@ -29,6 +29,11 @@ class _Repo implements InvitationRepository {
   @override
   Future<void> annuler(String invitationId) async {}
   @override
+  Future<InvitationCreee> renvoyer(String invitationId) async =>
+      InvitationCreee(id: invitationId, token: 'renewed', expiresAt: DateTime(2026, 10, 17));
+  @override
+  Future<void> supprimer(String invitationId) async {}
+  @override
   Future<List<Invitation>> lister(String entrepriseId) async => const [];
   @override
   Future<InvitationApercu> verifier(String token) async =>

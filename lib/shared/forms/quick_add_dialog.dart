@@ -172,7 +172,7 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
         ),
         FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF01226C),
+            backgroundColor: AppColors.green,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
           onPressed: canSubmit ? _submit : null,

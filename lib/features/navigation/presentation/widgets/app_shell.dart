@@ -53,7 +53,7 @@ class AppShell extends ConsumerWidget {
     (IconData, IconData, String) visual(NavDestination d) => switch (d) {
           NavDestination.accueil => (Icons.home_outlined, Icons.home_rounded, l10n.navHome),
           NavDestination.stock => (Icons.inventory_2_outlined, Icons.inventory_2, l10n.navStock),
-          NavDestination.prestations => (Icons.handyman_outlined, Icons.handyman, 'Prestations'),
+          NavDestination.prestations => (Icons.assignment_outlined, Icons.assignment, 'Contrats'),
           NavDestination.loyers => (Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, 'Loyers'),
           NavDestination.ventes => (Icons.point_of_sale_outlined, Icons.point_of_sale, 'Ventes'),
           NavDestination.finances => (Icons.insights_outlined, Icons.insights, l10n.navFinances),

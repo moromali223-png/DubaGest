@@ -11,7 +11,6 @@ import '../../../perimetres/domain/entities/perimetre.dart';
 import '../../../perimetres/presentation/providers/perimetres_providers.dart';
 import '../../domain/entities/invitation.dart';
 import '../providers/invitations_providers.dart';
-import 'inviter_sheet.dart';
 
 /// Invitations récentes de l'entreprise, avec copie/régénération du lien et annulation.
 class InvitationsSection extends ConsumerWidget {
@@ -29,21 +28,26 @@ class InvitationsSection extends ConsumerWidget {
       if (ctx == null) return;
 
       try {
-        final tousPerimetres = ref.read(perimetresProvider).value ?? const <Perimetre>[];
-        final perimetresDisponibles = tousPerimetres.isNotEmpty ? tousPerimetres : ctx.perimetres;
-        final role = ctx.roles[inv.roleCode];
-        final perimetresCompatibles = (role?.accesTousPerimetres ?? true)
-            ? const <Perimetre>[]
-            : (role?.activite != null
-                ? perimetresDisponibles.where((p) => p.activite == role!.activite).toList()
-                : perimetresDisponibles);
+        InvitationCreee creee;
+        try {
+          creee = await ref.read(renvoyerInvitationProvider).call(ctx, inv);
+        } catch (_) {
+          final tousPerimetres = ref.read(perimetresProvider).value ?? const <Perimetre>[];
+          final perimetresDisponibles = tousPerimetres.isNotEmpty ? tousPerimetres : ctx.perimetres;
+          final role = ctx.roles[inv.roleCode];
+          final perimetresCompatibles = (role?.accesTousPerimetres ?? true)
+              ? const <Perimetre>[]
+              : (role?.activite != null
+                  ? perimetresDisponibles.where((p) => p.activite == role!.activite).toList()
+                  : perimetresDisponibles);
 
-        final creee = await ref.read(creerInvitationProvider).call(
-              ctx,
-              email: inv.email,
-              roleCode: inv.roleCode,
-              perimetres: perimetresCompatibles,
-            );
+          creee = await ref.read(creerInvitationProvider).call(
+                ctx,
+                email: inv.email,
+                roleCode: inv.roleCode,
+                perimetres: perimetresCompatibles,
+              );
+        }
         final lien = ref.read(appConfigProvider).invitationLink(creee.token);
         await Clipboard.setData(ClipboardData(text: lien));
 
@@ -66,7 +70,7 @@ class InvitationsSection extends ConsumerWidget {
           title: const Text('Annuler l\'invitation ?'),
           content: Text(
             'Voulez-vous vraiment annuler l\'invitation envoyée à ${inv.email} ?\n'
-            'Le lien d\'accès et le code seront immédiatement invalidés.',
+            'Le lien d\'accès et le code seront immédiatement invalidés et la place sera libérée.',
           ),
           actions: [
             TextButton(
@@ -90,6 +94,46 @@ class InvitationsSection extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Invitation pour ${inv.email} annulée')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) showFailureSnackBar(context, e);
+      }
+    }
+
+    Future<void> confirmerEtSupprimer(Invitation inv) async {
+      final ctx = ref.read(contexteActifProvider);
+      if (ctx == null) return;
+
+      final confirmer = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: const Text('Supprimer l\'invitation ?'),
+          content: Text(
+            'Voulez-vous retirer définitivement l\'invitation pour ${inv.email} de l\'historique ?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: const Text('Retour'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.negative),
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmer != true || !context.mounted) return;
+
+      try {
+        await ref.read(supprimerInvitationProvider).call(ctx, inv);
+        ref.invalidate(invitationsProvider);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Invitation pour ${inv.email} supprimée')),
           );
         }
       } catch (e) {
@@ -199,19 +243,37 @@ class InvitationsSection extends ConsumerWidget {
                                   children: [
                                     IconButton(
                                       key: Key('btn-copy-invitation-${inv.id}'),
-                                      tooltip: 'Copier / Renvoyer le lien d\'invitation',
+                                      tooltip: 'Copier / Renouveler le lien d\'invitation',
                                       icon: const Icon(Icons.copy_rounded, color: AppColors.green, size: 20),
                                       onPressed: () => copierEtRenvoyer(inv),
                                     ),
                                     IconButton(
                                       key: Key('btn-cancel-invitation-${inv.id}'),
                                       tooltip: 'Annuler cette invitation',
-                                      icon: const Icon(Icons.delete_outline_rounded, color: AppColors.negative, size: 20),
+                                      icon: const Icon(Icons.cancel_outlined, color: AppColors.negative, size: 20),
                                       onPressed: () => confirmerEtAnnuler(inv),
                                     ),
                                   ],
                                 )
-                              : null,
+                              : (statut == InvitationStatut.expired || statut == InvitationStatut.cancelled)
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          key: Key('btn-resend-invitation-${inv.id}'),
+                                          tooltip: 'Renvoyer une invitation',
+                                          icon: const Icon(Icons.refresh_rounded, color: AppColors.green, size: 20),
+                                          onPressed: () => copierEtRenvoyer(inv),
+                                        ),
+                                        IconButton(
+                                          key: Key('btn-delete-invitation-${inv.id}'),
+                                          tooltip: 'Supprimer de l\'historique',
+                                          icon: const Icon(Icons.delete_outline_rounded, color: AppColors.negative, size: 20),
+                                          onPressed: () => confirmerEtSupprimer(inv),
+                                        ),
+                                      ],
+                                    )
+                                  : null,
                         ),
                       ],
                     );

@@ -102,15 +102,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: AppSpacing.lg),
               FilledButton(
                 key: const Key('login-submit'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  backgroundColor: AppColors.green,
+                ),
                 onPressed: loading ? null : _submit,
                 child: loading
-                    ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(l10n.authSignIn),
+                    ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text(l10n.authSignIn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ),
               const SizedBox(height: AppSpacing.sm),
               TextButton(
                 onPressed: loading ? null : () => context.push(Routes.forgotPassword),
-                child: Text(l10n.authForgotPassword),
+                child: Text(
+                  l10n.authForgotPassword,
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.muted),
+                ),
               ),
               const OrDivider(),
               GoogleSignInButton(enabled: !loading),
@@ -119,11 +127,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 alignment: WrapAlignment.center,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(l10n.authNoAccount),
+                  Text(l10n.authNoAccount, style: const TextStyle(color: AppColors.muted)),
                   TextButton(
                     key: const Key('go-register'),
                     onPressed: loading ? null : () => context.go(Routes.register),
-                    child: Text(l10n.authRegisterLink),
+                    child: Text(
+                      l10n.authRegisterLink,
+                      style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green),
+                    ),
                   ),
                 ],
               ),
@@ -142,16 +153,36 @@ class _Notice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
       decoration: BoxDecoration(
-        color: isError ? scheme.errorContainer : scheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(12),
+        color: isError ? AppColors.negative.withValues(alpha: 0.1) : AppColors.greenSoft,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isError ? AppColors.negative.withValues(alpha: 0.3) : AppColors.green.withValues(alpha: 0.3),
+        ),
       ),
-      child: Text(
-        text,
-        style: TextStyle(color: isError ? scheme.onErrorContainer : scheme.onSecondaryContainer),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+            size: 20,
+            color: isError ? AppColors.negative : AppColors.green,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: isError ? const Color(0xFF991B1B) : AppColors.ink,
+                fontWeight: FontWeight.w500,
+                fontSize: 13.5,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

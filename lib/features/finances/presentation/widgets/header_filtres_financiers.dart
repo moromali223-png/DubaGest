@@ -13,16 +13,18 @@ import 'bottom_sheet_filtre_mobile.dart';
 class HeaderFiltresFinanciers extends ConsumerWidget {
   const HeaderFiltresFinanciers({
     super.key,
+    this.estSurFondSombre = false,
     this.onActualiser,
     this.onExporter,
   });
 
+  final bool estSurFondSombre;
   final VoidCallback? onActualiser;
   final VoidCallback? onExporter;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
+    context.l10n;
     final ctx = ref.watch(contexteActifProvider);
     final periode = ref.watch(financePeriodFilterProvider);
     final activite = ref.watch(financeActiviteFilterProvider);
@@ -47,16 +49,25 @@ class HeaderFiltresFinanciers extends ConsumerWidget {
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      side: const BorderSide(color: AppColors.border),
-                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      side: BorderSide(
+                        color: estSurFondSombre ? const Color(0xFF243B34) : AppColors.border,
+                      ),
+                      backgroundColor: estSurFondSombre ? const Color(0xFF141E1B) : Colors.white,
                     ),
-                    icon: const Icon(Icons.tune_rounded, size: 20, color: AppColors.green),
+                    icon: Icon(
+                      Icons.tune_rounded,
+                      size: 20,
+                      color: estSurFondSombre ? const Color(0xFF2ECC71) : AppColors.green,
+                    ),
                     label: Text(
                       '${periode.libelleCourt()}${activite != null ? ' · ${_nomActivite(activite)}' : ''}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.ink),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: estSurFondSombre ? Colors.white : AppColors.ink,
+                      ),
                     ),
                     onPressed: () => showModalBottomSheet<void>(
                       context: context,
@@ -70,14 +81,22 @@ class HeaderFiltresFinanciers extends ConsumerWidget {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 if (onActualiser != null)
-                  IconButton.filledTonal(
+                  IconButton(
                     tooltip: 'Actualiser',
+                    style: IconButton.styleFrom(
+                      backgroundColor: estSurFondSombre ? const Color(0xFF1B2A25) : null,
+                      foregroundColor: estSurFondSombre ? const Color(0xFF2ECC71) : null,
+                    ),
                     icon: const Icon(Icons.refresh_rounded, size: 20),
                     onPressed: onActualiser,
                   ),
                 if (onExporter != null)
-                  IconButton.filledTonal(
+                  IconButton(
                     tooltip: 'Exporter',
+                    style: IconButton.styleFrom(
+                      backgroundColor: estSurFondSombre ? const Color(0xFF1B2A25) : null,
+                      foregroundColor: estSurFondSombre ? const Color(0xFF2ECC71) : null,
+                    ),
                     icon: const Icon(Icons.file_download_outlined, size: 20),
                     onPressed: onExporter,
                   ),
@@ -89,9 +108,11 @@ class HeaderFiltresFinanciers extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            color: estSurFondSombre ? const Color(0xFF141E1B) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: estSurFondSombre ? const Color(0xFF243B34) : AppColors.border,
+            ),
           ),
           child: Wrap(
             spacing: AppSpacing.md,
@@ -108,6 +129,22 @@ class HeaderFiltresFinanciers extends ConsumerWidget {
                     shape: WidgetStatePropertyAll(
                       RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
+                    backgroundColor: estSurFondSombre
+                        ? WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return const Color(0xFF1E7E4E);
+                            }
+                            return const Color(0xFF1B2A25);
+                          })
+                        : null,
+                    foregroundColor: estSurFondSombre
+                        ? WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return Colors.white;
+                            }
+                            return const Color(0xFFA5B8B1);
+                          })
+                        : null,
                   ),
                   segments: const [
                     ButtonSegment(value: TypePeriodeFinance.aujourdhui, label: Text("Aujourd'hui")),
@@ -134,14 +171,27 @@ class HeaderFiltresFinanciers extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: estSurFondSombre ? const Color(0xFF1B2A25) : AppColors.background,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(
+                            color: estSurFondSombre ? const Color(0xFF2E463E) : AppColors.border,
+                          ),
                         ),
                         child: DropdownButton<ActiviteCode?>(
                           value: activite,
-                          hint: const Text('Toutes activités', style: TextStyle(fontSize: 13)),
-                          style: const TextStyle(fontSize: 13, color: AppColors.ink, fontWeight: FontWeight.w500),
+                          dropdownColor: estSurFondSombre ? const Color(0xFF1B2A25) : null,
+                          hint: Text(
+                            'Toutes activités',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: estSurFondSombre ? const Color(0xFFA5B8B1) : null,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: estSurFondSombre ? Colors.white : AppColors.ink,
+                            fontWeight: FontWeight.w500,
+                          ),
                           items: [
                             const DropdownMenuItem(value: null, child: Text('Toutes activités')),
                             for (final a in activitesActives)
@@ -159,14 +209,27 @@ class HeaderFiltresFinanciers extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: estSurFondSombre ? const Color(0xFF1B2A25) : AppColors.background,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(
+                            color: estSurFondSombre ? const Color(0xFF2E463E) : AppColors.border,
+                          ),
                         ),
                         child: DropdownButton<String?>(
                           value: perimetreId,
-                          hint: const Text('Toutes les boutiques', style: TextStyle(fontSize: 13)),
-                          style: const TextStyle(fontSize: 13, color: AppColors.ink, fontWeight: FontWeight.w500),
+                          dropdownColor: estSurFondSombre ? const Color(0xFF1B2A25) : null,
+                          hint: Text(
+                            'Toutes boutiques',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: estSurFondSombre ? const Color(0xFFA5B8B1) : null,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: estSurFondSombre ? Colors.white : AppColors.ink,
+                            fontWeight: FontWeight.w500,
+                          ),
                           items: [
                             const DropdownMenuItem(value: null, child: Text('Toutes boutiques')),
                             for (final p in perimetres) DropdownMenuItem(value: p.id, child: Text(p.nom)),
@@ -180,7 +243,11 @@ class HeaderFiltresFinanciers extends ConsumerWidget {
 
                   IconButton(
                     tooltip: 'Sélectionner une plage personnalisée',
-                    icon: const Icon(Icons.date_range_rounded, size: 20, color: AppColors.muted),
+                    icon: Icon(
+                      Icons.date_range_rounded,
+                      size: 20,
+                      color: estSurFondSombre ? const Color(0xFF2ECC71) : AppColors.muted,
+                    ),
                     onPressed: () async {
                       final picked = await showDateRangePicker(
                         context: context,

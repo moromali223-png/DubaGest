@@ -13,7 +13,7 @@ import '../../modules/domain/entities/app_module.dart';
 const _uuid = Uuid();
 
 /// Types de fiche pouvant porter des notes et des pièces jointes.
-const ciblesFichiers = {CibleType.contact, CibleType.engagement, CibleType.paiement, CibleType.depense};
+const ciblesFichiers = {CibleType.contact, CibleType.engagement, CibleType.paiement, CibleType.depense, CibleType.document};
 
 class Note {
   const Note({
@@ -102,7 +102,8 @@ class DroitsFiche {
         (ModuleCodes.financesPaiements, PermissionCodes.paymentsView, PermissionCodes.paymentsCreate),
       CibleType.depense =>
         (ModuleCodes.financesDepenses, PermissionCodes.expensesView, PermissionCodes.expensesCreate),
-      CibleType.document => ('', '', ''),
+      CibleType.document =>
+        (ModuleCodes.communDocuments, PermissionCodes.documentsView, PermissionCodes.documentsCreate),
     };
     bool peut(String p) =>
         module.isNotEmpty && ctx.accessPolicy().canPerform(moduleCode: module, permission: p).isAllowed;

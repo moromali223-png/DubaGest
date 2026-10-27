@@ -28,5 +28,7 @@ class Membre {
   final String? nomComplet;
   final Set<String> perimetreIds;
 
+  String get nomAffiche => nomComplet ?? 'Utilisateur $id';
+
   bool get estActif => statut == MembreStatut.actif;
 }

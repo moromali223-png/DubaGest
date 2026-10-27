@@ -62,13 +62,42 @@ class ResumeRecusAccueil extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: AppSpacing.lg),
-        Row(children: [
-          Expanded(child: Text(l10n.rcpPeriodToday, style: Theme.of(context).textTheme.titleMedium)),
-          TextButton(
-            onPressed: () => context.push(Routes.historiqueVentes),
-            child: Text('${l10n.rcpSeeAll} →'),
-          ),
-        ]),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Dernières ventes',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: AppColors.ink,
+              ),
+            ),
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => context.push(Routes.historiqueVentes),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Voir tous les reçus',
+                      style: TextStyle(
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 15, color: AppColors.green),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
         Row(children: [
           chiffre(Icons.payments_outlined, l10n.rcpSales, montant(context, ref, total)),
           const SizedBox(width: AppSpacing.sm),
@@ -78,9 +107,7 @@ class ResumeRecusAccueil extends ConsumerWidget {
             chiffre(Icons.storefront_outlined, l10n.rcpShops, '${boutiques.length}'),
           ],
         ]),
-        const SizedBox(height: AppSpacing.md),
-        Text(l10n.rcpLatest, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.muted)),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.sm),
         Card(
           margin: EdgeInsets.zero,
           child: Column(children: [

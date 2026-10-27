@@ -69,6 +69,7 @@ class StickyFormActions extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Center(
+          heightFactor: 1.0,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Padding(
@@ -87,7 +88,7 @@ class StickyFormActions extends StatelessWidget {
                         OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 50),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                           ),
                           onPressed: isLoading ? null : onPrevious,
@@ -98,7 +99,7 @@ class StickyFormActions extends StatelessWidget {
                         OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 50),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                           ),
                           onPressed: isLoading ? null : onCancel,
@@ -117,10 +118,10 @@ class StickyFormActions extends StatelessWidget {
                         child: FilledButton.icon(
                           key: submitKey,
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF01226C),
+                            backgroundColor: AppColors.green,
                             foregroundColor: Colors.white,
                             minimumSize: const Size(0, 50),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             elevation: 0,
                           ),
                           onPressed: (isLoading || isSubmitDisabled || onSubmit == null) ? null : onSubmit,

@@ -94,6 +94,7 @@ abstract final class RuleCodes {
   static const salePaid = 'VENTE_PAYEE';
   static const customerRequired = 'CLIENT_REQUIS';
   static const movementInvalid = 'MOUVEMENT_INVALIDE';
+  static const productUsed = 'PRODUIT_UTILISE';
 
   /// Refus techniques (données incohérentes) : un seul message à l'utilisateur.
   static const financeInconsistent = {

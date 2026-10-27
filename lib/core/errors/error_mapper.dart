@@ -90,13 +90,27 @@ class ErrorMapper {
     return const {};
   }
 
-  /// Détection par nom de type : `dart:io` (SocketException) n'existe pas sur
+  /// Détection par nom de type ou message : `dart:io` (SocketException) n'existe pas sur
   /// le web, et `ClientException` vient d'un paquet transitif.
   static bool _isNetworkError(Object error) {
+    if (error is TimeoutException) return true;
     final type = error.runtimeType.toString();
+    final str = error.toString().toLowerCase();
     return type.contains('SocketException') ||
         type.contains('ClientException') ||
         type.contains('HandshakeException') ||
-        type.contains('HttpException');
+        type.contains('HttpException') ||
+        type.contains('TimeoutException') ||
+        str.contains('socketexception') ||
+        str.contains('clientexception') ||
+        str.contains('timeoutexception') ||
+        str.contains('failed host lookup') ||
+        str.contains('network is unreachable') ||
+        str.contains('connection refused') ||
+        str.contains('connection reset') ||
+        str.contains('connection timed out') ||
+        str.contains('software caused connection abort') ||
+        str.contains('os error:') ||
+        str.contains('errno =');
   }
 }

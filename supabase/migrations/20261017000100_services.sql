@@ -41,7 +41,19 @@ on conflict do nothing;
 insert into public.roles_permissions (role_code, permission_code)
 select r.role_code, r.permission_code
 from (values
+  ('ADMINISTRATEUR', 'services.view'),
+  ('ADMINISTRATEUR', 'services.create'),
+  ('ADMINISTRATEUR', 'services.update'),
+  ('ADMINISTRATEUR', 'services.delete'),
+  ('ADMINISTRATEUR', 'prestations.view'),
+  ('ADMINISTRATEUR', 'prestations.create'),
+  ('ADMINISTRATEUR', 'prestations.update'),
+  ('ADMINISTRATEUR', 'prestations.delete'),
   ('ADMINISTRATEUR', 'prestations.cancel'),
+  ('ADMINISTRATEUR', 'quotes.view'),
+  ('ADMINISTRATEUR', 'quotes.create'),
+  ('ADMINISTRATEUR', 'quotes.update'),
+  ('ADMINISTRATEUR', 'quotes.delete'),
   -- Gestionnaire : tout le module Services et le socle utile.
   ('GESTIONNAIRE_SERVICES', 'perimetres.view'),
   ('GESTIONNAIRE_SERVICES', 'services.view'), ('GESTIONNAIRE_SERVICES', 'services.create'),
@@ -126,7 +138,7 @@ create policy services_catalogue_modification on public.services_catalogue for u
 
 revoke all on public.services_catalogue from anon, authenticated;
 grant select on public.services_catalogue to authenticated;
-grant insert (id, entreprise_id, nom, categorie, description, prix, unite, duree_minutes, icone, ordre)
+grant insert (id, entreprise_id, nom, categorie, description, prix, unite, duree_minutes, icone, ordre, est_actif)
   on public.services_catalogue to authenticated;
 -- Pas de suppression : on archive (est_actif = false).
 grant update (nom, categorie, description, prix, unite, duree_minutes, icone, ordre, est_actif)
@@ -409,7 +421,7 @@ create policy prestation_historique_lecture on public.prestation_historique for 
 
 revoke all on public.prestations, public.prestation_historique from anon, authenticated;
 grant select on public.prestations, public.prestation_historique to authenticated;
-grant insert (id, entreprise_id, perimetre_id, contact_id, titre, description, lignes, remise, statut, priorite,
+grant insert (id, entreprise_id, activite_code, perimetre_id, contact_id, titre, description, lignes, remise, statut, priorite,
               debut_prevu, echeance_jour, echeance_heure, livraison_requise, duree_minutes, responsable_id, lieu, note)
   on public.prestations to authenticated;
 -- Pas de suppression : on annule (avec motif), l'historique reste.

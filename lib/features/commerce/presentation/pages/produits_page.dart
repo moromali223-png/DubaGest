@@ -149,8 +149,14 @@ class _Catalogue extends ConsumerWidget {
     final l10n = context.l10n;
     final droits = ref.watch(droitsCommerceProvider);
     final boutiques = ref.watch(boutiquesVisiblesProvider);
+    final boutiqueCourante = ref.watch(boutiqueCouranteProvider);
     final produits = etat
-        .rechercher(recherche, categorieId: sousCategorie ?? categorie, inclureInactifs: archives)
+        .rechercher(
+          recherche,
+          categorieId: sousCategorie ?? categorie,
+          boutiqueId: boutiqueCourante,
+          inclureInactifs: archives,
+        )
         .where((p) => archives ? !p.estActif : true)
         .toList();
     switch (tri) {

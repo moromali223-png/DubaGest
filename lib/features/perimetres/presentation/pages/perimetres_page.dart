@@ -30,7 +30,6 @@ class PerimetresPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
     final ctx = ref.watch(contexteActifProvider);
     final perimetresAsync = ref.watch(perimetresProvider);
     final membres = ref.watch(membresProvider).value ?? const [];
@@ -243,36 +242,36 @@ class _ResumePlanCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF01226C).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.domain_rounded, color: Color(0xFF01226C), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Capacité d\'accueil',
-                        style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        maxAutorise == null
-                            ? '$totalActifs boutique${totalActifs > 1 ? 's' : ''} (Illimité)'
-                            : '$totalActifs sur $maxAutorise boutique${maxAutorise! > 1 ? 's' : ''} autorisée${maxAutorise! > 1 ? 's' : ''}',
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.ink),
-                      ),
-                    ],
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF01226C).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.domain_rounded, color: Color(0xFF01226C), size: 20),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Capacité d\'accueil',
+                      style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      maxAutorise == null
+                          ? '$totalActifs boutique${totalActifs > 1 ? 's' : ''} (Illimité)'
+                          : '$totalActifs sur $maxAutorise boutique${maxAutorise! > 1 ? 's' : ''} autorisée${maxAutorise! > 1 ? 's' : ''}',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.ink),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(

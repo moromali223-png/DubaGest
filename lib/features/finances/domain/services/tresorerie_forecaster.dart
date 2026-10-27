@@ -41,7 +41,9 @@ class TresorerieForecaster {
     final attentionRequise = h7.tensionDetectee || h30.tensionDetectee || h90.tensionDetectee;
 
     final String synthese;
-    if (h30.tensionDetectee) {
+    if (soldeActuel == 0 && engagements.isEmpty && depensesCourantes.isEmpty) {
+      synthese = 'Aucune échéance financière ni charge récurrente programmée sur cette période.';
+    } else if (h30.tensionDetectee) {
       synthese =
           'Attention : Les paiements prévus dans les 30 prochains jours risquent de dépasser votre trésorerie et les encaissements attendus.';
     } else if (h30.soldePrevu > soldeActuel) {

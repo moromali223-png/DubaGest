@@ -56,6 +56,15 @@ class FakeInvitationRepository implements InvitationRepository {
   }
 
   @override
+  Future<InvitationCreee> renvoyer(String invitationId) async {
+    derniereInvitationCreeeEmail = 'vendeur@dubagest.com';
+    return InvitationCreee(id: invitationId, token: 'renewed-token', expiresAt: DateTime.now().add(const Duration(days: 7)));
+  }
+
+  @override
+  Future<void> supprimer(String invitationId) async {}
+
+  @override
   Future<InvitationApercu> verifier(String token) async {
     return const InvitationApercu(statut: InvitationStatut.pending, entrepriseNom: 'Entreprise ABC', roleCode: 'VENDEUR');
   }

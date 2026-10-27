@@ -153,5 +153,66 @@ void main() {
       expect(find.text('Vous n\'avez pas encore effectué de vente aujourd\'hui.'), findsOneWidget);
       expect(find.text('0 FCFA'), findsWidgets);
     });
+
+    test('Catalogue Global vs Spécifique : Visibilité et étanchéité par boutique', () {
+      const bA = 'boutique-a';
+      const bB = 'boutique-b';
+
+      const pGlobal = Produit(
+        id: 'p-global',
+        entrepriseId: entrepriseId,
+        nom: 'Produit Global',
+        uniteBase: 'Pièce',
+        prixDetail: 1000,
+      );
+
+      const pBoutiqueA = Produit(
+        id: 'p-a',
+        entrepriseId: entrepriseId,
+        nom: 'Produit Exclusif A',
+        uniteBase: 'Pièce',
+        prixDetail: 2000,
+        attributs: {'perimetre_id': bA},
+      );
+
+      const pBoutiqueB = Produit(
+        id: 'p-b',
+        entrepriseId: entrepriseId,
+        nom: 'Produit Exclusif B',
+        uniteBase: 'Pièce',
+        prixDetail: 3000,
+        attributs: {'perimetre_id': bB},
+      );
+
+      expect(pGlobal.estGlobal, isTrue);
+      expect(pGlobal.estVisibleDansBoutique(bA), isTrue);
+      expect(pGlobal.estVisibleDansBoutique(bB), isTrue);
+
+      expect(pBoutiqueA.estGlobal, isFalse);
+      expect(pBoutiqueA.estVisibleDansBoutique(bA), isTrue);
+      expect(pBoutiqueA.estVisibleDansBoutique(bB), isFalse);
+
+      expect(pBoutiqueB.estGlobal, isFalse);
+      expect(pBoutiqueB.estVisibleDansBoutique(bB), isTrue);
+      expect(pBoutiqueB.estVisibleDansBoutique(bA), isFalse);
+
+      final etat = EtatCommerce(
+        produits: [pGlobal, pBoutiqueA, pBoutiqueB],
+        stocks: const [
+          StockBoutique(perimetreId: bA, produitId: 'p-global', quantite: Qte(100000)),
+          StockBoutique(perimetreId: bB, produitId: 'p-global', quantite: Qte.zero),
+        ],
+      );
+
+      // Pour Boutique B : Seul pGlobal et pBoutiqueB sont visibles
+      final visiblesB = etat.rechercher('', boutiqueId: bB);
+      expect(visiblesB.map((p) => p.id), containsAll(['p-global', 'p-b']));
+      expect(visiblesB.map((p) => p.id), isNot(contains('p-a')));
+
+      // Stock de pGlobal dans Boutique B est 0 (pas de fuite du stock de Boutique A)
+      expect(etat.quantiteBoutique('p-global', bB), Qte.zero);
+      expect(etat.quantiteBoutique('p-global', bA), const Qte(100000));
+    });
   });
 }
+

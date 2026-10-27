@@ -24,6 +24,11 @@
 		<string>ar</string>
 		<string>en</string>
 	</array>
+	<!-- Permissions caméra et galerie pour iOS -->
+	<key>NSCameraUsageDescription</key>
+	<string>DubaGest a besoin de la caméra pour prendre en photo vos articles, chantiers, pièces jointes et scanner les codes-barres.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>DubaGest a besoin d'accéder à vos photos pour joindre des images à vos produits, prestations et devis.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Autorise HTTP uniquement vers les adresses locales (Supabase Local). -->

@@ -13,7 +13,8 @@ void main() {
   Future<void> toucher(WidgetTester tester, Finder f) async {
     await tester.ensureVisible(f);
     await tester.pumpAndSettle();
-    await toucher(tester, f);
+    await tester.tap(f);
+    await tester.pumpAndSettle();
   }
 
   Future<void> saisir(WidgetTester tester, Finder f, String texte) async {

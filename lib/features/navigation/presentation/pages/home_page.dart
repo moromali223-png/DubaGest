@@ -6,6 +6,7 @@ import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/di/sync_providers.dart';
+import '../../../../core/permissions/permission_codes.dart';
 import '../../../../core/sync/sync_models.dart';
 import '../../../../shared/widgets/app_header_buttons.dart';
 import '../../../../shared/widgets/responsive_body.dart';
@@ -34,7 +35,10 @@ import '../../../finances/presentation/widgets/finances_widgets.dart';
 import '../../../commerce/presentation/widgets/alertes_accueil.dart';
 import '../../../commerce/presentation/widgets/resume_recus_accueil.dart';
 import '../../../commerce/presentation/widgets/workspace_gestionnaire_stock_accueil.dart';
+import '../../../commerce/presentation/widgets/workspace_superviseur_accueil.dart';
 import '../../../commerce/presentation/widgets/workspace_vendeur_accueil.dart';
+import '../../../immobilier/domain/entities/dashboard_immobilier.dart';
+import '../../../immobilier/presentation/providers/immobilier_providers.dart';
 
 /// Accueil DUBAGEST : En-tête professionnel 3 lignes (☰ rond blanc, Bonjour Prénom,
 /// Entreprise · Site, Sélecteur), Recherche globale, Section Aujourd'hui (4 KPIs),
@@ -52,7 +56,7 @@ class HomePage extends ConsumerWidget {
     if (ctx == null || nav == null) return const Scaffold(body: LoadingView());
 
     // WORKSPACE VENDEUR DÉDIÉ (Épuré, Rapide, Mobile-first)
-    if (nav.isWorkspaceVendeur && espace.activite == ActiviteCode.commerce) {
+    if (nav.isWorkspaceVendeur && (espace.activite == ActiviteCode.commerce || espace.activite == null)) {
       return const Scaffold(
         drawer: AppMenuDrawer(),
         body: SafeArea(
@@ -63,12 +67,23 @@ class HomePage extends ConsumerWidget {
     }
 
     // WORKSPACE GESTIONNAIRE DE STOCK DÉDIÉ (Stock, Alertes, Opérations, Inventaires)
-    if (nav.isWorkspaceGestionnaireStock && espace.activite == ActiviteCode.commerce) {
+    if (nav.isWorkspaceGestionnaireStock) {
       return const Scaffold(
         drawer: AppMenuDrawer(),
         body: SafeArea(
           bottom: false,
           child: WorkspaceGestionnaireStockAccueil(),
+        ),
+      );
+    }
+
+    // WORKSPACE SUPERVISEUR DÉDIÉ (Supervision Opérationnelle des Boutiques)
+    if (nav.isWorkspaceSuperviseur) {
+      return const Scaffold(
+        drawer: AppMenuDrawer(),
+        body: SafeArea(
+          bottom: false,
+          child: WorkspaceSuperviseurAccueil(),
         ),
       );
     }
@@ -151,9 +166,6 @@ class HomePage extends ConsumerWidget {
                   const SectionAujourdhui(),
                 ],
 
-                // Reçus du jour (Commerce) : résumé, trois dernières ventes.
-                if (espace.activite == ActiviteCode.commerce) const ResumeRecusAccueil(),
-
                 if (!nav.abonnementActif && nav.sections.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.lg),
@@ -165,10 +177,11 @@ class HomePage extends ConsumerWidget {
                     child: EmptyView(message: l10n.homeNoModules, icon: Icons.lock_outline),
                   ),
 
-                // 4. Section Modules (Intelligente et Complétée par 2 services communs sur la ligne 2)
+                // 4. Section Modules (Priorité ergonomique : juste après les KPIs pour accès immédiat)
                 if (nav.sections.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Modules',
@@ -179,30 +192,32 @@ class HomePage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Spacer(),
                       if (aPlusieursActivites)
-                        Flexible(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (final a in ctx.activites.where((a) => a.estActive)) ...[
-                                    _ActivitePill(
-                                      activite: a.activite,
-                                      nom: l10n.activite(a.activite),
-                                      selected: espace.activite == a.activite,
-                                      onTap: () => ref.read(espaceCourantProvider.notifier).choisirActivite(a.activite),
-                                    ),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (final a in ctx.activites.where((a) => a.estActive)) ...[
+                                      _ActivitePill(
+                                        activite: a.activite,
+                                        nom: l10n.activite(a.activite),
+                                        selected: espace.activite == a.activite,
+                                        onTap: () => ref.read(espaceCourantProvider.notifier).choisirActivite(a.activite),
+                                      ),
+                                    ],
                                   ],
-                                ],
+                                ),
                               ),
                             ),
                           ),
@@ -234,7 +249,10 @@ class HomePage extends ConsumerWidget {
                   ],
                 ],
 
-                // 5. Section « À surveiller » (Alertes actionnables et complètes)
+                // 5. Reçus & Dernières ventes (Commerce) : placé après les modules
+                if (espace.activite == ActiviteCode.commerce) const ResumeRecusAccueil(),
+
+                // 6. Section « À surveiller » (Alertes actionnables et complètes)
                 if (alertes.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Text(
@@ -285,11 +303,26 @@ class HomePage extends ConsumerWidget {
   /// 2 lignes avant « Plus » : 4 modules métier, puis Dépenses, Caisse, Dettes.
   /// Si un module financier n'est pas accessible, sa place revient au métier.
   List<AppModule> _combinerModules(List<AppModule> metier, List<AppModule> finances) {
+    final listeMetier = [...metier];
+    if (listeMetier.any((m) => m.activite == ActiviteCode.services)) {
+      // Pour les Services à l'accueil : on exclut Factures & Reçus et on garantit Interventions
+      listeMetier.removeWhere((m) => m.code == ModuleCodes.servicesFacturation);
+      if (!listeMetier.any((m) => m.code == ModuleCodes.servicesPlanning)) {
+        listeMetier.add(const AppModule(
+          code: ModuleCodes.servicesPlanning,
+          activite: ActiviteCode.services,
+          permissionAcces: PermissionCodes.prestationsView,
+          ordre: 24,
+        ));
+      }
+      listeMetier.sort((a, b) => a.ordre.compareTo(b.ordre));
+    }
+
     final communs = [
       for (final code in _financesAccueil) ...finances.where((f) => f.code == code),
     ];
     final nbMetier = 7 - communs.length;
-    return [...metier.take(nbMetier), ...communs];
+    return [...listeMetier.take(nbMetier), ...communs];
   }
 
   /// Uniquement des alertes réelles, issues du contexte, des finances, de l'agenda et de la synchro.
@@ -339,7 +372,7 @@ class HomePage extends ConsumerWidget {
             sousTitre: '${l10n.montant(montant, devise)} à recouvrer',
             onTap: () => context.push(Routes.financesOnglet(ModuleCodes.financesCreances)),
           ));
-        case AlerteCaisseOuverte(:final caisse, :final depuis):
+        case AlerteCaisseOuverte(:final caisse):
           alertes.add(_Alerte(
             icon: Icons.point_of_sale_outlined,
             tone: _AlerteTone.warning,
@@ -360,6 +393,26 @@ class HomePage extends ConsumerWidget {
 
     // 3. Stock : produits en rupture ou en stock faible (avec leurs photos).
     alertes.addAll(alertesStockAccueil(context, ref));
+
+    // 3b. Immobilier : Loyers impayés, fins de bail proches ou biens vacants si activité immobilier
+    final espace = ref.watch(espaceCourantProvider);
+    if (espace.activite == ActiviteCode.immobilier) {
+      final dashImmo = ref.watch(dashboardImmobilierProvider);
+      for (final a in dashImmo.alertes.take(3)) {
+        final tone = switch (a.niveau) {
+          NiveauAlerte.critique => _AlerteTone.danger,
+          NiveauAlerte.avertissement => _AlerteTone.warning,
+          NiveauAlerte.information => _AlerteTone.info,
+        };
+        alertes.add(_Alerte(
+          icon: a.type.icone,
+          tone: tone,
+          titre: a.titre,
+          sousTitre: a.message,
+          onTap: a.actionRoute != null ? () => context.push(a.actionRoute!) : null,
+        ));
+      }
+    }
 
     // 4. Alertes Synchronisation & Réseau
     if (sync.pendingCount > 0) {

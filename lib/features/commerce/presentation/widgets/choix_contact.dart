@@ -10,6 +10,7 @@ import '../../../contacts/domain/usecases/gerer_contacts.dart';
 import '../../../contacts/presentation/providers/contacts_providers.dart';
 import '../../../contacts/presentation/widgets/contact_avatar.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
+import '../../../services/presentation/widgets/devis_contact_widgets.dart';
 import '../commerce_providers.dart';
 
 /// Contacts ayant une relation (fournisseurs, clients), lisibles hors-ligne.
@@ -52,17 +53,42 @@ class _ChoixContact extends ConsumerStatefulWidget {
 
 class _ChoixContactState extends ConsumerState<_ChoixContact> {
   String _recherche = '';
+  bool _voirTous = false;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final fournisseur = widget.relation == RelationContact.fournisseur;
-    final contacts = ref.watch(contactsRelationProvider(widget.relation)).value ?? const <Contact>[];
+    final contactsPrincipaux = ref.watch(contactsRelationProvider(widget.relation)).value ?? const <Contact>[];
+    final tousContacts = (ref.watch(tousContactsProvider).value ?? const <Contact>[])
+        .where((c) => !c.estArchive)
+        .toList();
+
     final mots = _recherche.toLowerCase().split(' ').where((m) => m.isNotEmpty);
+
+    // Si une recherche est saisie ou si aucun contact principal n'existe ou si l'utilisateur coche 'voir tous' :
+    // On permet de choisir parmi TOUS les contacts actifs de l'entreprise
+    final List<Contact> source;
+    if (mots.isNotEmpty || _voirTous || contactsPrincipaux.isEmpty) {
+      source = tousContacts;
+    } else {
+      source = contactsPrincipaux;
+    }
+
     final liste = [
-      for (final c in contacts)
-        if (mots.every((m) => '${c.nomAffiche} ${c.telephone ?? ''}'.toLowerCase().contains(m))) c,
+      for (final c in source)
+        if (mots.isEmpty || mots.every((m) => '${c.nomAffiche} ${c.telephone ?? ''}'.toLowerCase().contains(m))) c,
     ];
+
+    // Trier : les contacts ayant déjà la relation demandée en premier, puis ordre alphabétique
+    liste.sort((a, b) {
+      final aHas = a.relations.contains(widget.relation);
+      final bHas = b.relations.contains(widget.relation);
+      if (aHas && !bHas) return -1;
+      if (!aHas && bHas) return 1;
+      return a.nomAffiche.toLowerCase().compareTo(b.nomAffiche.toLowerCase());
+    });
+
     final peutCreer = ref.watch(droitsCommerceProvider).creerContacts;
 
     return Padding(
@@ -78,10 +104,38 @@ class _ChoixContactState extends ConsumerState<_ChoixContact> {
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: TextField(
-              decoration: InputDecoration(hintText: l10n.comSearchContact, prefixIcon: const Icon(Icons.search)),
+              decoration: InputDecoration(
+                hintText: l10n.comSearchContact,
+                prefixIcon: const Icon(Icons.search),
+              ),
               onChanged: (t) => setState(() => _recherche = t),
             ),
           ),
+          if (contactsPrincipaux.isNotEmpty && tousContacts.length > contactsPrincipaux.length && mots.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 2),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => setState(() => _voirTous = !_voirTous),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _voirTous ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                        size: 20,
+                        color: AppColors.green,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Afficher tous les contacts (${tousContacts.length})',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.ink),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           if (peutCreer)
             ListTile(
               leading: const CircleAvatar(
@@ -90,25 +144,105 @@ class _ChoixContactState extends ConsumerState<_ChoixContact> {
               ),
               title: Text(fournisseur ? l10n.comNewSupplier : l10n.comNewCustomer,
                   style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.green)),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(Routes.contactNouveau(relation: widget.relation.code));
+              onTap: () async {
+                final nouveau = await DialogueNouveauContactDevis.afficher(
+                  context,
+                  nomInitial: _recherche.trim().isNotEmpty ? _recherche.trim() : null,
+                  relation: widget.relation,
+                );
+                if (nouveau != null && mounted) {
+                  ref.invalidate(contactsRelationProvider(widget.relation));
+                  ref.invalidate(tousContactsProvider);
+                  Navigator.pop(context, nouveau);
+                }
               },
             ),
           const Divider(),
           Expanded(
             child: liste.isEmpty
-                ? Center(child: Text(l10n.comNoContact, style: const TextStyle(color: AppColors.muted)))
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_search_outlined, size: 48, color: AppColors.muted),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(l10n.comNoContact, style: const TextStyle(color: AppColors.muted)),
+                          if (peutCreer) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+                              onPressed: () async {
+                                final nouveau = await DialogueNouveauContactDevis.afficher(
+                                  context,
+                                  nomInitial: _recherche.trim().isNotEmpty ? _recherche.trim() : null,
+                                  relation: widget.relation,
+                                );
+                                if (nouveau != null && mounted) {
+                                  ref.invalidate(contactsRelationProvider(widget.relation));
+                                  ref.invalidate(tousContactsProvider);
+                                  Navigator.pop(context, nouveau);
+                                }
+                              },
+                              icon: const Icon(Icons.person_add_rounded, size: 18),
+                              label: Text(fournisseur ? l10n.comNewSupplier : l10n.comNewCustomer),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  )
                 : ListView.builder(
                     itemCount: liste.length,
                     itemBuilder: (_, i) {
                       final c = liste[i];
+                      final aLaRelation = c.relations.contains(widget.relation);
                       return ListTile(
                         key: Key('contact-${c.id}'),
                         leading: ContactAvatar(contact: c),
-                        title: Text(c.nomAffiche, style: const TextStyle(fontWeight: FontWeight.w700)),
-                        subtitle: c.telephone == null ? null : Text(c.telephone!),
-                        onTap: () => Navigator.pop(context, c),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(c.nomAffiche, style: const TextStyle(fontWeight: FontWeight.w700)),
+                            ),
+                            if (!aLaRelation)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.greenSoft,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  fournisseur ? '+ Fournisseur' : '+ Client',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.green,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        subtitle: c.telephone == null
+                            ? (!aLaRelation
+                                ? Text(
+                                    'Contact existant (${c.relations.isEmpty ? "Sans rôle" : c.relations.map((r) => l10n.relationContact(r)).join(", ")})',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                                  )
+                                : null)
+                            : Text(!aLaRelation
+                                ? '${c.telephone!} • Contact existant'
+                                : c.telephone!),
+                        onTap: () async {
+                          final ctx = ref.read(contexteActifProvider);
+                          if (ctx != null && !aLaRelation) {
+                            try {
+                              await ref.read(modifierContactProvider).ajouterRelation(ctx, c, {widget.relation});
+                            } catch (_) {}
+                          }
+                          if (context.mounted) Navigator.pop(context, c);
+                        },
                       );
                     },
                   ),

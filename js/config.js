@@ -41,10 +41,10 @@ window.DUBAGEST_CONFIG = {
 
   // Coordonnées et support (Bamako, Mali / Espace UEMOA)
   contact: {
-    supportEmail: 'contact@dubagest.ml',
-    commercialEmail: 'ventes@dubagest.ml',
-    telephone: '+223 70 00 00 00',
-    whatsapp: '22370000000', // sans '+' pour wa.me
+    supportEmail: 'sphereduba@gmail.com',
+    commercialEmail: 'sphereduba@gmail.com',
+    telephone: '+223 98 02 84 99',
+    whatsapp: '22398028499', // sans '+' pour wa.me
     adresse: 'Bamako, Mali'
   },
 

@@ -84,12 +84,14 @@ class DriftSyncQueueStore implements SyncQueueStore {
   }
 
   @override
-  Future<List<SyncOperation>> due(String userId, DateTime now) async {
+  Future<List<SyncOperation>> due(String userId, DateTime now, {bool force = false}) async {
     final rows = await (_db.select(_db.syncQueue)
           ..where((q) =>
               q.userId.equals(userId) &
               q.status.isIn(_waiting) &
-              (q.nextAttemptAt.isNull() | q.nextAttemptAt.isSmallerOrEqualValue(now)))
+              (force
+                  ? const Constant(true)
+                  : (q.nextAttemptAt.isNull() | q.nextAttemptAt.isSmallerOrEqualValue(now))))
           ..orderBy([(q) => OrderingTerm.asc(q.createdAt)]))
         .get();
     return rows.map(_toOperation).toList();

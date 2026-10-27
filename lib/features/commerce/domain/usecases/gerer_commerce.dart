@@ -8,6 +8,7 @@ import '../../../entreprise/domain/entities/contexte_session.dart';
 import '../../../finances/domain/entities/finances.dart' as fin;
 import '../../../finances/domain/services/etat_finances.dart';
 import '../../../modules/domain/entities/app_module.dart';
+import '../../../roles/domain/entities/role.dart';
 import '../commerce_repository.dart';
 import '../entities/commerce.dart';
 import '../services/etat_commerce.dart';
@@ -22,6 +23,7 @@ class SaisieAchat {
     this.fournisseurId,
     this.reference,
     this.date,
+    this.statut = StatutAchat.commande,
     this.note,
   });
 
@@ -29,6 +31,7 @@ class SaisieAchat {
   final String? fournisseurId;
   final String? reference;
   final DateTime? date;
+  final StatutAchat statut;
   final List<LigneOperation> lignes;
   final String? note;
 }
@@ -109,6 +112,19 @@ class GererCommerce {
     String? noteStockInitial,
   }) async {
     _verifier(_peut(ctx, ModuleCodes.commerceProduits, PermissionCodes.productsCreate));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      if (stockInitial.estPositif) {
+        throw const Failure.rule(RuleCodes.permissionDenied);
+      }
+      if (perimetreId != null && !ctx.aAccesAuPerimetre(perimetreId)) {
+        throw const Failure.rule(RuleCodes.permissionDenied);
+      }
+      for (final pid in brouillon.perimetresIds) {
+        if (!ctx.aAccesAuPerimetre(pid)) {
+          throw const Failure.rule(RuleCodes.permissionDenied);
+        }
+      }
+    }
     final produit = _produitValide(etat, brouillon);
     MouvementStock? initial;
     if (stockInitial.estPositif) {
@@ -140,7 +156,28 @@ class GererCommerce {
 
   Future<void> modifierProduit(ContexteSession ctx, EtatCommerce etat, Produit avant, Produit apres) async {
     _verifier(_peut(ctx, ModuleCodes.commerceProduits, PermissionCodes.productsUpdate));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      if (apres.prixAchat != avant.prixAchat) {
+        throw const Failure.rule(RuleCodes.permissionDenied);
+      }
+      for (final pid in apres.perimetresIds) {
+        if (!ctx.aAccesAuPerimetre(pid)) {
+          throw const Failure.rule(RuleCodes.permissionDenied);
+        }
+      }
+    }
     await _repository.modifierProduit(avant, _produitValide(etat, apres));
+  }
+
+  /// Protection contre la suppression d'un produit déjà mouvementé ou vendu
+  Future<void> supprimerProduit(ContexteSession ctx, EtatCommerce etat, Produit produit) async {
+    _verifier(_peut(ctx, ModuleCodes.commerceProduits, PermissionCodes.productsUpdate));
+    final aDesMouvements = etat.mouvements.any((m) => m.produitId == produit.id);
+    final aDesVentes = etat.ventes.any((v) => v.lignes.any((l) => l.produitId == produit.id));
+    final aDesAchats = etat.achats.any((a) => a.lignes.any((l) => l.produitId == produit.id));
+    if (aDesMouvements || aDesVentes || aDesAchats) {
+      throw const Failure.rule(RuleCodes.productUsed);
+    }
   }
 
   Produit _produitValide(EtatCommerce etat, Produit p) {
@@ -186,6 +223,12 @@ class GererCommerce {
     String? note,
   }) async {
     _verifier(_peut(ctx, ModuleCodes.commerceStock, PermissionCodes.stockCreate, perimetreId));
+    if (!entree && ctx.membre?.roleCode == RoleCodes.gestionnaireStock) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
+    if (ctx.membre?.roleCode == RoleCodes.superviseur && entree && motif == MotifMouvement.achat) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
     final base = _quantiteValide(produit, quantite, unite.facteur);
     final avant = etat.quantiteBoutique(produit.id, perimetreId);
     if (!entree) _assezDeStock(produit, avant, base);
@@ -227,6 +270,11 @@ class GererCommerce {
     if (compte.estNegatif) throw const Failure.rule(RuleCodes.quantityInvalid);
     final base = compte.fois(unite.facteur);
     final avant = etat.quantiteBoutique(produit.id, perimetreId);
+    final ecart = base - avant;
+    final estGestionnaire = ctx.membre?.roleCode == RoleCodes.gestionnaireStock;
+    if (estGestionnaire && ecart.estNegatif && (note == null || note.trim().isEmpty)) {
+      throw const Failure.rule(RuleCodes.discrepancyJustificationRequired);
+    }
     final m = MouvementStock(
       id: _uuid.v4(),
       entrepriseId: produit.entrepriseId,
@@ -321,6 +369,9 @@ class GererCommerce {
 
   Future<Achat> creerAchat(ContexteSession ctx, EtatCommerce etat, SaisieAchat s, {bool recevoirTout = false}) async {
     _verifier(_peut(ctx, ModuleCodes.commerceAchats, PermissionCodes.purchasesCreate, s.perimetreId));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
     if (recevoirTout) {
       _verifier(_peut(ctx, ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate, s.perimetreId));
     }
@@ -334,12 +385,13 @@ class GererCommerce {
       dateAchat: _jour(s.date ?? DateTime.now()),
       lignes: lignes,
       total: totalLignes(lignes),
+      statut: s.statut,
       note: _nul(s.note),
       auteurNom: ctx.nomComplet,
       creeLe: DateTime.now(),
       syncStatus: RecordSyncStatus.pendingSync,
     );
-    final dette = achat.total <= 0
+    final dette = (s.statut == StatutAchat.brouillon || achat.total <= 0)
         ? null
         : fin.Engagement(
             id: achat.id,
@@ -347,7 +399,7 @@ class GererCommerce {
             perimetreId: achat.perimetreId,
             sens: fin.SensEngagement.aPayer,
             contactId: achat.fournisseurId,
-            libelle: 'Achat ${achat.reference ?? ''}'.trim(),
+            libelle: 'Commande ${achat.reference ?? ''}'.trim(),
             montantTotal: achat.total,
             dateEngagement: achat.dateAchat,
             origineType: 'ACHAT',
@@ -365,14 +417,22 @@ class GererCommerce {
   /// Une commande pas encore reçue se modifie (produits, quantités, prix).
   Future<void> modifierAchat(ContexteSession ctx, EtatCommerce etat, Achat avant, SaisieAchat s) async {
     _verifier(_peut(ctx, ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate, avant.perimetreId));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
     if (avant.annule) throw const Failure.rule(RuleCodes.purchaseCancelled);
-    if (avant.statut != StatutAchat.commande) throw const Failure.rule(RuleCodes.purchaseReceived);
+    if (avant.statut != StatutAchat.commande &&
+        avant.statut != StatutAchat.brouillon &&
+        avant.statut != StatutAchat.envoyee) {
+      throw const Failure.rule(RuleCodes.purchaseReceived);
+    }
     final lignes = _lignesValides(etat, s.lignes, avecPrix: true);
     await _repository.modifierAchat(
       avant,
       avant.copyWith(
         lignes: lignes,
         total: totalLignes(lignes),
+        statut: s.statut,
         fournisseurId: () => s.fournisseurId,
         reference: () => _nul(s.reference),
         note: () => _nul(s.note),
@@ -383,11 +443,38 @@ class GererCommerce {
 
   Future<void> annulerAchat(ContexteSession ctx, Achat achat, {EtatFinances? finances}) async {
     _verifier(_peut(ctx, ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate, achat.perimetreId));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
     if (achat.annule) return;
-    if (achat.statut != StatutAchat.commande) throw const Failure.rule(RuleCodes.purchaseReceived);
+    if (achat.statut != StatutAchat.commande &&
+        achat.statut != StatutAchat.brouillon &&
+        achat.statut != StatutAchat.envoyee) {
+      throw const Failure.rule(RuleCodes.purchaseReceived);
+    }
     final dette = finances?.engagements.where((e) => e.id == achat.id).firstOrNull;
     if (dette != null && finances!.regle(dette) > 0) throw const Failure.rule(RuleCodes.purchasePaid);
     await _repository.modifierAchat(achat, achat.copyWith(statut: StatutAchat.annule));
+  }
+
+  /// Valider un bon de commande brouillon
+  Future<void> confirmerAchat(ContexteSession ctx, Achat achat) async {
+    _verifier(_peut(ctx, ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate, achat.perimetreId));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
+    if (achat.statut != StatutAchat.brouillon) return;
+    await _repository.modifierAchat(achat, achat.copyWith(statut: StatutAchat.commande));
+  }
+
+  /// Marquer un bon de commande comme transmis au fournisseur
+  Future<void> marquerAchatEnvoye(ContexteSession ctx, Achat achat) async {
+    _verifier(_peut(ctx, ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate, achat.perimetreId));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
+    if (achat.annule || achat.statut == StatutAchat.recu) return;
+    await _repository.modifierAchat(achat, achat.copyWith(statut: StatutAchat.envoyee));
   }
 
   /// Réception totale ou partielle : seules les quantités reçues entrent en stock.
@@ -399,6 +486,9 @@ class GererCommerce {
     String? note,
   }) async {
     _verifier(_peut(ctx, ModuleCodes.commerceAchats, PermissionCodes.purchasesUpdate, achat.perimetreId));
+    if (ctx.membre?.roleCode == RoleCodes.superviseur) {
+      throw const Failure.rule(RuleCodes.permissionDenied);
+    }
     if (achat.annule) throw const Failure.rule(RuleCodes.purchaseCancelled);
     if (!achat.aRecevoir) throw const Failure.rule(RuleCodes.purchaseReceived);
     final (reception, entrees, achatRecu) = _reception(ctx, etat, achat, quantites, note: note);

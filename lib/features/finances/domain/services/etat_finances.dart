@@ -176,10 +176,13 @@ class EtatFinances {
         ouverte ??
         (sessions.where((s) => s.caisseId == c.id).toList()..sort((a, b) => b.ouverteLe.compareTo(a.ouverteLe)))
             .firstOrNull;
+    final soldeEffectif = ouverte != null
+        ? solde(ouverte)
+        : (derniere != null ? (derniere.soldeReel ?? solde(derniere)) : 0);
     return CaisseSuivi(
       caisse: c,
       session: derniere,
-      solde: ouverte == null ? 0 : solde(ouverte),
+      solde: soldeEffectif,
       mouvements: derniere == null
           ? const []
           : (mouvements.where((m) => m.sessionId == derniere.id).toList()
@@ -207,12 +210,16 @@ class EtatFinances {
       if (DateTime(d.year, d.month, d.day) != jour) continue;
       p.sens == SensPaiement.entree ? encaisse += p.montant : decaisse += p.montant;
     }
-    final enCaisse = caisses
-        .map((c) => sessionOuverte(c.id))
-        .whereType<SessionCaisse>()
-        .fold(0, (t, s) => t + solde(s));
+    final enCaisse = caisses.fold<int>(0, (total, c) {
+      final ouverte = sessionOuverte(c.id);
+      if (ouverte != null) return total + solde(ouverte);
+      final derniere = (sessions.where((s) => s.caisseId == c.id).toList()
+        ..sort((a, b) => b.ouverteLe.compareTo(a.ouverteLe))).firstOrNull;
+      if (derniere != null) return total + (derniere.soldeReel ?? solde(derniere));
+      return total;
+    });
     final depensesDuMois = depenses
-        .where((d) => depenseComptee(d) && d.dateDepense.year == jour.year && d.dateDepense.month == jour.month)
+        .where((d) => depenseComptee(d) && d.dateDepense.toLocal().year == jour.year && d.dateDepense.toLocal().month == jour.month)
         .fold(0, (t, d) => t + d.montant);
     return ResumeFinances(
       depensesDuMois: depensesDuMois,

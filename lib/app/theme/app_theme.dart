@@ -20,18 +20,23 @@ abstract final class AppBreakpoints {
 
 /// Palette DubaGest : Vert Émeraude (#1E7E4E) + Ardoise Sombre (#1A2522) + Menthe douce (#E8F5EE).
 abstract final class AppColors {
-  // Couleur primaire et identité
+  // Couleur primaire et identité DubaGest (Vert Émeraude #1E7E4E & Ardoise #1A2522)
   static const green = Color(0xFF1E7E4E);
   static const greenPressed = Color(0xFF15633D);
   static const greenLight = Color(0xFF27AE60);
   static const greenSoft = Color(0xFFE8F5EE);
   static const greenOnDark = Color(0xFF2ECC71);
 
-  // Alias institutionnels
-  static const navy = Color(0xFF1E7E4E);
-  static const navyDark = Color(0xFF15633D);
-  static const navyLight = Color(0xFF27AE60);
-  static const navySoft = Color(0xFFE8F5EE);
+  static const primary = green;
+  static const primaryDark = greenPressed;
+  static const primaryLight = greenLight;
+  static const primarySoft = greenSoft;
+
+  // Alias rétrocompatibilité
+  static const navy = green;
+  static const navyDark = greenPressed;
+  static const navyLight = greenLight;
+  static const navySoft = greenSoft;
 
   static const gold = Color(0xFFD97706);
   static const goldDark = Color(0xFFB45309);
@@ -45,32 +50,41 @@ abstract final class AppColors {
   static const onInkMuted = Color(0xFFA5B8B1);
   static const background = Color(0xFFF4F7F5);
   static const surface = Color(0xFFFFFFFF);
-  static const border = Color(0xFFE5EAE7);
+  static const border = Color(0xFFE2E8F0);
   static const muted = Color(0xFF64748B);
 
-  // Sens (données financières) — toujours accompagnés d'une flèche ou d'un signe.
+  // Sens (données financières)
   static const positive = Color(0xFF1E7E4E);
   static const positiveSoft = Color(0xFFE8F5EE);
-  static const negative = Color(0xFFDC2626);
-  static const negativeSoft = Color(0xFFFEE2E2);
+  static const negative = Color(0xFFEF4444);
+  static const negativeSoft = Color(0xFFFEF2F2);
   static const warning = Color(0xFFD97706);
   static const warningSoft = Color(0xFFFDECDA);
+
+  // Sémantique Dettes & Créances
+  static const creance = Color(0xFF1E7E4E); // Vert Émeraude : À recevoir (argent entrant)
+  static const creanceSoft = Color(0xFFE8F5EE);
+  static const dette = Color(0xFFEA580C); // Ambre / Orange chaud : À payer / Dette fournisseur
+  static const detteSoft = Color(0xFFFFF7ED);
+  static const detteHeader = Color(0xFFC2410C); // Terracotta soutenu pour bandeau de synthèse dette
+  static const avoir = Color(0xFFDC2626); // Rouge note d'avoir / crédit à déduire
+  static const avoirSoft = Color(0xFFFEF2F2);
 }
 
 /// Thème Material 3. L'identité visuelle se change ici uniquement.
 abstract final class AppTheme {
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.navy,
-      primary: AppColors.navy,
+      seedColor: AppColors.green,
+      primary: AppColors.green,
       onPrimary: Colors.white,
-      primaryContainer: AppColors.navySoft,
-      onPrimaryContainer: AppColors.navyDark,
-      secondary: AppColors.gold,
+      primaryContainer: AppColors.greenSoft,
+      onPrimaryContainer: AppColors.greenPressed,
+      secondary: AppColors.ink,
       onSecondary: Colors.white,
-      secondaryContainer: AppColors.goldSoft,
-      onSecondaryContainer: AppColors.goldDark,
-      tertiary: AppColors.warning,
+      secondaryContainer: AppColors.greenSoft,
+      onSecondaryContainer: AppColors.ink,
+      tertiary: AppColors.gold,
       error: AppColors.negative,
       surface: AppColors.surface,
       onSurface: AppColors.ink,
@@ -135,7 +149,7 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size(0, 48),
           shape: rounded14,
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),

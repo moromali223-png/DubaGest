@@ -52,7 +52,7 @@ class _Formulaire extends ConsumerStatefulWidget {
 
 class _FormulaireState extends ConsumerState<_Formulaire> {
   final _formKey = GlobalKey<FormState>();
-  final _formController = SmartFormController(initialOpenIndex: 0);
+  late final _formController = SmartFormController(initialOpenIndex: 0, allowMultipleOpen: true)..openAll(5);
 
   late TypePersonne _type = widget.initial?.typePersonne ?? TypePersonne.personne;
   late final Set<RelationContact> _relations = {...?widget.initial?.relations, ?widget.relation};
@@ -241,35 +241,25 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                   child: SmartFormContainer(
                     controller: _formController,
                     children: [
-                      // Section 1 : Identité & Nom (Obligatoire)
+                      // ─── Section 1 : Identité du contact ───
                       CollapsibleFormSection(
                         key: _formController.registerSectionKey(0),
                         title: personne ? 'Identité du contact' : 'Entreprise & Organisation',
                         icon: personne ? Icons.person_rounded : Icons.business_rounded,
+                        accentColor: const Color(0xFF01226C),
                         summary: _identiteSummary,
                         status: _identiteStatus,
-                        isRequired: true,
+                        headerTrailing: const _PillBadge(label: 'Requis', isRequired: true),
                         isExpanded: _formController.isSectionOpen(0),
                         onToggle: () => setState(() => _formController.toggleSection(0)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            SegmentedButton<TypePersonne>(
-                              segments: [
-                                ButtonSegment(
-                                  value: TypePersonne.personne,
-                                  icon: const Icon(Icons.person_outline),
-                                  label: Text(l10n.contactTypePersonne),
-                                ),
-                                ButtonSegment(
-                                  value: TypePersonne.organisation,
-                                  icon: const Icon(Icons.business_outlined),
-                                  label: Text(l10n.contactTypeOrganisation),
-                                ),
-                              ],
-                              selected: {_type},
-                              onSelectionChanged: (s) => setState(() {
-                                _type = s.first;
+                            // Sélecteur Type Personne / Organisation façon Pillules fluides
+                            _TypePersonnePills(
+                              selected: _type,
+                              onChanged: (t) => setState(() {
+                                _type = t;
                                 _aEteModifie = true;
                               }),
                             ),
@@ -280,7 +270,11 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                                 controller: _prenom,
                                 textCapitalization: TextCapitalization.words,
                                 maxLength: 100,
-                                decoration: InputDecoration(labelText: l10n.contactFieldPrenom, counterText: ''),
+                                decoration: _buildInputDecoration(
+                                  label: l10n.contactFieldPrenom,
+                                  hint: 'Prénom (ex: Amadou, Fatoumata...)',
+                                  icon: Icons.person_outline_rounded,
+                                ),
                               ),
                               espace,
                             ],
@@ -289,9 +283,11 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                               controller: _nom,
                               textCapitalization: TextCapitalization.words,
                               maxLength: 200,
-                              decoration: InputDecoration(
-                                labelText: '${personne ? l10n.contactFieldNom : l10n.contactFieldRaisonSociale} *',
-                                counterText: '',
+                              decoration: _buildInputDecoration(
+                                label: personne ? l10n.contactFieldNom : l10n.contactFieldRaisonSociale,
+                                hint: personne ? 'Nom de famille (ex: Traoré)' : 'Raison sociale (ex: Mali BTP SARL)',
+                                icon: personne ? Icons.badge_outlined : Icons.domain_rounded,
+                                isRequired: true,
                               ),
                               validator: (v) => (v ?? '').trim().isEmpty ? l10n.validationRequired : null,
                             ),
@@ -299,35 +295,41 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                         ),
                       ),
 
-                      // Section 2 : Rôles & Relations (Client, Fournisseur)
+                      // ─── Section 2 : Relation avec l'entreprise ───
                       CollapsibleFormSection(
                         key: _formController.registerSectionKey(1),
-                        title: l10n.contactFieldRelations,
-                        icon: Icons.groups_rounded,
+                        title: "Relation avec l'entreprise",
+                        icon: Icons.hub_outlined,
+                        accentColor: const Color(0xFFDF9540),
                         summary: _relationsSummary(l10n),
                         status: _relationsStatus,
+                        headerTrailing: const _PillBadge(label: 'Facultatif', isRequired: false),
                         isExpanded: _formController.isSectionOpen(1),
                         onToggle: () => setState(() => _formController.toggleSection(1)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Sélectionnez les rôles de ce contact dans votre activité :',
-                              style: TextStyle(fontSize: 13, color: AppColors.muted),
+                              'Sélectionnez les rôles de ce contact dans votre activité (cumulables) :',
+                              style: TextStyle(fontSize: 13, color: AppColors.muted, height: 1.3),
                             ),
-                            const SizedBox(height: AppSpacing.sm),
+                            const SizedBox(height: 12),
                             Wrap(
-                              spacing: AppSpacing.sm,
-                              runSpacing: AppSpacing.sm,
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
                                 for (final r in RelationContact.values)
-                                  FilterChip(
-                                    key: Key('contact-relation-${r.code}'),
-                                    label: Text(l10n.relationContact(r)),
-                                    selected: _relations.contains(r),
-                                    onSelected: (on) => setState(() {
+                                  _RelationPillChip(
+                                    relation: r,
+                                    label: l10n.relationContact(r),
+                                    isSelected: _relations.contains(r),
+                                    onTap: () => setState(() {
                                       _aEteModifie = true;
-                                      on ? _relations.add(r) : _relations.remove(r);
+                                      if (_relations.contains(r)) {
+                                        _relations.remove(r);
+                                      } else {
+                                        _relations.add(r);
+                                      }
                                     }),
                                   ),
                               ],
@@ -336,13 +338,15 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                         ),
                       ),
 
-                      // Section 3 : Coordonnées (Téléphone, WhatsApp, Email)
+                      // ─── Section 3 : Coordonnées & Téléphone ───
                       CollapsibleFormSection(
                         key: _formController.registerSectionKey(2),
                         title: 'Coordonnées & Téléphone',
-                        icon: Icons.contact_phone_rounded,
+                        icon: Icons.phone_in_talk_rounded,
+                        accentColor: const Color(0xFF0284C7),
                         summary: _coordonneesSummary,
                         status: _coordonneesStatus,
+                        headerTrailing: const _PillBadge(label: 'Facultatif', isRequired: false),
                         isExpanded: _formController.isSectionOpen(2),
                         onToggle: () => setState(() => _formController.toggleSection(2)),
                         child: Column(
@@ -352,10 +356,10 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                               controller: _telephone,
                               keyboardType: TextInputType.phone,
                               maxLength: 30,
-                              decoration: InputDecoration(
-                                labelText: l10n.contactFieldTelephone,
-                                prefixIcon: const Icon(Icons.phone_outlined),
-                                counterText: '',
+                              decoration: _buildInputDecoration(
+                                label: l10n.contactFieldTelephone,
+                                hint: 'Numéro principal (ex: +223 70 00 00 00)',
+                                icon: Icons.phone_outlined,
                               ),
                             ),
                             espace,
@@ -363,11 +367,11 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                               controller: _whatsapp,
                               keyboardType: TextInputType.phone,
                               maxLength: 30,
-                              decoration: InputDecoration(
-                                labelText: l10n.contactFieldWhatsapp,
-                                helperText: l10n.contactWhatsappHint,
-                                prefixIcon: const Icon(Icons.chat_outlined),
-                                counterText: '',
+                              decoration: _buildInputDecoration(
+                                label: l10n.contactFieldWhatsapp,
+                                hint: 'WhatsApp direct (ex: +223 70 00 00 00)',
+                                helper: l10n.contactWhatsappHint,
+                                icon: Icons.chat_bubble_outline_rounded,
                               ),
                             ),
                             espace,
@@ -376,10 +380,10 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                               controller: _email,
                               keyboardType: TextInputType.emailAddress,
                               maxLength: 254,
-                              decoration: InputDecoration(
-                                labelText: l10n.contactFieldEmail,
-                                prefixIcon: const Icon(Icons.mail_outline),
-                                counterText: '',
+                              decoration: _buildInputDecoration(
+                                label: l10n.contactFieldEmail,
+                                hint: 'Adresse électronique (ex: contact@exemple.com)',
+                                icon: Icons.mail_outline_rounded,
                               ),
                               validator: (v) {
                                 final t = (v ?? '').trim();
@@ -392,13 +396,15 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                         ),
                       ),
 
-                      // Section 4 : Adresse & Localisation
+                      // ─── Section 4 : Adresse & Localisation ───
                       CollapsibleFormSection(
                         key: _formController.registerSectionKey(3),
                         title: 'Adresse & Localisation',
                         icon: Icons.location_on_rounded,
+                        accentColor: const Color(0xFF10B981),
                         summary: _adresseSummary,
                         status: _adresseStatus,
+                        headerTrailing: const _PillBadge(label: 'Facultatif', isRequired: false),
                         isExpanded: _formController.isSectionOpen(3),
                         onToggle: () => setState(() => _formController.toggleSection(3)),
                         child: Column(
@@ -407,33 +413,35 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                               controller: _ville,
                               textCapitalization: TextCapitalization.words,
                               maxLength: 100,
-                              decoration: InputDecoration(
-                                labelText: l10n.contactFieldVille,
-                                prefixIcon: const Icon(Icons.location_city_outlined),
-                                counterText: '',
+                              decoration: _buildInputDecoration(
+                                label: l10n.contactFieldVille,
+                                hint: 'Ville ou commune (ex: Bamako, Ségou...)',
+                                icon: Icons.location_city_outlined,
                               ),
                             ),
                             espace,
                             TextFormField(
                               controller: _adresse,
                               maxLength: 300,
-                              decoration: InputDecoration(
-                                labelText: l10n.contactFieldAdresse,
-                                prefixIcon: const Icon(Icons.place_outlined),
-                                counterText: '',
+                              decoration: _buildInputDecoration(
+                                label: l10n.contactFieldAdresse,
+                                hint: 'Quartier, rue, porte, repère géographique...',
+                                icon: Icons.place_outlined,
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                      // Section 5 : Remarques & Notes
+                      // ─── Section 5 : Notes & Remarques ───
                       CollapsibleFormSection(
                         key: _formController.registerSectionKey(4),
                         title: 'Notes & Remarques',
-                        icon: Icons.note_alt_rounded,
+                        icon: Icons.edit_note_rounded,
+                        accentColor: const Color(0xFF8B5CF6),
                         summary: _remarque.text.trim().isEmpty ? 'Aucune note (Facultatif)' : _remarque.text.trim(),
                         status: _notesStatus,
+                        headerTrailing: const _PillBadge(label: 'Facultatif', isRequired: false),
                         isExpanded: _formController.isSectionOpen(4),
                         onToggle: () => setState(() => _formController.toggleSection(4)),
                         child: TextFormField(
@@ -443,23 +451,417 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                           maxLength: longueurMaxRemarque,
                           decoration: InputDecoration(
                             labelText: l10n.contactFieldRemarque,
-                            hintText: 'Informations complémentaires, préférences...',
+                            hintText: 'Informations complémentaires, préférences, notes utiles...',
                             alignLabelWithHint: true,
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.only(bottom: 48),
+                              child: Icon(Icons.notes_rounded, size: 20, color: Color(0xFF64748B)),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF01226C), width: 1.8),
+                            ),
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
               ),
 
-              // Barre d'actions fixe
-              StickyFormActions(
-                submitKey: const Key('contact-save'),
-                onSubmit: _enCours ? null : _enregistrer,
+              // ─── Barre d'actions fixe ergonomique & anti-clavier ───
+              _ContactFormBottomBar(
+                onSave: _enCours ? null : _enregistrer,
                 onCancel: () => Navigator.of(context).maybePop(),
                 isLoading: _enCours,
-                submitLabel: l10n.commonSave,
+                saveLabel: l10n.commonSave,
+                cancelLabel: l10n.commonCancel,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── COMPOSANTS MODERNISÉS DUBAGEST CONTACTS ───
+
+InputDecoration _buildInputDecoration({
+  required String label,
+  String? hint,
+  String? helper,
+  required IconData icon,
+  bool isRequired = false,
+}) {
+  return InputDecoration(
+    labelText: isRequired ? '$label *' : label,
+    hintText: hint,
+    helperText: helper,
+    counterText: '',
+    prefixIcon: Icon(icon, size: 20, color: const Color(0xFF64748B)),
+    filled: true,
+    fillColor: const Color(0xFFF8FAFC),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF01226C), width: 1.8),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.2),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.8),
+    ),
+  );
+}
+
+class _TypePersonnePills extends StatelessWidget {
+  const _TypePersonnePills({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final TypePersonne selected;
+  final ValueChanged<TypePersonne> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _PillOption(
+              label: 'Particulier',
+              icon: Icons.person_rounded,
+              isSelected: selected == TypePersonne.personne,
+              onTap: () => onChanged(TypePersonne.personne),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _PillOption(
+              label: 'Organisation / Société',
+              icon: Icons.business_rounded,
+              isSelected: selected == TypePersonne.organisation,
+              onTap: () => onChanged(TypePersonne.organisation),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PillOption extends StatelessWidget {
+  const _PillOption({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? const Color(0xFF01226C) : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected ? const Color(0xFF01226C) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PillBadge extends StatelessWidget {
+  const _PillBadge({required this.label, required this.isRequired});
+
+  final String label;
+  final bool isRequired;
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isRequired ? const Color(0xFFFEE2E2) : const Color(0xFFF1F5F9);
+    final textColor = isRequired ? const Color(0xFFDC2626) : const Color(0xFF64748B);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: isRequired ? FontWeight.w800 : FontWeight.w600,
+          color: textColor,
+          letterSpacing: 0.1,
+        ),
+      ),
+    );
+  }
+}
+
+class _RelationPillChip extends StatelessWidget {
+  const _RelationPillChip({
+    required this.relation,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final RelationContact relation;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  IconData get _icon => switch (relation) {
+        RelationContact.client => Icons.person_pin_circle_outlined,
+        RelationContact.fournisseur => Icons.local_shipping_outlined,
+        RelationContact.locataire => Icons.vpn_key_outlined,
+        RelationContact.proprietaire => Icons.home_work_outlined,
+        RelationContact.prestataire => Icons.handyman_outlined,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('contact-relation-${relation.code}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF01226C) : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF01226C) : const Color(0xFFE2E8F0),
+              width: 1.2,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF01226C).withValues(alpha: 0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? Icons.check_circle_rounded : _icon,
+                size: 16,
+                color: isSelected ? const Color(0xFFDF9540) : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 7),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ContactFormBottomBar extends StatelessWidget {
+  const _ContactFormBottomBar({
+    required this.onSave,
+    required this.onCancel,
+    required this.isLoading,
+    required this.saveLabel,
+    required this.cancelLabel,
+  });
+
+  final VoidCallback? onSave;
+  final VoidCallback onCancel;
+  final bool isLoading;
+  final String saveLabel;
+  final String cancelLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            bottomInset > 0 ? 8 : 12,
+          ),
+          child: Row(
+            children: [
+              // Bouton Annuler secondaire
+              Expanded(
+                flex: 2,
+                child: OutlinedButton.icon(
+                  onPressed: isLoading ? null : onCancel,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  label: Text(
+                    cancelLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 52),
+                    foregroundColor: const Color(0xFF475569),
+                    side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Bouton Enregistrer principal
+              Expanded(
+                flex: 3,
+                child: FilledButton.icon(
+                  key: const Key('contact-save'),
+                  onPressed: onSave,
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check_circle_rounded, size: 20),
+                  label: Text(
+                    saveLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 52),
+                    backgroundColor: const Color(0xFF01226C),
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shadowColor: const Color(0xFF01226C).withValues(alpha: 0.35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
               ),
             ],
           ),

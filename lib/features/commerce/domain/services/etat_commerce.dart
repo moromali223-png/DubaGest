@@ -16,11 +16,26 @@ class EtatCommerce {
     this.receptions = const [],
     this.ventes = const [],
   }) {
+    final produitsAvecStock = <(String, String)>{};
     for (final s in stocks) {
-      (_serveur[s.produitId] ??= {})[s.perimetreId] = s.quantite;
+      final cle = (s.produitId, s.perimetreId);
+      final existant = (_serveur[s.produitId] ??= {})[s.perimetreId];
+      if (existant == null) {
+        _serveur[s.produitId]![s.perimetreId] = s.quantite;
+      }
+      produitsAvecStock.add(cle);
     }
+
+    final ventesAnnulees = {for (final v in ventes) if (v.annulee) v.id};
+    final achatsAnnules = {for (final a in achats) if (a.annule) a.id};
+
     for (final m in mouvements) {
-      if (!m.enAttente) continue;
+      if (m.origineType == 'VENTE' && ventesAnnulees.contains(m.origineId)) continue;
+      if (m.origineType == 'ACHAT' && achatsAnnules.contains(m.origineId)) continue;
+      if (m.refuse && m.origineType != 'VENTE' && m.origineType != 'ACHAT') continue;
+      final cle = (m.produitId, m.perimetreId);
+      final hasServerStock = produitsAvecStock.contains(cle);
+      if (hasServerStock && m.syncStatus == RecordSyncStatus.synced) continue;
       final parBoutique = _attente[m.produitId] ??= {};
       parBoutique[m.perimetreId] = (parBoutique[m.perimetreId] ?? Qte.zero) + m.delta;
     }
@@ -51,6 +66,10 @@ class EtatCommerce {
 
   List<Produit> get produitsActifs => [for (final p in produits) if (p.estActif) p];
 
+  /// Produits actifs visibles pour une boutique (global ou réservé à cette boutique).
+  List<Produit> produitsActifsPour(String? boutiqueId) =>
+      [for (final p in produitsActifs) if (p.estVisibleDansBoutique(boutiqueId)) p];
+
   List<CategorieProduit> get categoriesRacines =>
       [for (final c in categories) if (c.estRacine && c.estActive) c];
 
@@ -79,9 +98,14 @@ class EtatCommerce {
   Qte quantite(String produitId, Iterable<String> boutiques) =>
       boutiques.map((b) => quantiteBoutique(produitId, b)).somme;
 
-  /// Répartition par boutique (boutiques visibles seulement).
-  Map<String, Qte> repartition(String produitId, Iterable<String> boutiques) =>
-      {for (final b in boutiques) b: quantiteBoutique(produitId, b)};
+  /// Répartition par boutique (boutiques visibles seulement où le produit est autorisé).
+  Map<String, Qte> repartition(String produitId, Iterable<String> boutiques) {
+    final p = _produits[produitId];
+    return {
+      for (final b in boutiques)
+        if (p == null || p.estVisibleDansBoutique(b)) b: quantiteBoutique(produitId, b),
+    };
+  }
 
   /// Le produit a-t-il déjà eu du stock dans ces boutiques ?
   bool suiviDans(String produitId, Iterable<String> boutiques) => boutiques.any(
@@ -97,9 +121,12 @@ class EtatCommerce {
 
   /// Produits qui demandent une action (stock faible ou rupture), les ruptures d'abord.
   List<Produit> aSurveiller(Iterable<String> boutiques) {
+    final ensemble = boutiques.toSet();
     final liste = [
       for (final p in produitsActifs)
-        if (statutDans(p, boutiques) != StatutStock.enStock) p,
+        if ((ensemble.isEmpty || ensemble.any(p.estVisibleDansBoutique)) &&
+            statutDans(p, boutiques) != StatutStock.enStock)
+          p,
     ];
     liste.sort((a, b) => statutDans(b, boutiques).index.compareTo(statutDans(a, boutiques).index));
     return liste;
@@ -108,7 +135,15 @@ class EtatCommerce {
   ResumeStock resume(Iterable<String> boutiques) {
     var faibles = 0;
     var ruptures = 0;
-    for (final p in produitsActifs) {
+    var valeurStock = 0;
+    var totalArticles = 0;
+    final ensemble = boutiques.toSet();
+    final actifs = [
+      for (final p in produitsActifs)
+        if (ensemble.isEmpty || ensemble.any(p.estVisibleDansBoutique)) p,
+    ];
+    for (final p in actifs) {
+      final qte = quantite(p.id, boutiques);
       switch (statutDans(p, boutiques)) {
         case StatutStock.faible:
           faibles++;
@@ -117,29 +152,46 @@ class EtatCommerce {
         case StatutStock.enStock:
           break;
       }
+      if (qte.estPositif) {
+        final prixValo = p.prixAchat ?? p.prixDetail;
+        valeurStock += (qte.valeur * prixValo).round();
+        totalArticles += qte.valeur.round();
+      }
     }
     final aujourdhui = DateTime.now();
     final debut = DateTime(aujourdhui.year, aujourdhui.month, aujourdhui.day);
-    final ensemble = boutiques.toSet();
+    var entrees = 0;
+    var sorties = 0;
+    for (final m in mouvements) {
+      if (m.refuse || !ensemble.contains(m.perimetreId) || m.date.isBefore(debut)) continue;
+      if (m.delta.estPositif) {
+        entrees++;
+      } else if (m.delta.estNegatif) {
+        sorties++;
+      }
+    }
     return ResumeStock(
-      produits: produitsActifs.length,
+      produits: actifs.length,
       faibles: faibles,
       ruptures: ruptures,
-      mouvementsDuJour: mouvements
-          .where((m) => !m.refuse && ensemble.contains(m.perimetreId) && !m.date.isBefore(debut))
-          .length,
+      mouvementsDuJour: entrees + sorties,
+      valeurStock: valeurStock,
+      entreesDuJour: entrees,
+      sortiesDuJour: sorties,
+      totalArticlesEnStock: totalArticles,
     );
   }
 
   // --- Recherche --------------------------------------------------------------
 
-  /// Recherche tolérante : nom, référence, code-barres, marque, catégorie.
-  List<Produit> rechercher(String texte, {String? categorieId, bool inclureInactifs = false}) {
+  /// Recherche tolérante : nom, référence, code-barres, marque, catégorie, filtrée par boutique.
+  List<Produit> rechercher(String texte, {String? categorieId, String? boutiqueId, bool inclureInactifs = false}) {
     final mots = normaliserRecherche(texte).split(' ').where((m) => m.isNotEmpty).toList();
     final chiffres = texte.replaceAll(RegExp(r'\s'), '');
     return [
       for (final p in inclureInactifs ? produits : produitsActifs)
-        if ((categorieId == null || dansCategorie(p, categorieId)) &&
+        if ((boutiqueId == null || p.estVisibleDansBoutique(boutiqueId)) &&
+            (categorieId == null || dansCategorie(p, categorieId)) &&
             (mots.isEmpty ||
                 (chiffres.isNotEmpty && p.codeBarres == chiffres) ||
                 mots.every(cleRecherche(p).contains)))
@@ -156,11 +208,11 @@ class EtatCommerce {
         racine(p.categorieId)?.nom,
       ].whereType<String>().join(' '));
 
-  Produit? parCodeBarres(String code) {
+  Produit? parCodeBarres(String code, {String? boutiqueId}) {
     final c = code.trim();
     if (c.isEmpty) return null;
-    return produits.where((p) => p.codeBarres == c && p.estActif).firstOrNull ??
-        produits.where((p) => p.reference?.toLowerCase() == c.toLowerCase() && p.estActif).firstOrNull;
+    return produits.where((p) => p.codeBarres == c && p.estActif && (boutiqueId == null || p.estVisibleDansBoutique(boutiqueId))).firstOrNull ??
+        produits.where((p) => p.reference?.toLowerCase() == c.toLowerCase() && p.estActif && (boutiqueId == null || p.estVisibleDansBoutique(boutiqueId))).firstOrNull;
   }
 
   // --- Mouvements -------------------------------------------------------------
@@ -221,17 +273,21 @@ class EtatCommerce {
 
   Vente? vente(String id) => ventes.where((v) => v.id == id).firstOrNull;
 
-  /// Produits les plus vendus (pour l'onglet « Favoris » de la caisse).
-  List<Produit> plusVendus({int limite = 12}) {
+  /// Produits les plus vendus (pour l'onglet « Favoris » de la caisse), filtrés par boutique.
+  List<Produit> plusVendus({int limite = 12, String? boutiqueId}) {
     final compte = <String, int>{};
     for (final v in ventes) {
       if (v.annulee || v.refuse) continue;
+      if (boutiqueId != null && v.perimetreId != boutiqueId) continue;
       for (final l in v.lignes) {
         compte[l.produitId] = (compte[l.produitId] ?? 0) + 1;
       }
     }
     final ids = compte.keys.toList()..sort((a, b) => compte[b]!.compareTo(compte[a]!));
-    return [for (final id in ids.take(limite)) ?produit(id)].where((p) => p.estActif).toList();
+    return [for (final id in ids) ?produit(id)]
+        .where((p) => p.estActif && (boutiqueId == null || p.estVisibleDansBoutique(boutiqueId)))
+        .take(limite)
+        .toList();
   }
 
   /// Ventes du jour (non annulées) sur les boutiques visibles.
@@ -260,12 +316,20 @@ class ResumeStock {
     required this.faibles,
     required this.ruptures,
     required this.mouvementsDuJour,
+    this.valeurStock = 0,
+    this.entreesDuJour = 0,
+    this.sortiesDuJour = 0,
+    this.totalArticlesEnStock = 0,
   });
 
   final int produits;
   final int faibles;
   final int ruptures;
   final int mouvementsDuJour;
+  final int valeurStock;
+  final int entreesDuJour;
+  final int sortiesDuJour;
+  final int totalArticlesEnStock;
 }
 
 class ResumeFournisseur {

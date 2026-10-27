@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/sync/stockage_miroir.dart';
@@ -22,7 +23,7 @@ class CommerceLocalDataSource {
             statutDe: (r) => r.syncStatus,
             versionDe: (r) => r.version,
             identique: CommerceMapper.produitIdentique),
-        stocks = StockageMiroir(_db, _db.stocks,
+        stocks = StockageStocks(_db, _db.stocks,
             versLocal: CommerceMapper.stockServeur, statutDe: (r) => r.syncStatus, versionDe: (r) => r.version),
         mouvements = StockageMiroir(_db, _db.mouvementsStock,
             versLocal: CommerceMapper.mouvementServeur, statutDe: (r) => r.syncStatus, versionDe: (r) => r.version),
@@ -58,9 +59,9 @@ class CommerceLocalDataSource {
   /// Réémis à chaque écriture locale ou synchronisation d'une table Commerce.
   Stream<EtatCommerce> watch(String entrepriseId) async* {
     yield await charger(entrepriseId);
-    await for (final _ in _db.tableUpdates(TableUpdateQuery.onAllTables(_db.tablesCommerce))) {
-      yield await charger(entrepriseId);
-    }
+    yield* _db
+        .tableUpdates(TableUpdateQuery.onAllTables(_db.tablesCommerce))
+        .asyncMap((_) => charger(entrepriseId));
   }
 
   Future<EtatCommerce> charger(String eid) async {
@@ -247,10 +248,62 @@ class CommerceLocalDataSource {
           .write(EngagementsCompanion(syncStatus: Value(statut.wire)));
 
   /// Mouvements créés par une opération (transfert, réception, vente).
+  /// Applique atomiquement leurs deltas à la table locale des stocks si le statut
+  /// devient synchronisé, pour éviter toute régression avant la descente serveur.
   Future<void> marquerMouvementsDe(String origineId, RecordSyncStatus statut) =>
-      (_db.update(_db.mouvementsStock)
-            ..where((t) => t.origineId.equals(origineId) & t.syncStatus.equals(RecordSyncStatus.pendingSync.wire)))
-          .write(MouvementsStockCompanion(syncStatus: Value(statut.wire)));
+      _db.transaction(() async {
+        final pending = await (_db.select(_db.mouvementsStock)
+              ..where((t) => t.origineId.equals(origineId) & t.syncStatus.equals(RecordSyncStatus.pendingSync.wire)))
+            .get();
+        if (statut == RecordSyncStatus.synced && pending.isNotEmpty) {
+          for (final m in pending) {
+            await _appliquerDeltaStock(m);
+          }
+        }
+        await (_db.update(_db.mouvementsStock)
+              ..where((t) => t.origineId.equals(origineId) & t.syncStatus.equals(RecordSyncStatus.pendingSync.wire)))
+            .write(MouvementsStockCompanion(syncStatus: Value(statut.wire)));
+      });
+
+  Future<void> appliquerMouvementAuStock(String mouvementId) => _db.transaction(() async {
+        final m = await (_db.select(_db.mouvementsStock)
+              ..where((t) => t.id.equals(mouvementId) & t.syncStatus.equals(RecordSyncStatus.pendingSync.wire)))
+            .getSingleOrNull();
+        if (m != null) {
+          await _appliquerDeltaStock(m);
+        }
+      });
+
+  Future<void> _appliquerDeltaStock(MouvementStockRow m) async {
+    if (m.delta == 0) return;
+    final existants = await (_db.select(_db.stocks)
+          ..where((t) => t.produitId.equals(m.produitId) & t.perimetreId.equals(m.perimetreId) & t.deletedAt.isNull()))
+        .get();
+    if (existants.isNotEmpty) {
+      final premier = existants.first;
+      await (_db.update(_db.stocks)..where((t) => t.id.equals(premier.id))).write(
+        StocksCompanion(
+          quantite: Value(premier.quantite + m.delta),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+      // Nettoyer les doublons éventuels pour garantir l'unicité
+      for (final doublon in existants.skip(1)) {
+        await (_db.delete(_db.stocks)..where((t) => t.id.equals(doublon.id))).go();
+      }
+    } else {
+      await _db.into(_db.stocks).insert(
+        StocksCompanion.insert(
+          id: const Uuid().v4(),
+          entrepriseId: m.entrepriseId,
+          perimetreId: m.perimetreId,
+          produitId: m.produitId,
+          quantite: Value(m.stockApres ?? (m.delta > 0 ? m.delta : 0)),
+          syncStatus: RecordSyncStatus.synced.wire,
+        ),
+      );
+    }
+  }
 
   /// Supprime une écriture jamais acceptée par le serveur et ce qui en découle.
   Future<void> retirer(String table, String id) async {
@@ -276,3 +329,33 @@ class CommerceLocalDataSource {
     }
   }
 }
+
+/// Stockage miroir spécifique pour la table `stocks` évitant les doublons
+/// entre l'UUID généré localement et l'UUID officiel du serveur Supabase.
+class StockageStocks extends StockageMiroir<$StocksTable, StockRow> {
+  StockageStocks(
+    AppDatabase db,
+    $StocksTable info, {
+    required super.versLocal,
+    required super.statutDe,
+    required super.versionDe,
+  })  : database = db,
+        super(db, info);
+
+  final AppDatabase database;
+
+  @override
+  Future<void> ecrireDepuisServeur(Map<String, dynamic> json, RecordSyncStatus statut) async {
+    final produitId = json['produit_id'] as String?;
+    final perimetreId = json['perimetre_id'] as String?;
+    final id = json['id'] as String?;
+    if (produitId != null && perimetreId != null && id != null) {
+      // Éliminer toute ligne locale pour ce même produit et périmètre ayant un identifiant différent
+      await (database.delete(database.stocks)
+            ..where((t) => t.produitId.equals(produitId) & t.perimetreId.equals(perimetreId) & t.id.equals(id).not()))
+          .go();
+    }
+    await super.ecrireDepuisServeur(json, statut);
+  }
+}
+

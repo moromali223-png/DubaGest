@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/app_header_buttons.dart';
@@ -12,7 +11,6 @@ import '../../../../shared/widgets/sync_status_button.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../../entreprise/presentation/providers/espace_providers.dart';
 import '../../domain/entities/commerce.dart';
-import '../../domain/entities/quantite.dart';
 import '../../domain/services/etat_commerce.dart';
 import '../commerce_providers.dart';
 import 'choix_produit.dart';
@@ -29,7 +27,6 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
     final ctx = ref.watch(contexteActifProvider);
     final etat = ref.watch(etatCommerceProvider).value;
@@ -90,28 +87,31 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF01226C).withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.inventory_2_rounded, size: 14, color: Color(0xFF01226C)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  nomBoutiqueAffichee,
-                                  style: const TextStyle(
-                                    color: Color(0xFF01226C),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
+                          if (ref.watch(boutiquesProvider).length > 1)
+                            const BoutiqueSelecteur()
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF01226C).withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.inventory_2_rounded, size: 14, color: Color(0xFF01226C)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    nomBoutiqueAffichee,
+                                    style: const TextStyle(
+                                      color: Color(0xFF01226C),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ],
@@ -122,9 +122,19 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                 const SyncStatusButton(boxed: true),
               ],
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
 
-            // 2. Grille des 4 KPIs Essentiels
+            // 2. CARTE HERO : VALEUR TOTALE DU STOCK (Valeur immobilisée)
+            _ValeurTotaleStockCard(
+              key: const Key('card-valeur-totale-stock'),
+              valeurFormatee: montant(context, ref, resume.valeurStock),
+              totalArticles: resume.totalArticlesEnStock,
+              totalReferences: resume.produits,
+              onTap: () => context.push(Routes.stock),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 3. Grille des 4 KPIs Logistiques Essentiels
             Row(
               children: [
                 Expanded(
@@ -132,6 +142,7 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                     key: const Key('kpi-stock-faible'),
                     titre: 'Stock faible',
                     valeur: '${resume.faibles}',
+                    sousTitre: 'Sous seuil min.',
                     icone: Icons.warning_amber_rounded,
                     couleur: const Color(0xFFDF9540),
                     onTap: () => context.push(Routes.stock),
@@ -143,6 +154,7 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                     key: const Key('kpi-stock-rupture'),
                     titre: 'Ruptures',
                     valeur: '${resume.ruptures}',
+                    sousTitre: 'Stock à 0',
                     icone: Icons.error_outline_rounded,
                     couleur: const Color(0xFFE53935),
                     onTap: () => context.push(Routes.stock),
@@ -158,6 +170,7 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                     key: const Key('kpi-stock-mouvements'),
                     titre: 'Mouvements',
                     valeur: '${resume.mouvementsDuJour}',
+                    sousTitre: '+${resume.entreesDuJour} E · -${resume.sortiesDuJour} S',
                     icone: Icons.swap_horiz_rounded,
                     couleur: const Color(0xFF01226C),
                     onTap: () => context.push(Routes.mouvementsStock),
@@ -169,6 +182,7 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                     key: const Key('kpi-stock-produits'),
                     titre: 'Produits',
                     valeur: '${resume.produits}',
+                    sousTitre: '${resume.totalArticlesEnStock} en stock',
                     icone: Icons.category_rounded,
                     couleur: AppColors.green,
                     onTap: () => context.push(Routes.produits),
@@ -178,14 +192,34 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
 
-            // 3. Actions Rapides
-            Text(
-              'Actions rapides',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                fontSize: 17,
-                color: AppColors.ink,
-              ),
+            // 4. Raccourcis & Actions Rapides
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Actions rapides',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 17,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+                if (resume.ruptures > 0 || resume.faibles > 0)
+                  TextButton.icon(
+                    key: const Key('btn-action-rupture'),
+                    onPressed: () => context.push(Routes.stock),
+                    icon: const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFDF9540)),
+                    label: Text(
+                      '${resume.ruptures + resume.faibles} alerte${resume.ruptures + resume.faibles > 1 ? "s" : ""}',
+                      style: const TextStyle(
+                        color: Color(0xFFDF9540),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
@@ -203,12 +237,12 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _ActionRapideBouton(
-                    key: const Key('btn-action-sortie'),
-                    titre: '− Sortie',
-                    sousTitre: 'Perte / Casse',
-                    icone: Icons.remove_circle_outline_rounded,
-                    couleur: const Color(0xFFE53935),
-                    onTap: () => _declencherAction(context, ref, OperationStock.sortie, boutiqueCouranteId),
+                    key: const Key('btn-action-alertes'),
+                    titre: '⚠️ Alertes',
+                    sousTitre: 'Ruptures & réappro',
+                    icone: Icons.notification_important_rounded,
+                    couleur: const Color(0xFFDF9540),
+                    onTap: () => context.push(Routes.stock),
                   ),
                 ),
               ],
@@ -239,6 +273,43 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                 ),
               ],
             ),
+            if (resume.ruptures > 0 || resume.faibles > 0) ...[
+              const SizedBox(height: 10),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => context.push(Routes.stock),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDF9540).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFDF9540).withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications_active_rounded, color: Color(0xFFDF9540), size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Consulter les ruptures : ${resume.ruptures} rupture(s) et ${resume.faibles} stock(s) critique(s)',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFDF9540),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: Color(0xFFDF9540), size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.xl),
 
             // 4. Alertes Stock
@@ -391,6 +462,7 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
   ) async {
     final produit = await choisirProduit(
       context,
+      boutiqueId: perimetreId,
       titre: switch (op) {
         OperationStock.entree => 'Choisir le produit à entrer',
         OperationStock.sortie => 'Choisir le produit à sortir',
@@ -409,6 +481,159 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
   }
 }
 
+class _ValeurTotaleStockCard extends StatelessWidget {
+  const _ValeurTotaleStockCard({
+    super.key,
+    required this.valeurFormatee,
+    required this.totalArticles,
+    required this.totalReferences,
+    required this.onTap,
+  });
+
+  final String valeurFormatee;
+  final int totalArticles;
+  final int totalReferences;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF01226C),
+                Color(0xFF07308F),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF01226C).withValues(alpha: 0.22),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDF9540).withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.inventory_2_rounded, color: Color(0xFFDF9540), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'VALEUR TOTALE DU STOCK',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFFDF9540),
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 13),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  valeurFormatee,
+                  style: const TextStyle(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 3),
+              const Text(
+                'Valorisation marchande immobilisée',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.category_rounded, size: 13, color: Colors.white70),
+                        const SizedBox(width: 5),
+                        Text(
+                          '$totalReferences références gérées',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.all_inbox_rounded, size: 13, color: Colors.white70),
+                        const SizedBox(width: 5),
+                        Text(
+                          '$totalArticles articles en stock',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _KpiStockCard extends StatelessWidget {
   const _KpiStockCard({
     super.key,
@@ -417,6 +642,7 @@ class _KpiStockCard extends StatelessWidget {
     required this.icone,
     required this.couleur,
     required this.onTap,
+    this.sousTitre,
   });
 
   final String titre;
@@ -424,6 +650,7 @@ class _KpiStockCard extends StatelessWidget {
   final IconData icone;
   final Color couleur;
   final VoidCallback onTap;
+  final String? sousTitre;
 
   @override
   Widget build(BuildContext context) {
@@ -433,11 +660,11 @@ class _KpiStockCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: couleur.withValues(alpha: 0.18)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.02),
@@ -455,29 +682,47 @@ class _KpiStockCard extends StatelessWidget {
                   color: couleur.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icone, color: couleur, size: 22),
+                child: Icon(icone, color: couleur, size: 21),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      valeur,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.ink,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        valeur,
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.ink,
+                        ),
                       ),
                     ),
                     Text(
                       titre,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.muted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
                       ),
                     ),
+                    if (sousTitre != null)
+                      Text(
+                        sousTitre!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.muted,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -595,61 +840,76 @@ class _AlerteProduitItem extends StatelessWidget {
     final isRupture = statut == StatutStock.rupture;
     final couleur = isRupture ? const Color(0xFFE53935) : const Color(0xFFDF9540);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onVoir,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: couleur.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        children: [
-          ProduitImage(produit: produit, taille: 44),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  produit.nom,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppColors.ink),
-                ),
-                const SizedBox(height: 2),
-                Row(
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: couleur.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            children: [
+              ProduitImage(produit: produit, taille: 44),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: couleur.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        isRupture ? '🔴 Rupture' : '🟠 Faible (${formatQte(context, quantiteConvertie)} ${uniteAffichee.nom})',
-                        style: TextStyle(
-                          color: couleur,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
+                    Text(
+                      produit.nom,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 2),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: couleur.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isRupture ? '🔴 Rupture' : '🟠 Faible (${formatQte(context, quantiteConvertie)} ${uniteAffichee.nom})',
+                            style: TextStyle(
+                              color: couleur,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (boutiques.length > 1)
+                          Text(
+                            produit.estGlobal ? '🌐 Global' : '🏪',
+                            style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600),
+                          ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              IconButton.filledTonal(
+                tooltip: '+ Entrée',
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.green.withValues(alpha: 0.12),
+                  foregroundColor: AppColors.green,
+                ),
+                onPressed: onEntree,
+                icon: const Icon(Icons.add_rounded, size: 20),
+              ),
+            ],
           ),
-          IconButton.filledTonal(
-            tooltip: '+ Entrée',
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.green.withValues(alpha: 0.12),
-              foregroundColor: AppColors.green,
-            ),
-            onPressed: onEntree,
-            icon: const Icon(Icons.add_rounded, size: 20),
-          ),
-        ],
+        ),
       ),
     );
   }

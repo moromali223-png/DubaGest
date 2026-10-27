@@ -61,7 +61,7 @@ class _DettesVuePrincipaleState extends ConsumerState<DettesVuePrincipale> {
           : FloatingActionButton.extended(
               key: const Key('engagement-add'),
               heroTag: 'engagement-add',
-              backgroundColor: const Color(0xFF01226C),
+              backgroundColor: estRecevoir ? AppColors.green : AppColors.dette,
               foregroundColor: Colors.white,
               onPressed: () => context.push(Routes.engagementNouveau(_sens)),
               icon: const Icon(Icons.add_rounded),
@@ -80,26 +80,28 @@ class _DettesVuePrincipaleState extends ConsumerState<DettesVuePrincipale> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Sélecteur À recevoir / À payer
-                      SegmentedButton<SensEngagement>(
-                        segments: [
-                          ButtonSegment(
-                            value: SensEngagement.aRecevoir,
-                            label: Text(l10n.financeToReceive, style: const TextStyle(fontWeight: FontWeight.w700)),
-                            icon: const Icon(Icons.south_west_rounded, size: 16),
-                          ),
-                          ButtonSegment(
-                            value: SensEngagement.aPayer,
-                            label: Text(l10n.financeToPay, style: const TextStyle(fontWeight: FontWeight.w700)),
-                            icon: const Icon(Icons.north_east_rounded, size: 16),
-                          ),
-                        ],
-                        selected: {_sens},
-                        onSelectionChanged: (s) {
-                          setState(() => _sens = s.first);
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.md),
+                      // Sélecteur À recevoir / À payer (affiché uniquement si l'utilisateur a le droit aux dépenses / dettes fournisseurs)
+                      if (droits.voirDepenses) ...[
+                        SegmentedButton<SensEngagement>(
+                          segments: [
+                            ButtonSegment(
+                              value: SensEngagement.aRecevoir,
+                              label: Text(l10n.financeToReceive, style: const TextStyle(fontWeight: FontWeight.w700)),
+                              icon: const Icon(Icons.south_west_rounded, size: 16),
+                            ),
+                            ButtonSegment(
+                              value: SensEngagement.aPayer,
+                              label: Text(l10n.financeToPay, style: const TextStyle(fontWeight: FontWeight.w700)),
+                              icon: const Icon(Icons.north_east_rounded, size: 16),
+                            ),
+                          ],
+                          selected: {_sens},
+                          onSelectionChanged: (s) {
+                            setState(() => _sens = s.first);
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
 
                       // Carte KPI Globale de la situation
                       tousDossiersAsync.maybeWhen(
@@ -112,25 +114,26 @@ class _DettesVuePrincipaleState extends ConsumerState<DettesVuePrincipale> {
                           return Container(
                             padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF01226C),
+                              color: estRecevoir ? AppColors.green : AppColors.detteHeader,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF01226C).withValues(alpha: 0.2),
+                                  color: (estRecevoir ? AppColors.green : AppColors.detteHeader).withValues(alpha: 0.25),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
                             child: Column(
+                              
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  estRecevoir ? 'Total à recevoir' : 'Total à payer',
+                                  estRecevoir ? 'Total à recevoir (Créances)' : 'Total à payer (Dettes)',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white.withValues(alpha: 0.8),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -148,6 +151,7 @@ class _DettesVuePrincipaleState extends ConsumerState<DettesVuePrincipale> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const Icon(Icons.people_alt_rounded, size: 16, color: Colors.white70),
                                         const SizedBox(width: 6),
@@ -157,28 +161,37 @@ class _DettesVuePrincipaleState extends ConsumerState<DettesVuePrincipale> {
                                         ),
                                       ],
                                     ),
-                                    if (nbEcheancesRetard > 0 || totalRetard > 0)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.negative,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.error_outline_rounded, size: 13, color: Colors.white),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '$nbEcheancesRetard en retard (${l10n.montant(totalRetard, devise)})',
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w800,
-                                                color: Colors.white,
+                                    if (nbEcheancesRetard > 0 || totalRetard > 0) ...[
+                                      const SizedBox(width: AppSpacing.xs),
+                                      Flexible(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.negative,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.error_outline_rounded, size: 13, color: Colors.white),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  '$nbEcheancesRetard en retard (${l10n.montant(totalRetard, devise)})',
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
+                                    ],
                                   ],
                                 ),
                               ],
@@ -360,6 +373,7 @@ class _SliverListeEcheances extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final devise = ref.watch(deviseProvider);
+    final estRecevoir = sens == SensEngagement.aRecevoir;
 
     return echeancesAsync.when(
       loading: () => const SliverFillRemaining(
@@ -477,7 +491,7 @@ class _SliverListeEcheances extends ConsumerWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
-                            color: estRetard ? AppColors.negative : const Color(0xFF01226C),
+                            color: estRetard ? AppColors.negative : (estRecevoir ? AppColors.green : AppColors.dette),
                           ),
                         ),
                         const SizedBox(height: 2),

@@ -33,13 +33,31 @@ class PrestationPhotosSection extends ConsumerStatefulWidget {
 class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSection> {
   final _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    _recupererPhotoPerdue();
+  }
+
+  Future<void> _recupererPhotoPerdue() async {
+    try {
+      final response = await _picker.retrieveLostData();
+      if (response.isEmpty || response.file == null) return;
+      if (!mounted) return;
+      final taille = await response.file!.length();
+      _ouvrirDialogueCategorie(response.file!.path, taille);
+    } catch (_) {
+      // Ignorer si pas de données perdues
+    }
+  }
+
   Future<void> _capturerPhoto(ImageSource source) async {
     try {
       final xFile = await _picker.pickImage(
         source: source,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 82,
+        maxWidth: 1280,
+        maxHeight: 1280,
+        imageQuality: 75,
       );
       if (xFile == null || !mounted) return;
 
@@ -82,10 +100,10 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF01226C).withValues(alpha: 0.1),
+                          color: AppColors.greenSoft,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.camera_alt_outlined, color: Color(0xFF01226C)),
+                        child: const Icon(Icons.camera_alt_outlined, color: AppColors.green),
                       ),
                       const SizedBox(width: 12),
                       const Expanded(
@@ -98,7 +116,7 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                             ),
                             Text(
                               'Sélectionnez la catégorie du dossier',
-                              style: TextStyle(fontSize: 12, color: AppColors.muted),
+                              style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
@@ -106,7 +124,7 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text('Catégorie de la photo *', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  const Text('Catégorie de la photo *', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -115,9 +133,9 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                       for (final cat in CategoriePhoto.values)
                         ChoiceChip(
                           avatar: Text(cat.emoji),
-                          label: Text(cat.libelle, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                          label: Text(cat.libelle, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
                           selected: categorieChoisie == cat,
-                          selectedColor: const Color(0xFF01226C),
+                          selectedColor: AppColors.green,
                           labelStyle: TextStyle(color: categorieChoisie == cat ? Colors.white : AppColors.ink),
                           onSelected: (selected) {
                             if (selected) {
@@ -192,10 +210,10 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF01226C).withValues(alpha: 0.1),
+                  color: AppColors.greenSoft,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.photo_library_outlined, size: 18, color: Color(0xFF01226C)),
+                child: const Icon(Icons.photo_library_outlined, size: 18, color: AppColors.green),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -204,11 +222,11 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                   children: [
                     Text(
                       'Photographies du dossier (${widget.photos.length})',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppColors.ink),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: AppColors.ink, letterSpacing: -0.2),
                     ),
                     const Text(
                       'État initial, progression, résultat & preuve de remise',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.muted),
+                      style: TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -219,7 +237,7 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                   icon: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF01226C),
+                      color: AppColors.green,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Row(
@@ -229,7 +247,7 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                         SizedBox(width: 4),
                         Text(
                           'Photo',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
                         ),
                       ],
                     ),
@@ -240,9 +258,9 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                       value: ImageSource.camera,
                       child: Row(
                         children: [
-                          Icon(Icons.camera_alt_outlined, color: Color(0xFF01226C)),
+                          Icon(Icons.camera_alt_outlined, color: AppColors.green),
                           SizedBox(width: 10),
-                          Text('Prendre une photo'),
+                          Text('Prendre une photo', style: TextStyle(fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -250,9 +268,9 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
                       value: ImageSource.gallery,
                       child: Row(
                         children: [
-                          Icon(Icons.photo_library_outlined, color: Color(0xFF01226C)),
+                          Icon(Icons.photo_library_outlined, color: AppColors.green),
                           SizedBox(width: 10),
-                          Text('Choisir dans la galerie'),
+                          Text('Choisir dans la galerie', style: TextStyle(fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),

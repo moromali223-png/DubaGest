@@ -16,6 +16,7 @@ import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../../finances/presentation/providers/finances_providers.dart';
 import '../../../modules/domain/entities/app_module.dart';
 import '../../../navigation/presentation/providers/navigation_providers.dart';
+import '../../../super_admin/presentation/providers/super_admin_providers.dart';
 import '../widgets/deconnexion.dart';
 
 class ParametresPage extends ConsumerWidget {
@@ -28,6 +29,7 @@ class ParametresPage extends ConsumerWidget {
     final ctx = ref.watch(contexteActifProvider);
     final auth = ref.watch(authStateProvider).value;
     final sync = ref.watch(syncStateProvider).value ?? const SyncState();
+    final estSuperAdmin = ref.watch(estSuperAdminProvider).value ?? false;
     final email = auth is Authenticated ? auth.user.email : null;
 
     Widget section(String title, List<Widget> children) => Padding(
@@ -80,6 +82,28 @@ class ParametresPage extends ConsumerWidget {
                 onTap: () => context.go(Routes.changePassword),
               ),
             ]),
+            if (estSuperAdmin)
+              section('Administration Centrale', [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.shield_rounded, color: Colors.white, size: 20),
+                  ),
+                  title: const Text(
+                    'Console Super Admin DubaGest',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: const Text('Supervision des entreprises, accès sponsorisés, journal d\'audit'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.go(Routes.superAdmin),
+                ),
+              ]),
             section(l10n.languageLabel, const [LanguageList()]),
             if (ctx != null)
               section(l10n.settingsEntreprise, [

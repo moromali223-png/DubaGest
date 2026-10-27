@@ -13,6 +13,123 @@ class SyncStatusButton extends ConsumerWidget {
   /// Carré arrondi bordé (en-tête de l'accueil).
   final bool boxed;
 
+  void _action(BuildContext context, WidgetRef ref, SyncState state) {
+    ref.read(syncEngineProvider).requestSync(force: true);
+
+    if (state.phase == SyncPhase.error || state.pendingCount > 0) {
+      showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (ctx) => Consumer(
+          builder: (ctx, ref, _) {
+            final currentState = ref.watch(syncStateProvider).value ?? state;
+            final isSyncing = currentState.phase == SyncPhase.syncing;
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: currentState.phase == SyncPhase.error
+                                ? Colors.red.withValues(alpha: 0.12)
+                                : const Color(0xFF1E7E4E).withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            currentState.phase == SyncPhase.error
+                                ? Icons.sync_problem_rounded
+                                : Icons.sync_rounded,
+                            color: currentState.phase == SyncPhase.error
+                                ? Colors.red
+                                : const Color(0xFF1E7E4E),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Synchronisation',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                              ),
+                              Text(
+                                isSyncing
+                                    ? 'Synchronisation en cours...'
+                                    : (currentState.pendingCount > 0
+                                        ? '${currentState.pendingCount} élément(s) en attente d\'envoi'
+                                        : 'Toutes les données sont synchronisées'),
+                                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (currentState.lastError != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.info_outline_rounded, color: Colors.red, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                currentState.lastError!,
+                                style: const TextStyle(fontSize: 12.5, color: Colors.red, height: 1.3),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                      onPressed: isSyncing
+                          ? null
+                          : () {
+                              ref.read(syncEngineProvider).requestSync(force: true);
+                            },
+                      icon: isSyncing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.refresh_rounded),
+                      label: Text(isSyncing ? 'Synchronisation...' : 'Synchroniser maintenant'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Synchronisation avec le serveur lancée...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(syncStateProvider).value ?? const SyncState();
@@ -31,7 +148,7 @@ class SyncStatusButton extends ConsumerWidget {
     return IconButton(
       style: boxed ? headerIconButtonStyle(context) : null,
       tooltip: label,
-      onPressed: () => ref.read(syncEngineProvider).requestSync(),
+      onPressed: () => _action(context, ref, state),
       icon: Badge(
         isLabelVisible: state.pendingCount > 0,
         label: Text('${state.pendingCount}'),

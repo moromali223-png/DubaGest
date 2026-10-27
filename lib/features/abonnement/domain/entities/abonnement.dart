@@ -57,6 +57,7 @@ class Abonnement {
     required this.statut,
     required this.dateDebut,
     this.dateFin,
+    this.typeFacturation = 'COMMERCIAL',
   });
 
   final String id;
@@ -64,6 +65,9 @@ class Abonnement {
   final AbonnementStatut statut;
   final DateTime dateDebut;
   final DateTime? dateFin;
+  final String typeFacturation; // 'COMMERCIAL' ou 'SPONSORISE'
+
+  bool get estSponsorise => typeFacturation.toUpperCase() == 'SPONSORISE';
 
   bool estEnVigueur(DateTime now) =>
       (statut == AbonnementStatut.essai || statut == AbonnementStatut.actif) &&
@@ -75,6 +79,9 @@ class Abonnement {
 class ConsommationAbonnement {
   const ConsommationAbonnement({
     required this.utilisateurs,
+    this.utilisateursActifs,
+    this.invitationsEnAttente,
+    this.utilisateursMax,
     required this.membresParRole,
     required this.perimetresParActivite,
   });
@@ -86,6 +93,13 @@ class ConsommationAbonnement {
   );
 
   final int utilisateurs;
+  final int? utilisateursActifs;
+  final int? invitationsEnAttente;
+  final int? utilisateursMax;
   final Map<String, int> membresParRole;
   final Map<ActiviteCode, int> perimetresParActivite;
+
+  int get actifs => utilisateursActifs ?? utilisateurs;
+  int get enAttente => invitationsEnAttente ?? 0;
+  int get totalOccupes => utilisateurs;
 }

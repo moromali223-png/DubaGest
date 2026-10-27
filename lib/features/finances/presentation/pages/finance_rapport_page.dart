@@ -67,7 +67,7 @@ class FinanceRapportPage extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF01226C),
+                              color: AppColors.green,
                               letterSpacing: 1.2,
                             ),
                           ),

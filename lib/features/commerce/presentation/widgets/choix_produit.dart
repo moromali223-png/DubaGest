@@ -14,6 +14,7 @@ Future<Produit?> choisirProduit(
   BuildContext context, {
   String? titre,
   List<Produit> suggestions = const [],
+  String? boutiqueId,
   VoidCallback? onCreer,
 }) =>
     showModalBottomSheet<Produit>(
@@ -23,14 +24,25 @@ Future<Produit?> choisirProduit(
       showDragHandle: true,
       builder: (_) => FractionallySizedBox(
         heightFactor: 0.92,
-        child: _ChoixProduit(titre: titre, suggestions: suggestions, onCreer: onCreer),
+        child: _ChoixProduit(
+          titre: titre,
+          suggestions: suggestions,
+          boutiqueId: boutiqueId,
+          onCreer: onCreer,
+        ),
       ),
     );
 
 class _ChoixProduit extends ConsumerStatefulWidget {
-  const _ChoixProduit({this.titre, required this.suggestions, this.onCreer});
+  const _ChoixProduit({
+    this.titre,
+    required this.suggestions,
+    this.boutiqueId,
+    this.onCreer,
+  });
   final String? titre;
   final List<Produit> suggestions;
+  final String? boutiqueId;
   final VoidCallback? onCreer;
 
   @override
@@ -46,8 +58,13 @@ class _ChoixProduitState extends ConsumerState<_ChoixProduit> {
     final l10n = context.l10n;
     final etat = ref.watch(etatCommerceProvider).value;
     if (etat == null) return const Center(child: CircularProgressIndicator());
-    final produits = etat.rechercher(_recherche, categorieId: _categorie);
-    final suggestions = _recherche.isEmpty && _categorie == null ? widget.suggestions : const <Produit>[];
+    final produits = etat.rechercher(_recherche, categorieId: _categorie, boutiqueId: widget.boutiqueId);
+    final suggestions = _recherche.isEmpty && _categorie == null
+        ? [
+            for (final p in widget.suggestions)
+              if (widget.boutiqueId == null || p.estVisibleDansBoutique(widget.boutiqueId!)) p,
+          ]
+        : const <Produit>[];
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -73,7 +90,7 @@ class _ChoixProduitState extends ConsumerState<_ChoixProduit> {
                 BoutonScanner(
                   boxed: true,
                   onCode: (code) {
-                    final p = etat.parCodeBarres(code);
+                    final p = etat.parCodeBarres(code, boutiqueId: widget.boutiqueId);
                     if (p != null) {
                       Navigator.of(context).pop(p);
                     } else {
@@ -130,10 +147,10 @@ class _ChoixProduitState extends ConsumerState<_ChoixProduit> {
                     slivers: [
                       if (suggestions.isNotEmpty) ...[
                         _Titre(l10n.comUsualProducts),
-                        _Grille(produits: suggestions),
+                        _Grille(produits: suggestions, boutiqueId: widget.boutiqueId),
                         _Titre(l10n.comAllProducts),
                       ],
-                      _Grille(produits: produits),
+                      _Grille(produits: produits, boutiqueId: widget.boutiqueId),
                     ],
                   ),
           ),
@@ -157,8 +174,9 @@ class _Titre extends StatelessWidget {
 }
 
 class _Grille extends ConsumerWidget {
-  const _Grille({required this.produits});
+  const _Grille({required this.produits, this.boutiqueId});
   final List<Produit> produits;
+  final String? boutiqueId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -168,15 +186,17 @@ class _Grille extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
       sliver: SliverGrid.builder(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 150,
+          maxCrossAxisExtent: 160,
           mainAxisSpacing: AppSpacing.sm,
           crossAxisSpacing: AppSpacing.sm,
-          childAspectRatio: 0.72,
+          childAspectRatio: 0.65,
         ),
         itemCount: produits.length,
         itemBuilder: (_, i) {
           final p = produits[i];
-          final q = etat?.quantite(p.id, boutiques) ?? Qte.zero;
+          final q = boutiqueId != null
+              ? (etat?.quantiteBoutique(p.id, boutiqueId!) ?? Qte.zero)
+              : (etat?.quantite(p.id, boutiques) ?? Qte.zero);
           return Material(
             color: AppColors.surface,
             shape: RoundedRectangleBorder(
@@ -190,23 +210,31 @@ class _Grille extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AspectRatio(aspectRatio: 1, child: LayoutBuilder(
-                    builder: (_, c) => ProduitImage(produit: p, taille: c.maxWidth, rayon: 0),
-                  )),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-                    child: Text(p.nom,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, height: 1.2)),
+                  Expanded(
+                    child: ProduitImage(
+                      produit: p,
+                      largeur: double.infinity,
+                      hauteur: double.infinity,
+                      rayon: 0,
+                    ),
                   ),
-                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
+                    child: Text(
+                      p.nom,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, height: 1.2),
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
-                    child: Text(quantiteLisible(context, p, q),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      quantiteLisible(context, p, q),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),

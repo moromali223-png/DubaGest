@@ -15,7 +15,7 @@ import '../helpers/pump_app.dart';
 
 class _Audit implements AuditRepository {
   @override
-  Future<List<EntreeAudit>> lister(String entrepriseId, {int limite = 100, int? avantId}) async => [
+  Future<List<EntreeAudit>> lister(String entrepriseId, {int limite = 100, int? avantId, String? entiteId, String? entiteType}) async => [
         EntreeAudit(
           id: 2,
           action: AuditAction.modification,

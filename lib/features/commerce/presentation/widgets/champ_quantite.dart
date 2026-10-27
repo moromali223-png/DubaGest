@@ -18,6 +18,7 @@ class ChampQuantite extends StatefulWidget {
     this.label,
     this.autofocus = false,
     this.zeroAutorise = false,
+    this.afficherSelecteurUnites = true,
     this.champKey,
   });
 
@@ -30,6 +31,7 @@ class ChampQuantite extends StatefulWidget {
 
   /// Inventaire : 0 est une quantité comptée valable.
   final bool zeroAutorise;
+  final bool afficherSelecteurUnites;
   final Key? champKey;
 
   @override
@@ -41,6 +43,14 @@ class _ChampQuantiteState extends State<ChampQuantite> {
   late final _texte = TextEditingController(
     text: widget.quantiteInitiale == null ? '' : _brut(widget.quantiteInitiale!),
   );
+
+  @override
+  void didUpdateWidget(ChampQuantite oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.uniteInitiale != null && widget.uniteInitiale != oldWidget.uniteInitiale) {
+      _unite = widget.uniteInitiale!;
+    }
+  }
 
   static String _brut(Qte q) => q.estEntier ? '${q.brut ~/ Qte.echelle}' : q.valeur.toString();
 
@@ -106,7 +116,7 @@ class _ChampQuantiteState extends State<ChampQuantite> {
             _notifier();
           },
         ),
-        if (p.aPlusieursUnites) ...[
+        if (widget.afficherSelecteurUnites && p.aPlusieursUnites) ...[
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,

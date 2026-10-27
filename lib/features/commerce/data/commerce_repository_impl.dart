@@ -192,8 +192,26 @@ List<SyncEntityHandler> commerceSyncHandlers(CommerceLocalDataSource local, Sync
       OperationSyncHandler(local.ventes, local, cursors, dettesEtPaiements: true),
       OperationSyncHandler(local.transferts, local, cursors),
       StandardSyncHandler(local.stocks, cursors, local.enTransaction),
-      StandardSyncHandler(local.mouvements, cursors, local.enTransaction),
+      MouvementsSyncHandler(local.mouvements, local, cursors),
     ];
+
+/// Gestionnaire de mouvements de stock : répercute le mouvement sur le stock local
+/// dès que le serveur confirme sa création, évitant tout écart d'affichage.
+class MouvementsSyncHandler extends StandardSyncHandler {
+  MouvementsSyncHandler(
+    StockageSynchronise stockage,
+    this._local,
+    SyncCursorStore curseurs,
+  ) : super(stockage, curseurs, _local.enTransaction);
+
+  final CommerceLocalDataSource _local;
+
+  @override
+  Future<void> onPushApplied(SyncOperation op, Map<String, dynamic>? serverRow) async {
+    await _local.appliquerMouvementAuStock(op.recordId);
+    await super.onPushApplied(op, serverRow);
+  }
+}
 
 /// Opération qui crée d'autres lignes côté serveur (mouvements de stock,
 /// somme due, paiement) : leurs copies locales suivent son sort.
@@ -212,9 +230,9 @@ class OperationSyncHandler extends StandardSyncHandler {
   @override
   Future<void> onPushApplied(SyncOperation op, Map<String, dynamic>? serverRow) async {
     await super.onPushApplied(op, serverRow);
-    if (op.type != SyncOperationType.insert) return;
-    // Le serveur a créé les mouvements : ils ne s'ajoutent plus au stock
-    // affiché (le stock serveur, relu dans le même cycle, les inclut).
+    if (op.type != SyncOperationType.insert && op.type != SyncOperationType.update) return;
+    // Le serveur a validé l'opération : on répercute les mouvements sur le stock local
+    // en même temps qu'ils passent à synced, garantissant une cohérence immédiate.
     await _local.marquerMouvementsDe(op.recordId, RecordSyncStatus.synced);
     if (op.payload['paiement_id'] case final String paiementId) {
       await _local.marquerPaiement(paiementId, RecordSyncStatus.synced);

@@ -1,4 +1,3 @@
-import '../entities/finance_alert.dart';
 import '../entities/finance_health_score.dart';
 
 /// Évaluateur intelligent de la santé financière d'une entreprise.

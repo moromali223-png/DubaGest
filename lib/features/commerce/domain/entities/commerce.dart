@@ -180,6 +180,35 @@ class Produit {
   bool get aPlusieursUnites => unites.isNotEmpty;
   bool get venteEnGros => prixGros != null || unites.any((u) => u.prixGros != null);
 
+  /// Périmètre d'affectation : global à l'entreprise ou réservé à une ou plusieurs boutiques.
+  bool get estGlobal {
+    final brute = attributs['perimetres_ids'] ?? attributs['perimetre_id'];
+    if (brute == null || brute.trim().isEmpty || brute == 'GLOBAL') return true;
+    return false;
+  }
+
+  /// Liste des IDs des boutiques auxquelles ce produit est réservé (vide si global).
+  List<String> get perimetresIds {
+    final brute = attributs['perimetres_ids'] ?? attributs['perimetre_id'];
+    if (brute == null || brute.trim().isEmpty || brute == 'GLOBAL') return const [];
+    return brute
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty && s != 'GLOBAL')
+        .toList();
+  }
+
+  /// ID de boutique pour rétrocompatibilité (première boutique assignée).
+  String? get perimetreId => perimetresIds.firstOrNull;
+
+  /// Détermine si le produit est accessible pour une boutique donnée.
+  /// Un produit global est visible partout ; un produit réservé n'est visible que dans ses boutiques.
+  bool estVisibleDansBoutique(String? boutiqueId) {
+    if (estGlobal) return true;
+    if (boutiqueId == null) return true; // Contexte administrateur global
+    return perimetresIds.contains(boutiqueId);
+  }
+
   UniteVente get uniteDeBase => UniteVente(
         id: UniteVente.idBase,
         nom: uniteBase,
@@ -445,6 +474,7 @@ class LigneOperation {
     required this.facteur,
     required this.quantite,
     required this.prixUnitaire,
+    this.remise = 0,
     this.recu = Qte.zero,
   });
 
@@ -454,16 +484,24 @@ class LigneOperation {
   final Qte facteur;
   final Qte quantite;
   final int prixUnitaire;
+  final int remise;
 
   /// Achat : quantité déjà reçue (même unité).
   final Qte recu;
 
   Qte get quantiteBase => quantite.fois(facteur);
-  int get montant => quantite.montant(prixUnitaire);
+  int get montant => (quantite.montant(prixUnitaire) - remise).clamp(0, 10000000000);
   Qte get reste => (quantite - recu).max(Qte.zero);
   bool get complete => recu >= quantite;
 
-  LigneOperation copyWith({Qte? quantite, int? prixUnitaire, Qte? recu, String? unite, Qte? facteur}) =>
+  LigneOperation copyWith({
+    Qte? quantite,
+    int? prixUnitaire,
+    int? remise,
+    Qte? recu,
+    String? unite,
+    Qte? facteur,
+  }) =>
       LigneOperation(
         id: id,
         produitId: produitId,
@@ -471,6 +509,7 @@ class LigneOperation {
         facteur: facteur ?? this.facteur,
         quantite: quantite ?? this.quantite,
         prixUnitaire: prixUnitaire ?? this.prixUnitaire,
+        remise: remise ?? this.remise,
         recu: recu ?? this.recu,
       );
 
@@ -481,6 +520,7 @@ class LigneOperation {
         'facteur': facteur.json,
         'quantite': quantite.json,
         'prix_unitaire': prixUnitaire,
+        if (remise > 0) 'remise': remise,
         if (avecRecu) 'recu': recu.json,
       };
 
@@ -491,6 +531,7 @@ class LigneOperation {
         facteur: Qte.depuis(j['facteur'] as num),
         quantite: Qte.depuis(j['quantite'] as num),
         prixUnitaire: (j['prix_unitaire'] as num).toInt(),
+        remise: (j['remise'] as num?)?.toInt() ?? 0,
         recu: Qte.depuis((j['recu'] as num?) ?? 0),
       );
 }
@@ -498,7 +539,9 @@ class LigneOperation {
 int totalLignes(Iterable<LigneOperation> lignes) => lignes.fold(0, (s, l) => s + l.montant);
 
 enum StatutAchat {
+  brouillon('BROUILLON'),
   commande('COMMANDE'),
+  envoyee('ENVOYEE'),
   recuPartiel('RECU_PARTIEL'),
   recu('RECU'),
   annule('ANNULE');
@@ -543,8 +586,16 @@ class Achat {
   final RecordSyncStatus syncStatus;
 
   bool get annule => statut == StatutAchat.annule;
-  bool get aRecevoir => statut == StatutAchat.commande || statut == StatutAchat.recuPartiel;
+  bool get estBrouillon => statut == StatutAchat.brouillon;
+  bool get estConfirmee => statut == StatutAchat.commande;
+  bool get estEnvoyee => statut == StatutAchat.envoyee;
+  bool get aRecevoir =>
+      statut == StatutAchat.commande ||
+      statut == StatutAchat.envoyee ||
+      statut == StatutAchat.recuPartiel;
   bool get refuse => syncStatus == RecordSyncStatus.syncError && version == null;
+
+  int get sousTotal => totalLignes(lignes);
 
   Achat copyWith({
     List<LigneOperation>? lignes,

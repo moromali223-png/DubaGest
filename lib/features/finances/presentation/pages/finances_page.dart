@@ -15,22 +15,17 @@ import '../../domain/entities/finances.dart';
 import '../providers/finance_dashboard_providers.dart';
 import '../providers/finances_providers.dart';
 import '../widgets/caisse_dashboard_view.dart';
-import '../widgets/card_creances_dettes.dart';
-import '../widgets/card_performance_activites.dart';
-import '../widgets/card_performance_boutiques.dart';
-import '../widgets/card_prevision_tresorerie.dart';
 import '../widgets/card_sante_financiere.dart';
-import '../widgets/chart_depenses_categories.dart';
-import '../widgets/chart_evolution_ca.dart';
-import '../widgets/chart_evolution_tresorerie.dart';
-import '../widgets/chart_marge_commerce.dart';
-import '../widgets/chart_revenus_depenses.dart';
 import '../widgets/finances_widgets.dart';
 import '../widgets/header_filtres_financiers.dart';
-import '../widgets/kpi_principaux_row.dart';
-import '../widgets/section_alertes_financieres.dart';
-import '../widgets/section_ce_qui_change.dart';
+import '../widgets/section_derniers_flux.dart';
+import '../widgets/card_conseiller_cfo.dart';
+import '../widgets/barre_raccourcis_finance.dart';
+import '../widgets/section_comptes_tresorerie.dart';
+import '../widgets/selecteur_analyse_focus.dart';
 import '../widgets/dettes_vue_principale.dart';
+import '../widgets/workspace_finances_vendeur.dart';
+import '../widgets/workspace_finances_superviseur.dart';
 import 'depenses_page.dart';
 
 /// Module Finance Centralisé — Centre financier intelligent de DUBAGEST.
@@ -47,7 +42,62 @@ class FinancesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final modules = ref.watch(navigationModelProvider)?.modulesFinances ?? const <AppModule>[];
+    final nav = ref.watch(navigationModelProvider);
+
+    // RESTRICTION RÔLE : Le Gestionnaire de Stock n'a pas accès aux dépenses ni à la trésorerie globale
+    if (nav?.isWorkspaceGestionnaireStock == true) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Finances & Stock'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go(Routes.home),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF01226C).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.inventory_2_rounded, size: 48, color: Color(0xFF01226C)),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Accès Restreint — Espace Stock',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.ink),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'La consultation des dépenses de l\'entreprise et des flux de trésorerie généraux est strictement réservée à la direction.\nLa valorisation financière de vos marchandises est consultable directement depuis votre accueil.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted, fontSize: 13.5, height: 1.4),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => context.go(Routes.home),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF01226C),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.dashboard_rounded),
+                  label: const Text('Retour à l\'accueil Stock'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final modules = nav?.modulesFinances ?? const <AppModule>[];
     if (modules.isEmpty) return const Scaffold(body: LoadingView());
 
     final module = modules.where((m) => m.code == onglet).firstOrNull;
@@ -65,13 +115,42 @@ class FinancesPage extends ConsumerWidget {
       );
     }
 
+    // WORKSPACE VENDEUR DÉDIÉ (Point de caisse & Encaissements de la boutique)
+    if (nav?.isWorkspaceVendeur == true) {
+      return const WorkspaceFinancesVendeur();
+    }
+
+    // WORKSPACE SUPERVISEUR DÉDIÉ (Caisse, Dépenses, Créances boutique)
+    if (nav?.isWorkspaceSuperviseur == true) {
+      return const WorkspaceFinancesSuperviseur();
+    }
+
     // Vue principale sans onglets en haut : Synthèse financière décisionnelle
     return Scaffold(
+      backgroundColor: const Color(0xFF0C1412),
       appBar: AppBar(
-        title: Text(l10n.navFinances),
+        backgroundColor: const Color(0xFF0C1412),
+        foregroundColor: Colors.white,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E7E4E).withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.account_balance_rounded, color: Color(0xFF2ECC71), size: 18),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              l10n.navFinances,
+              style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 18),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.description_outlined),
+            icon: const Icon(Icons.description_outlined, color: Color(0xFFA5B8B1)),
             tooltip: 'Rapport financier',
             onPressed: () => context.push(Routes.financeRapport),
           ),
@@ -85,8 +164,8 @@ class FinancesPage extends ConsumerWidget {
 
 /// Accès aux modules financiers autorisés : une carte par module, avec son
 /// chiffre clé du moment. Placé sous les indicateurs, jamais en haut.
-class _AccesModulesFinances extends ConsumerWidget {
-  const _AccesModulesFinances();
+class AccesModulesFinances extends ConsumerWidget {
+  const AccesModulesFinances({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,7 +179,9 @@ class _AccesModulesFinances extends ConsumerWidget {
       ModuleCodes.financesCreances => (
         Icons.swap_vert_rounded,
         resume == null ? null : '${l10n.financeToReceive} : ${l10n.montant(resume.aRecevoir, devise)}',
-        resume == null ? null : '${l10n.financeToPay} : ${l10n.montant(resume.aPayer, devise)}',
+        resume == null || !ref.watch(droitsFinancesProvider).voirDepenses
+            ? null
+            : '${l10n.financeToPay} : ${l10n.montant(resume.aPayer, devise)}',
       ),
       ModuleCodes.financesPaiements => (
         Icons.payments_outlined,
@@ -122,7 +203,10 @@ class _AccesModulesFinances extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(l10n.financeManage, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          l10n.financeManage,
+          style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 16),
+        ),
         const SizedBox(height: AppSpacing.sm),
         LayoutBuilder(
           builder: (context, contraintes) {
@@ -161,10 +245,10 @@ class _CarteModule extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icone, chiffre, legende) = details;
     return Material(
-      color: AppColors.surface,
+      color: const Color(0xFF141E1B),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFF223830)),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -178,11 +262,14 @@ class _CarteModule extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(12)),
-                    child: Icon(icone, color: AppColors.green, size: 20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E7E4E).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icone, color: const Color(0xFF2ECC71), size: 20),
                   ),
                   const Spacer(),
-                  const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.muted),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFF5A756D)),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -190,21 +277,21 @@ class _CarteModule extends StatelessWidget {
                 titre,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, height: 1.2),
+                style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, height: 1.2, fontSize: 13),
               ),
               const SizedBox(height: 4),
               Text(
                 chiffre ?? '—',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.green, fontSize: 13),
+                style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF2ECC71), fontSize: 13),
               ),
               if (legende != null)
                 Text(
                   legende,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                  style: const TextStyle(color: Color(0xFFA5B8B1), fontSize: 11),
                 ),
             ],
           ),
@@ -221,6 +308,7 @@ class _VueSyntheseFinances extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dataAsync = ref.watch(financeDashboardDataProvider);
+    final devise = ref.watch(deviseProvider);
 
     return ResponsiveBody(
       maxWidth: 1040,
@@ -237,6 +325,7 @@ class _VueSyntheseFinances extends ConsumerWidget {
                 padding: const EdgeInsets.all(AppSpacing.md),
                 children: [
                   HeaderFiltresFinanciers(
+                    estSurFondSombre: true,
                     onActualiser: () => ref.invalidate(etatFinancesProvider),
                     onExporter: () => context.push(Routes.financeRapport),
                   ),
@@ -245,11 +334,11 @@ class _VueSyntheseFinances extends ConsumerWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.insights_rounded, size: 48, color: AppColors.muted),
+                        Icon(Icons.insights_rounded, size: 48, color: Color(0xFF5A756D)),
                         SizedBox(height: AppSpacing.md),
                         Text(
                           'Pas encore assez de données',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                         ),
                         SizedBox(height: 6),
                         Padding(
@@ -257,14 +346,14 @@ class _VueSyntheseFinances extends ConsumerWidget {
                           child: Text(
                             'Les statistiques financières apparaîtront dès que votre activité aura enregistré ses premières opérations.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 13, color: AppColors.muted, height: 1.4),
+                            style: TextStyle(fontSize: 13, color: Color(0xFFA5B8B1), height: 1.4),
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  const _AccesModulesFinances(),
+                  const AccesModulesFinances(),
                 ],
               );
             }
@@ -272,166 +361,142 @@ class _VueSyntheseFinances extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 96),
               children: [
-                // 1. Filtres
+                // 1. En-tête exécutif DAF & Salutation
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Flexible(
+                                child: Text(
+                                  'Direction Financière',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Supervision stratégique & trésorerie en temps réel',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFA5B8B1),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Badge profil exécutif
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFF2ECC71).withValues(alpha: 0.6), width: 1.5),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Color(0xFF1B2A25),
+                        child: Icon(Icons.person_rounded, color: Color(0xFF2ECC71), size: 24),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // 2. Filtres
                 HeaderFiltresFinanciers(
+                  estSurFondSombre: true,
                   onActualiser: () => ref.invalidate(etatFinancesProvider),
                   onExporter: () => context.push(Routes.financeRapport),
                 ),
                 const SizedBox(height: AppSpacing.md),
 
-                // 2. Santé financière
-                CardSanteFinanciere(sante: data.sante, onTap: () => context.push(Routes.financeRapport)),
+                // 3. Conseiller DAF IA (AI Coach card du mockup)
+                CardConseillerCfo(
+                  sante: data.sante,
+                  previsions: data.previsions,
+                  recouvrement: data.recouvrement,
+                  devise: devise,
+                  onTap: () => context.push(Routes.financeRapport),
+                ),
                 const SizedBox(height: AppSpacing.md),
 
-                // 3. 5 KPI Majeurs
-                KpiPrincipauxRow(
-                  data: data,
+                // 4. Santé financière (Jauge concentrique + 3 métriques clés)
+                CardSanteFinanciere(
+                  sante: data.sante,
+                  chiffreAffaires: data.chiffreAffaires.valeurActuelle,
+                  chiffreAffairesPrecedent: data.chiffreAffaires.valeurPrecedente,
+                  tauxEvolutionCA: data.chiffreAffaires.tauxEvolution,
+                  tresorerieDisponible: data.tresorerieDisponible.valeurActuelle,
+                  tauxRecouvrement: data.recouvrement.tauxPourcent,
+                  devise: devise,
+                  periodeLabel: data.periode.libelleCourt(),
+                  onTap: () => context.push(Routes.financeRapport),
                   onTapCA: () => context.push(Routes.financeRevenus),
-                  onTapResultat: () => context.push(Routes.financeRapport),
                   onTapTresorerie: () => context.push(Routes.financeTresorerie),
-                  onTapARecevoir: () => context.push(Routes.financeCreancesDettes),
-                  onTapAPayer: () => context.push(Routes.financeCreancesDettes),
+                  onTapRecouvrement: () => context.push(Routes.financeCreancesDettes),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // 5. Barre de Raccourcis Financement (Style Image 2 : Caisse, Dépenses, Dettes, Analyse)
+                BarreRaccourcisFinance(
+                  onTapCaisse: () => context.push(Routes.financesOnglet(ModuleCodes.financesCaisse)),
+                  onTapDepenses: () => context.push(Routes.financesOnglet(ModuleCodes.financesDepenses)),
+                  onTapDettes: () => context.push(Routes.financesOnglet(ModuleCodes.financesCreances)),
+                  onTapAnalyse: () => context.push(Routes.financeRapport),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Modules financiers autorisés
+                const AccesModulesFinances(),
+                const SizedBox(height: AppSpacing.lg),
+
+                // 6. Situation des Comptes & Trésorerie Active (Style Image 2 "CURRENT LOANS" card)
+                SectionComptesTresorerie(
+                  data: data,
+                  devise: devise,
+                  onTapCaisse: () => context.push(Routes.financesOnglet(ModuleCodes.financesCaisse)),
+                  onTapCreances: () => context.push(Routes.financesOnglet(ModuleCodes.financesCreances)),
+                  onTapDettes: () => context.push(Routes.financesOnglet(ModuleCodes.financesCreances)),
+                  onActionPlus: () => context.push(Routes.financesOnglet(ModuleCodes.financesPaiements)),
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                // 3 bis. Accès aux modules (sous les indicateurs, pas en haut)
-                const _AccesModulesFinances(),
-                const SizedBox(height: AppSpacing.lg),
-
-                // 4. Évolution du CA
-                ChartEvolutionCA(serie: data.serieEvolutionCA, onTapDetail: () => context.push(Routes.financeRevenus)),
-                const SizedBox(height: AppSpacing.lg),
-
-                // 5. Revenus vs Dépenses & Trésorerie
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final twoCols = constraints.maxWidth >= 720;
-                    if (twoCols) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: ChartRevenusDepenses(
-                              totalRevenus: data.totalRevenus,
-                              totalDepenses: data.totalDepenses,
-                              onTapDetail: () => context.push(Routes.financeCharges),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: ChartEvolutionTresorerie(
-                              serie: data.serieEvolutionTresorerie,
-                              onTapDetail: () => context.push(Routes.financeTresorerie),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        ChartRevenusDepenses(
-                          totalRevenus: data.totalRevenus,
-                          totalDepenses: data.totalDepenses,
-                          onTapDetail: () => context.push(Routes.financeCharges),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ChartEvolutionTresorerie(
-                          serie: data.serieEvolutionTresorerie,
-                          onTapDetail: () => context.push(Routes.financeTresorerie),
-                        ),
-                      ],
-                    );
-                  },
+                // 7. Sélecteur d'Analyse Focalisée (Élimine le défilement infini !)
+                SelecteurAnalyseFocus(
+                  data: data,
+                  devise: devise,
+                  onTapDetailCA: () => context.push(Routes.financeRevenus),
+                  onTapCreances: () => context.push(Routes.financeCreancesDettes),
+                  onTapDettes: () => context.push(Routes.financeCreancesDettes),
+                  onTapDetailCharges: () => context.push(Routes.financeCharges),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
 
-                // 6. Marge brute (si Commerce actif)
-                if (data.margeCommerce != null && data.margeCommerce!.chiffreAffairesCommerce > 0) ...[
-                  ChartMargeCommerce(marge: data.margeCommerce!),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                // 7. Créances vs Dettes & Dépenses par catégorie
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final twoCols = constraints.maxWidth >= 720;
-                    if (twoCols) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: CardCreancesDettes(
-                              aRecevoir: data.aRecevoir.valeurActuelle,
-                              nombreDebiteurs: data.nombreClientsDebiteurs,
-                              creancesEnRetard: data.creancesEnRetard,
-                              aPayer: data.aPayer.valeurActuelle,
-                              nombreCreanciers: data.nombreFournisseursCreanciers,
-                              dettesEnRetard: data.dettesEnRetard,
-                              onTapCreances: () => context.push(Routes.financeCreancesDettes),
-                              onTapDettes: () => context.push(Routes.financeCreancesDettes),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: ChartDepensesCategories(
-                              categories: data.categoriesDepenses,
-                              onTapDetail: () => context.push(Routes.financeCharges),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    return Column(
-                      children: [
-                        CardCreancesDettes(
-                          aRecevoir: data.aRecevoir.valeurActuelle,
-                          nombreDebiteurs: data.nombreClientsDebiteurs,
-                          creancesEnRetard: data.creancesEnRetard,
-                          aPayer: data.aPayer.valeurActuelle,
-                          nombreCreanciers: data.nombreFournisseursCreanciers,
-                          dettesEnRetard: data.dettesEnRetard,
-                          onTapCreances: () => context.push(Routes.financeCreancesDettes),
-                          onTapDettes: () => context.push(Routes.financeCreancesDettes),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ChartDepensesCategories(
-                          categories: data.categoriesDepenses,
-                          onTapDetail: () => context.push(Routes.financeCharges),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-
-                // 8. Performance Activités & Boutiques
-                if (data.performancesActivites.length > 1) ...[
-                  CardPerformanceActivites(performances: data.performancesActivites),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                if (data.performancesBoutiques.length > 1) ...[
-                  CardPerformanceBoutiques(
-                    performances: data.performancesBoutiques,
-                    onTapBoutique: (pid) => ref.read(financePerimetreFilterProvider.notifier).filtrer(pid),
+                // Passerelle vers Intelligence Commerciale (si module accessible)
+                if (ref.watch(moduleAccessProvider(ModuleCodes.commerceIntelligence)).isAllowed) ...[
+                  _BandeauPontIntelligenceCommerciale(
+                    onTap: () => context.push(Routes.commerceIntelligence),
                   ),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.md),
                 ],
 
-                // 9. Prévision de trésorerie
-                CardPrevisionTresorerie(previsions: data.previsions),
-                const SizedBox(height: AppSpacing.lg),
-
-                // 10. Ce qui change & Alertes
-                if (data.faitsMarquants.isNotEmpty) ...[
-                  SectionCeQuiChange(faits: data.faitsMarquants),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                if (data.alertes.isNotEmpty) ...[
-                  SectionAlertesFinancieres(alertes: data.alertes),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
+                // 8. Historique des Paiements & Flux Récents (Style Image 1 "Payment History")
+                SectionDerniersFlux(
+                  onVoirTout: () => context.push(Routes.financeRapport),
+                ),
               ],
             );
           },
@@ -590,6 +655,86 @@ class _OngletCaisse extends ConsumerWidget {
     if (etat == null) return const Scaffold(body: LoadingView());
     return Scaffold(
       body: ResponsiveBody(child: CaisseDashboardView(etat: etat)),
+    );
+  }
+}
+
+class _BandeauPontIntelligenceCommerciale extends StatelessWidget {
+  const _BandeauPontIntelligenceCommerciale({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF141E1B),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFF01226C).withValues(alpha: 0.5),
+              width: 1.2,
+            ),
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF01226C).withValues(alpha: 0.25),
+                const Color(0xFF141E1B),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF01226C),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF01226C).withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.insights_rounded, color: Color(0xFFDF9540), size: 22),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Intelligence commerciale',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Marges réelles, vitesse des stocks et prévisions d’achats.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFFDF9540)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

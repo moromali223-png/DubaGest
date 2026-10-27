@@ -78,6 +78,7 @@ abstract final class ContexteSessionModel {
           statut: AbonnementStatut.parse(j['statut'] as String),
           dateDebut: DateTime.parse(j['date_debut'] as String),
           dateFin: j['date_fin'] == null ? null : DateTime.parse(j['date_fin'] as String),
+          typeFacturation: (j['type_facturation'] as String?) ?? 'COMMERCIAL',
         );
 
   static Plan? _plan(Json? j) {
@@ -151,7 +152,10 @@ abstract final class ContexteSessionModel {
       if (code != null) parActivite[code] = value as int;
     });
     return ConsommationAbonnement(
-      utilisateurs: j['utilisateurs'] as int? ?? 0,
+      utilisateurs: j['utilisateurs_occupes'] as int? ?? j['utilisateurs'] as int? ?? 0,
+      utilisateursActifs: j['utilisateurs_actifs'] as int?,
+      invitationsEnAttente: j['invitations_en_attente'] as int?,
+      utilisateursMax: j['utilisateurs_max'] as int?,
       membresParRole: ((j['membres_par_role'] as Json?) ?? const {}).cast<String, int>(),
       perimetresParActivite: parActivite,
     );

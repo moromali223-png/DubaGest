@@ -280,7 +280,7 @@ class _ConditionsConfidentialiteDialogState extends State<ConditionsConfidential
               SizedBox(height: 8),
               _InfoRow(label: 'Contact Légal', value: 'legal@dubagest.com'),
               SizedBox(height: 8),
-              _InfoRow(label: 'Support Technique', value: 'support@dubagest.com'),
+              _InfoRow(label: 'Support Technique', value: 'sphereduba@gmail.com'),
             ],
           ),
         ),

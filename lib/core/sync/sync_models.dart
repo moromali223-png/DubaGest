@@ -96,15 +96,24 @@ class SyncState {
     this.phase = SyncPhase.idle,
     this.pendingCount = 0,
     this.lastSyncedAt,
+    this.lastError,
   });
 
   final SyncPhase phase;
   final int pendingCount;
   final DateTime? lastSyncedAt;
+  final String? lastError;
 
-  SyncState copyWith({SyncPhase? phase, int? pendingCount, DateTime? lastSyncedAt}) => SyncState(
+  SyncState copyWith({
+    SyncPhase? phase,
+    int? pendingCount,
+    DateTime? lastSyncedAt,
+    String? lastError,
+  }) =>
+      SyncState(
         phase: phase ?? this.phase,
         pendingCount: pendingCount ?? this.pendingCount,
         lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+        lastError: lastError ?? this.lastError,
       );
 }

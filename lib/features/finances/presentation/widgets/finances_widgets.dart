@@ -161,7 +161,9 @@ class EtatReglementChip extends StatelessWidget {
       EtatReglement.regle => (AppColors.positiveSoft, AppColors.positive),
       EtatReglement.enRetard => (AppColors.negativeSoft, AppColors.negative),
       EtatReglement.partiel => (AppColors.warningSoft, AppColors.warning),
-      EtatReglement.aRegler => (AppColors.greenSoft, AppColors.ink),
+      EtatReglement.aRegler => sens == SensEngagement.aRecevoir
+          ? (AppColors.greenSoft, AppColors.green)
+          : (AppColors.detteSoft, AppColors.dette),
       EtatReglement.annule => (AppColors.border, AppColors.muted),
     };
     return Container(
@@ -250,7 +252,7 @@ class ChampMontant extends ConsumerWidget {
 Future<({Contact? contact})?> choisirContact(
   BuildContext context, {
   bool aucun = true,
-  RelationContact relation = RelationContact.fournisseur,
+  RelationContact relation = RelationContact.client,
 }) =>
     showModalBottomSheet<({Contact? contact})>(
       context: context,
@@ -263,7 +265,7 @@ Future<({Contact? contact})?> choisirContact(
 class DialogNouveauContactRapide extends ConsumerStatefulWidget {
   const DialogNouveauContactRapide({
     super.key,
-    this.relationInitiale = RelationContact.fournisseur,
+    this.relationInitiale = RelationContact.client,
     this.nomInitial,
   });
 
@@ -272,7 +274,7 @@ class DialogNouveauContactRapide extends ConsumerStatefulWidget {
 
   static Future<Contact?> afficher(
     BuildContext context, {
-    RelationContact relation = RelationContact.fournisseur,
+    RelationContact relation = RelationContact.client,
     String? nomInitial,
   }) =>
       showDialog<Contact>(
@@ -423,6 +425,51 @@ class _DialogNouveauContactRapideState extends ConsumerState<DialogNouveauContac
                   prefixIcon: Icon(Icons.phone_outlined),
                 ),
               ),
+              const SizedBox(height: AppSpacing.sm),
+              const Text(
+                'Rôle / Relation :',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                children: [
+                  FilterChip(
+                    key: const Key('contact-rapide-role-client'),
+                    label: const Text('Client'),
+                    avatar: const Icon(Icons.person_pin_circle_outlined, size: 16),
+                    selected: _relations.contains(RelationContact.client),
+                    selectedColor: AppColors.greenSoft,
+                    checkmarkColor: AppColors.green,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _relations.add(RelationContact.client);
+                        } else if (_relations.length > 1) {
+                          _relations.remove(RelationContact.client);
+                        }
+                      });
+                    },
+                  ),
+                  FilterChip(
+                    key: const Key('contact-rapide-role-fournisseur'),
+                    label: const Text('Fournisseur'),
+                    avatar: const Icon(Icons.local_shipping_outlined, size: 16),
+                    selected: _relations.contains(RelationContact.fournisseur),
+                    selectedColor: AppColors.detteSoft,
+                    checkmarkColor: AppColors.dette,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _relations.add(RelationContact.fournisseur);
+                        } else if (_relations.length > 1) {
+                          _relations.remove(RelationContact.fournisseur);
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -449,7 +496,7 @@ class _DialogNouveauContactRapideState extends ConsumerState<DialogNouveauContac
 }
 
 class _ChoixContact extends ConsumerStatefulWidget {
-  const _ChoixContact({required this.aucun, this.relation = RelationContact.fournisseur});
+  const _ChoixContact({required this.aucun, this.relation = RelationContact.client});
   final bool aucun;
   final RelationContact relation;
 
@@ -588,7 +635,7 @@ class ChampContact extends ConsumerWidget {
     required this.contactId,
     required this.onChanged,
     this.label,
-    this.relation = RelationContact.fournisseur,
+    this.relation = RelationContact.client,
   });
 
   final String? contactId;

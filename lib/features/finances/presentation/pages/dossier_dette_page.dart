@@ -168,8 +168,10 @@ class _ContenuDossierDette extends ConsumerWidget {
                             radius: 26,
                             backgroundColor: dossier.estEnRetard
                                 ? AppColors.negativeSoft
-                                : const Color(0xFF01226C).withValues(alpha: 0.1),
-                            foregroundColor: dossier.estEnRetard ? AppColors.negative : const Color(0xFF01226C),
+                                : (estRecevoir ? AppColors.greenSoft : AppColors.detteSoft),
+                            foregroundColor: dossier.estEnRetard
+                                ? AppColors.negative
+                                : (estRecevoir ? AppColors.green : AppColors.dette),
                             child: Text(
                               initiales,
                               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
@@ -250,7 +252,9 @@ class _ContenuDossierDette extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.w900,
-                                  color: dossier.estEnRetard ? AppColors.negative : const Color(0xFF01226C),
+                                  color: dossier.estEnRetard
+                                      ? AppColors.negative
+                                      : (estRecevoir ? AppColors.green : AppColors.dette),
                                   letterSpacing: -0.5,
                                 ),
                               ),
@@ -322,7 +326,7 @@ class _ContenuDossierDette extends ConsumerWidget {
                         child: FilledButton.icon(
                           key: const Key('dossier-bouton-paiement'),
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF01226C),
+                            backgroundColor: estRecevoir ? AppColors.green : AppColors.dette,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
@@ -370,9 +374,9 @@ class _ContenuDossierDette extends ConsumerWidget {
               controller: tabController,
               isScrollable: true,
               tabAlignment: TabAlignment.start,
-              labelColor: const Color(0xFF01226C),
+              labelColor: AppColors.ink,
               unselectedLabelColor: AppColors.muted,
-              indicatorColor: const Color(0xFF01226C),
+              indicatorColor: estRecevoir ? AppColors.green : AppColors.dette,
               indicatorWeight: 3,
               labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
@@ -434,10 +438,10 @@ class _GrilleKpisDossier extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final devise = ref.watch(deviseProvider);
+    final estRecevoir = dossier.sens == SensEngagement.aRecevoir;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final colWidth = (constraints.maxWidth - AppSpacing.sm * 3) / 4;
         final compact = constraints.maxWidth < 480;
 
         if (compact) {
@@ -474,8 +478,8 @@ class _GrilleKpisDossier extends ConsumerWidget {
                       titre: 'Reste',
                       valeur: l10n.montant(dossier.reste, devise),
                       icone: Icons.account_balance_wallet_rounded,
-                      couleur: const Color(0xFF01226C),
-                      fond: const Color(0xFF01226C).withValues(alpha: 0.08),
+                      couleur: estRecevoir ? AppColors.green : AppColors.dette,
+                      fond: estRecevoir ? AppColors.greenSoft : AppColors.detteSoft,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -521,8 +525,8 @@ class _GrilleKpisDossier extends ConsumerWidget {
                 titre: 'Reste',
                 valeur: l10n.montant(dossier.reste, devise),
                 icone: Icons.account_balance_wallet_rounded,
-                couleur: const Color(0xFF01226C),
-                fond: const Color(0xFF01226C).withValues(alpha: 0.08),
+                couleur: estRecevoir ? AppColors.green : AppColors.dette,
+                fond: estRecevoir ? AppColors.greenSoft : AppColors.detteSoft,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -665,15 +669,15 @@ class _SectionDettesEnCours extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF01226C).withValues(alpha: 0.08),
+                        color: (e.sens == SensEngagement.aRecevoir ? AppColors.green : AppColors.dette).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'Source : ${e.origineType}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF01226C),
+                          color: e.sens == SensEngagement.aRecevoir ? AppColors.green : AppColors.dette,
                         ),
                       ),
                     ),
@@ -700,7 +704,9 @@ class _SectionDettesEnCours extends ConsumerWidget {
                         child: _ColonneMontant(
                           titre: 'Reste',
                           valeur: l10n.montant(suivi.reste, devise),
-                          couleur: estRetard ? AppColors.negative : const Color(0xFF01226C),
+                          couleur: estRetard
+                              ? AppColors.negative
+                              : (e.sens == SensEngagement.aRecevoir ? AppColors.green : AppColors.dette),
                           gras: true,
                         ),
                       ),
@@ -776,6 +782,7 @@ class _SectionEcheancesDossier extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final devise = ref.watch(deviseProvider);
+    final estRecevoir = dossier.sens == SensEngagement.aRecevoir;
     final liste = dossier.echeances.where((e) => e.montantReste > 0).toList();
 
     if (liste.isEmpty) {
@@ -869,7 +876,7 @@ class _SectionEcheancesDossier extends ConsumerWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
-                    color: ech.estEnRetard ? AppColors.negative : const Color(0xFF01226C),
+                    color: ech.estEnRetard ? AppColors.negative : (estRecevoir ? AppColors.green : AppColors.dette),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -922,7 +929,11 @@ class _SectionHistoriqueTimeline extends ConsumerWidget {
         final (icone, couleur, fond) = switch (ev.type) {
           TypeEvenementDette.paiementRecu => (Icons.south_west_rounded, AppColors.green, AppColors.greenSoft),
           TypeEvenementDette.paiementEmis => (Icons.north_east_rounded, AppColors.negative, AppColors.negativeSoft),
-          TypeEvenementDette.creationDette => (Icons.add_shopping_cart_rounded, const Color(0xFF01226C), const Color(0xFF01226C).withValues(alpha: 0.08)),
+          TypeEvenementDette.creationDette => (
+              Icons.add_shopping_cart_rounded,
+              dossier.sens == SensEngagement.aRecevoir ? AppColors.green : AppColors.dette,
+              dossier.sens == SensEngagement.aRecevoir ? AppColors.greenSoft : AppColors.detteSoft,
+            ),
           TypeEvenementDette.annulation => (Icons.block_rounded, AppColors.muted, AppColors.background),
         };
 
@@ -1007,7 +1018,7 @@ class _SectionHistoriqueTimeline extends ConsumerWidget {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF01226C),
+                              color: AppColors.ink,
                             ),
                           ),
                         ],

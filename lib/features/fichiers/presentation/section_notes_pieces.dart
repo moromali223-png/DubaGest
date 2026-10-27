@@ -64,7 +64,7 @@ class _SectionNotesPiecesState extends ConsumerState<SectionNotesPieces> {
   }
 
   Future<FichierChoisi?> _photo() async {
-    final x = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 2000, imageQuality: 80);
+    final x = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 1280, imageQuality: 75);
     if (x == null) return null;
     return FichierChoisi(nom: x.name, octets: await x.readAsBytes(), typeMime: x.mimeType ?? 'image/jpeg');
   }

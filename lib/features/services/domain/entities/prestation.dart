@@ -137,6 +137,7 @@ class PhotoPrestation {
       );
 
   PhotoPrestation copyWith({
+    String? prestationId,
     CategoriePhoto? categorie,
     String? cheminLocal,
     String? cheminDistant,
@@ -146,7 +147,7 @@ class PhotoPrestation {
   }) =>
       PhotoPrestation(
         id: id,
-        prestationId: prestationId,
+        prestationId: prestationId ?? this.prestationId,
         categorie: categorie ?? this.categorie,
         cheminLocal: cheminLocal ?? this.cheminLocal,
         cheminDistant: cheminDistant ?? this.cheminDistant,
@@ -292,6 +293,20 @@ class Prestation {
   bool get estPayeIntegralement => total > 0 && montantRegle >= total;
   bool get aAcomptePartiel => montantRegle > 0 && montantRegle < total;
   bool get estNonPaye => total > 0 && montantRegle == 0;
+
+  /// Vrai si ce dossier est un contrat de service (durée déterminée, couvaison, location, suivi...)
+  bool get estContrat {
+    if (champsMetier['type_dossier'] == 'CONTRAT') return true;
+    if (champsMetier['type_dossier'] == 'INTERVENTION') return false;
+    return dureeEstimee != null &&
+        dureeEstimee! > 0 &&
+        (uniteDuree == UniteDuree.jours || uniteDuree == UniteDuree.mois) &&
+        (dureeMinutes == null || dureeMinutes == 0) &&
+        (echeanceHeure == null || echeanceHeure!.isEmpty);
+  }
+
+  /// Vrai si ce dossier est une intervention terrain ponctuelle ou planifiée
+  bool get estIntervention => !estContrat;
 
   DateTime? get dateEcheanceComplete {
     if (echeanceJour == null) return null;

@@ -10,6 +10,8 @@ abstract interface class InvitationRepository {
     required List<String> perimetreIds,
   });
   Future<List<Invitation>> lister(String entrepriseId);
+  Future<InvitationCreee> renvoyer(String invitationId);
+  Future<void> supprimer(String invitationId);
   Future<void> annuler(String invitationId);
   Future<InvitationApercu> verifier(String token);
 

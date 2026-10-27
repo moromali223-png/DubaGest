@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
+import '../../../roles/domain/entities/role.dart';
 import '../../domain/entities/commerce.dart';
 import '../commerce_providers.dart';
 import 'champ_quantite.dart';
@@ -58,14 +60,17 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
     final liste = op == OperationStock.entree || op == OperationStock.sortie
         ? d.boutiquesEntreeSortie
         : d.boutiquesAjustement;
-    if (liste.isNotEmpty) return liste;
-    final fallback = [for (final b in ref.read(boutiquesProvider)) b.id];
-    return fallback;
+    final base = liste.isNotEmpty ? liste : [for (final b in ref.read(boutiquesProvider)) b.id];
+    final autoriseesProduit = base.where(p.estVisibleDansBoutique).toList();
+    return autoriseesProduit.isNotEmpty ? autoriseesProduit : base;
   }
 
   @override
   void initState() {
     super.initState();
+    _note.addListener(() {
+      if (mounted) setState(() {});
+    });
     final autorisees = _autorisees;
     final souhaitee = widget.perimetreId ?? ref.read(boutiqueCouranteProvider);
     _boutique = (souhaitee != null && autorisees.contains(souhaitee))
@@ -95,7 +100,14 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
 
   bool _valide(Qte? base) {
     if (base == null || _boutique == null) return false;
-    if (op == OperationStock.inventaire) return !base.estNegatif;
+    if (op == OperationStock.inventaire) {
+      if (base.estNegatif) return false;
+      final etat = ref.read(etatCommerceProvider).value;
+      final avant = _boutique == null || etat == null ? Qte.zero : etat.quantiteBoutique(p.id, _boutique!);
+      final ecart = base - avant;
+      if (ecart.estNegatif && _note.text.trim().isEmpty) return false;
+      return true;
+    }
     if (!base.estPositif) return false;
     if (!p.venteFractionnee && !base.estEntier) return false;
     if (p.venteFractionnee && !base.estMultipleDe(p.pasMinimum)) return false;
@@ -166,6 +178,10 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final ctx = ref.watch(contexteActifProvider);
+    final estAdminOuSuperviseur = ctx?.membre?.roleCode == RoleCodes.administrateur || ctx?.membre?.roleCode == RoleCodes.superviseur;
+    final blindCount = op == OperationStock.inventaire && !estAdminOuSuperviseur;
+
     final etat = ref.watch(etatCommerceProvider).value;
     final autorisees = _autorisees;
     final base = _base;
@@ -177,6 +193,7 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
     };
     final insuffisant = (op == OperationStock.sortie || op == OperationStock.transfert) && base != null && base > avant;
     final ecart = op == OperationStock.inventaire && base != null ? base - avant : null;
+    final noteObligatoire = op == OperationStock.inventaire && ecart != null && ecart.estNegatif;
     final valide = _valide(base) && !insuffisant;
 
     final (titre, icone, bouton, couleurTheme) = switch (op) {
@@ -244,15 +261,36 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
                       children: [
                         Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15.5)),
                         const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            const Text('En stock : ', style: TextStyle(color: AppColors.muted, fontSize: 13)),
-                            Text(
-                              quantiteLisible(context, p, avant),
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.ink),
+                        if (blindCount)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF01226C).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                          ],
-                        ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.visibility_off_outlined, size: 13, color: Color(0xFF01226C)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Comptage à l\'aveugle',
+                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF01226C)),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Row(
+                            children: [
+                              const Text('En stock : ', style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                              Text(
+                                quantiteLisible(context, p, avant),
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppColors.ink),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -315,7 +353,7 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
                       setState(() => _quantite = Qte.zero);
                     },
                   ),
-                  if (!avant.estNul)
+                  if (!blindCount && !avant.estNul)
                     ActionChip(
                       label: Text('Même stock (${formatQte(context, avant.divisePar(_unite.facteur))})',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
@@ -339,6 +377,7 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
                   apres: quantiteLisible(context, p, apres),
                   ecart: ecart,
                   uniteBase: p.uniteBase,
+                  produit: p,
                 )
               else
                 AvantApres(
@@ -378,16 +417,29 @@ class _OperationSheetState extends ConsumerState<_OperationSheet> {
               ),
             ],
 
-            // 7. Note facultative
+            // 7. Note / Justification
             const SizedBox(height: AppSpacing.sm),
-            if (_noteVisible)
-              TextField(
-                controller: _note,
-                maxLength: 500,
-                decoration: InputDecoration(
-                  labelText: l10n.comNoteOptional,
-                  prefixIcon: const Icon(Icons.edit_note_rounded),
-                ),
+            if (_noteVisible || noteObligatoire)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _note,
+                    maxLength: 500,
+                    decoration: InputDecoration(
+                      labelText: noteObligatoire
+                          ? 'Justification obligatoire de l\'écart (perte/manquant) *'
+                          : l10n.comNoteOptional,
+                      prefixIcon: Icon(
+                        Icons.edit_note_rounded,
+                        color: noteObligatoire && _note.text.trim().isEmpty ? AppColors.warning : null,
+                      ),
+                      errorText: noteObligatoire && _note.text.trim().isEmpty
+                          ? 'Une note explicative est requise pour valider cet écart négatif.'
+                          : null,
+                    ),
+                  ),
+                ],
               )
             else
               Align(
@@ -428,12 +480,14 @@ class _CarteEcartInventaire extends StatelessWidget {
     required this.apres,
     required this.ecart,
     required this.uniteBase,
+    required this.produit,
   });
 
   final String avant;
   final String apres;
   final Qte ecart;
   final String uniteBase;
+  final Produit produit;
 
   @override
   Widget build(BuildContext context) {
@@ -441,6 +495,13 @@ class _CarteEcartInventaire extends StatelessWidget {
     final bool positif = ecart.estPositif;
     final couleurEcart = nul ? AppColors.muted : (positif ? AppColors.green : AppColors.warning);
     final signe = positif ? '+' : (ecart.estNegatif ? '−' : '');
+
+    // Impact financier de l'écart
+    final prixRef = (produit.prixAchat != null && produit.prixAchat! > 0)
+        ? produit.prixAchat!
+        : produit.prixDetail;
+    final impactFinancier = (ecart.absolue.valeur * prixRef).round();
+    final fmt = NumberFormat.decimalPattern('fr');
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -468,6 +529,28 @@ class _CarteEcartInventaire extends StatelessWidget {
               ),
             ],
           ),
+          if (!nul && impactFinancier > 0) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: couleurEcart.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.monetization_on_outlined, size: 16, color: couleurEcart),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Valorisation de l\'écart : $signe${fmt.format(impactFinancier)} FCFA',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: couleurEcart),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           Row(
             children: [
@@ -475,7 +558,7 @@ class _CarteEcartInventaire extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Avant inventaire', style: TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
+                    const Text('Stock théorique', style: TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(avant, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.ink)),
                   ],

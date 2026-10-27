@@ -35,7 +35,7 @@ class SyncEngine {
     required SyncCursorStore cursors,
     required ConnectivityService connectivity,
     required List<SyncEntityHandler> handlers,
-    this.periodicInterval = const Duration(minutes: 2),
+    this.periodicInterval = const Duration(seconds: 15),
     this.pullPageSize = 200,
     this.pullOverlap = const Duration(minutes: 2),
     DateTime Function()? clock,
@@ -74,6 +74,7 @@ class SyncEngine {
   SyncScope? _scope;
   Future<void>? _inFlight;
   bool _rerun = false;
+  bool _forceNext = false;
   Timer? _timer;
   StreamSubscription<bool>? _connectivitySub;
   StreamSubscription<int>? _pendingSub;
@@ -97,7 +98,7 @@ class SyncEngine {
     });
     _connectivitySub = _connectivity.onlineChanges.listen((online) {
       if (online) {
-        requestSync();
+        requestSync(force: true);
       } else {
         _emit(_state.copyWith(phase: SyncPhase.offline));
       }
@@ -106,12 +107,16 @@ class SyncEngine {
     requestSync();
   }
 
-  void requestSync() => unawaited(syncNow());
+  void requestSync({bool force = false}) {
+    if (force) _forceNext = true;
+    unawaited(syncNow(force: force));
+  }
 
   /// Lance un cycle ; si un cycle tourne déjà, en programme un nouveau à sa
   /// suite et renvoie le cycle en cours (qui inclut ce nouveau passage).
-  Future<void> syncNow() {
+  Future<void> syncNow({bool force = false}) {
     if (_scope == null) return Future.value();
+    if (force) _forceNext = true;
     if (_inFlight case final running?) {
       _rerun = true;
       return running;
@@ -125,13 +130,15 @@ class SyncEngine {
     try {
       do {
         _rerun = false;
+        final force = _forceNext;
+        _forceNext = false;
         if (!await _connectivity.isOnline()) {
           _emit(_state.copyWith(phase: SyncPhase.offline));
           return;
         }
         _emit(_state.copyWith(phase: SyncPhase.syncing));
 
-        final pushed = await _push(scope);
+        final (pushed, pushError) = await _push(scope, force: force);
         if (!identical(scope, _scope)) return;
         await _pull(scope);
         if (!identical(scope, _scope)) return;
@@ -140,6 +147,7 @@ class SyncEngine {
           phase: pushed ? SyncPhase.idle : SyncPhase.error,
           lastSyncedAt: _clock(),
           pendingCount: await _queue.pendingCount(scope.userId),
+          lastError: pushed ? null : pushError,
         ));
         // Après un échec transitoire, pas de relance immédiate : le réessai
         // suit le backoff (minuteur périodique, retour du réseau).
@@ -152,20 +160,21 @@ class SyncEngine {
       if (identical(scope, _scope)) {
         _emit(_state.copyWith(
           phase: failure.kind == FailureKind.network ? SyncPhase.offline : SyncPhase.error,
+          lastError: failure.toString(),
         ));
       }
     }
   }
 
   /// Retourne `false` si une opération a échoué de façon transitoire.
-  Future<bool> _push(SyncScope scope) async {
-    final operations = await _queue.due(scope.userId, _clock());
+  Future<(bool, String?)> _push(SyncScope scope, {bool force = false}) async {
+    final operations = await _queue.due(scope.userId, _clock(), force: force);
     // Versions serveur obtenues pendant ce cycle : une modification qui suit
     // la création (ou une autre modification) de la même ligne part de la
     // nouvelle version, même si elle a été lue avant le rebase en base.
     final versions = <(String, String), int>{};
     for (final lue in operations) {
-      if (!identical(scope, _scope)) return false;
+      if (!identical(scope, _scope)) return (false, null);
       final connue = versions[(lue.entityTable, lue.recordId)];
       final op = connue != null && lue.type != SyncOperationType.insert ? lue.withBaseVersion(connue) : lue;
       final handler = _handlers[op.entityTable];
@@ -214,10 +223,10 @@ class SyncEngine {
         await _queue.markFailed(op.id, failure.toString(), _clock().add(backoffFor(op.attempts)));
         await _queue.log('warning', 'Échec transitoire (tentative ${op.attempts + 1}) : $failure',
             opId: op.id);
-        return false;
+        return (false, failure.toString());
       }
     }
-    return true;
+    return (true, null);
   }
 
   Future<void> _pull(SyncScope scope) async {
@@ -242,7 +251,7 @@ class SyncEngine {
         if (rows.isEmpty) break;
         await handler.applyRemoteRows(rows);
         afterTs = rows.last['updated_at'] as String;
-        afterId = rows.last['id'] as String;
+        afterId = (rows.last['id'] ?? rows.last['contact_id'])?.toString() ?? '';
         await _cursors.write(handler.table, scope.entrepriseId, _encodeCursor(afterTs, afterId));
         if (rows.length < pullPageSize) break;
       }

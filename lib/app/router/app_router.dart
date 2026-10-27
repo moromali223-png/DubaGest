@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/permissions/permission_codes.dart';
 import '../../features/abonnement/presentation/pages/abonnement_page.dart';
+import '../../features/abonnement/presentation/pages/declassement_page.dart';
 import '../../features/audit/presentation/pages/audit_page.dart';
 import '../../features/authentication/domain/entities/auth_state.dart';
 import '../../features/authentication/presentation/pages/change_password_page.dart';
@@ -21,6 +22,8 @@ import '../../features/agenda/presentation/pages/agenda_page.dart';
 import '../../features/agenda/presentation/pages/echeance_form_page.dart';
 import '../../features/agenda/presentation/pages/notifications_page.dart';
 import '../../features/agenda/presentation/providers/agenda_providers.dart';
+import '../../features/documents/domain/entities/document.dart';
+import '../../features/documents/presentation/pages/document_form_page.dart';
 import '../../features/documents/presentation/pages/documents_page.dart';
 import '../../features/rapports/domain/rapports.dart';
 import '../../features/rapports/presentation/rapports_page.dart';
@@ -77,12 +80,14 @@ import '../../features/commerce/presentation/pages/produits_page.dart';
 import '../../features/commerce/presentation/pages/stock_page.dart';
 import '../../features/commerce/presentation/pages/vente_page.dart';
 import '../../features/commerce/presentation/pages/ventes_page.dart';
+import '../../features/commerce/presentation/pages/intelligence_commerciale_page.dart';
 import '../../features/utilisateurs/presentation/pages/utilisateurs_page.dart';
 import '../../features/services/presentation/pages/services_accueil_page.dart';
 import '../../features/services/presentation/pages/prestations_page.dart';
 import '../../features/services/presentation/pages/prestation_form_page.dart';
 import '../../features/services/presentation/pages/prestation_details_page.dart';
 import '../../features/services/presentation/pages/services_planning_page.dart';
+import '../../features/services/presentation/pages/planning_intervention_form_page.dart';
 import '../../features/services/presentation/pages/services_catalogue_page.dart';
 import '../../features/services/presentation/pages/service_form_page.dart';
 import '../../features/services/presentation/pages/services_devis_page.dart';
@@ -90,6 +95,29 @@ import '../../features/services/presentation/pages/devis_form_page.dart';
 import '../../features/services/presentation/pages/devis_details_page.dart';
 import '../../features/services/presentation/pages/services_rapport_page.dart';
 import '../../features/services/presentation/services_providers.dart';
+import '../../features/immobilier/presentation/pages/biens_page.dart';
+import '../../features/immobilier/presentation/pages/bien_form_page.dart';
+import '../../features/immobilier/presentation/pages/bien_details_page.dart';
+import '../../features/immobilier/presentation/pages/proprietaires_page.dart';
+import '../../features/immobilier/presentation/pages/proprietaire_details_page.dart';
+import '../../features/immobilier/presentation/pages/locataires_page.dart';
+import '../../features/immobilier/presentation/pages/locataire_details_page.dart';
+import '../../features/immobilier/presentation/pages/locations_page.dart';
+import '../../features/immobilier/presentation/pages/location_form_page.dart';
+import '../../features/immobilier/presentation/pages/location_details_page.dart';
+import '../../features/immobilier/presentation/pages/contrats_page.dart';
+import '../../features/immobilier/presentation/pages/contrat_form_page.dart';
+import '../../features/immobilier/presentation/pages/contrat_details_page.dart';
+import '../../features/immobilier/presentation/pages/loyers_page.dart';
+import '../../features/immobilier/presentation/pages/recevoir_loyer_page.dart';
+import '../../features/immobilier/presentation/pages/echeance_details_page.dart';
+import '../../features/immobilier/presentation/pages/immobilier_dashboard_page.dart';
+import '../../features/super_admin/presentation/pages/super_admin_audit_page.dart';
+import '../../features/super_admin/presentation/pages/super_admin_dashboard_page.dart';
+import '../../features/super_admin/presentation/pages/super_admin_detail_entreprise_page.dart';
+import '../../features/super_admin/presentation/pages/super_admin_entreprises_page.dart';
+import '../../features/super_admin/presentation/pages/super_admin_sponsor_page.dart';
+import '../../features/super_admin/presentation/providers/super_admin_providers.dart';
 import 'routes.dart';
 
 /// Décision de redirection globale, pure et testable.
@@ -102,6 +130,7 @@ String? globalRedirect({
   required AuthState? auth,
   required ContexteSession? contexte,
   String? invitationEnAttente,
+  bool estSuperAdmin = false,
 }) {
   String? aller(String cible) => location == cible ? null : cible;
   final isPublic = Routes.publicRoutes.contains(location);
@@ -109,6 +138,13 @@ String? globalRedirect({
   if (auth == null || auth is AuthUnknown) return aller(Routes.splash);
   if (auth is Unauthenticated) return isPublic ? null : Routes.login;
   if (auth is Authenticated && auth.passwordRecovery) return aller(Routes.resetPassword);
+
+  // Protection stricte de l'administration centrale Super Admin
+  final estRouteSuperAdmin = location.startsWith(Routes.superAdmin);
+  if (estRouteSuperAdmin) {
+    if (!estSuperAdmin) return Routes.accessDenied;
+    return null; // Autoriser l'accès pour les Super Admins même sans entreprise active
+  }
 
   // Connecté : contexte en cours de chargement ou en erreur → écran d'attente.
   if (contexte == null) return aller(Routes.splash);
@@ -135,6 +171,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   void bump(_, _) => refresh.value++;
   ref.listen(authStateProvider, bump);
   ref.listen(contexteSessionProvider, bump);
+  ref.listen(estSuperAdminProvider, bump);
   // Permissions / abonnement modifiés : les gardes sont réévaluées.
   ref.listen(navigationModelProvider, bump);
   ref.listen(invitationEnAttenteProvider, bump);
@@ -160,6 +197,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       auth: ref.read(authStateProvider).value,
       contexte: ref.read(contexteSessionProvider).value,
       invitationEnAttente: ref.read(invitationEnAttenteProvider),
+      estSuperAdmin: ref.read(estSuperAdminProvider).value ?? false,
     ),
     routes: [
       GoRoute(path: Routes.splash, builder: (_, _) => const SplashPage()),
@@ -177,6 +215,96 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => JoinCompanyPage(tokenFromLink: state.uri.queryParameters['token']),
       ),
       GoRoute(path: Routes.blocked, builder: (_, _) => const ContexteBloquePage()),
+
+      // --- Administration Centrale DubaGest (Super Admin) ---
+      GoRoute(
+        path: Routes.superAdmin,
+        redirect: (_, _) => ref.read(estSuperAdminProvider).value == true ? null : Routes.accessDenied,
+        builder: (_, _) => const SuperAdminDashboardPage(),
+      ),
+      GoRoute(
+        path: Routes.superAdminEntreprises,
+        redirect: (_, _) => ref.read(estSuperAdminProvider).value == true ? null : Routes.accessDenied,
+        builder: (_, _) => const SuperAdminEntreprisesPage(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            redirect: (_, _) => ref.read(estSuperAdminProvider).value == true ? null : Routes.accessDenied,
+            builder: (_, state) => SuperAdminDetailEntreprisePage(
+              entrepriseId: state.pathParameters['id']!,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Routes.superAdminSponsorises,
+        redirect: (_, _) => ref.read(estSuperAdminProvider).value == true ? null : Routes.accessDenied,
+        builder: (_, _) => const SuperAdminSponsorPage(),
+      ),
+      GoRoute(
+        path: Routes.superAdminAudit,
+        redirect: (_, _) => ref.read(estSuperAdminProvider).value == true ? null : Routes.accessDenied,
+        builder: (_, _) => const SuperAdminAuditPage(),
+      ),
+      GoRoute(
+        path: Routes.prestationNouvelle,
+        redirect: (_, _) => ref.read(droitsServicesProvider).peutCreerPrestations ? null : Routes.accessDenied,
+        builder: (_, state) => PrestationFormPage(
+          initialContactId: state.uri.queryParameters['contactId'],
+          initialDate: state.uri.queryParameters['date'],
+        ),
+      ),
+      GoRoute(
+        path: Routes.prestationModifier(':id'),
+        redirect: (_, _) => ref.read(droitsServicesProvider).peutModifierPrestations ? null : Routes.accessDenied,
+        builder: (_, state) => PrestationFormPage(prestationId: state.pathParameters['id']),
+      ),
+      GoRoute(
+        path: Routes.devisNouveau,
+        redirect: (_, _) => ref.read(droitsServicesProvider).peutCreerDevis ? null : Routes.accessDenied,
+        builder: (_, state) => DevisFormPage(initialContactId: state.uri.queryParameters['contactId']),
+      ),
+      GoRoute(
+        path: Routes.bienNouveau,
+        builder: (_, _) => const BienFormPage(),
+      ),
+      GoRoute(
+        path: Routes.bienModifier(':id'),
+        builder: (_, state) => BienFormPage(bienId: state.pathParameters['id']),
+      ),
+      GoRoute(
+        path: Routes.locationNouvelle,
+        builder: (_, state) => LocationFormPage(
+          initialBienId: state.uri.queryParameters['bienId'],
+          initialLocataireId: state.uri.queryParameters['locataireId'],
+        ),
+      ),
+      GoRoute(
+        path: Routes.contratNouveau,
+        builder: (_, state) => ContratFormPage(
+          initialBienId: state.uri.queryParameters['bienId'],
+          initialLocataireId: state.uri.queryParameters['locataireId'],
+        ),
+      ),
+      GoRoute(
+        path: Routes.contratModifier(':id'),
+        builder: (_, state) => ContratFormPage(contratId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.contactNew,
+        redirect: (_, _) => ref.read(droitsContactsProvider).creer ? null : Routes.accessDenied,
+        builder: (_, state) => ContactFormPage(
+          relation: switch (state.uri.queryParameters['relation']) {
+            final String r => RelationContact.tryParse(r),
+            _ => null,
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/contacts/:id/edit',
+        redirect: (_, _) => ref.read(droitsContactsProvider).modifier ? null : Routes.accessDenied,
+        builder: (_, state) => ContactFormPage(contactId: state.pathParameters['id']),
+      ),
       ShellRoute(
         builder: (context, state, child) => AppShell(location: state.uri.path, child: child),
         routes: [
@@ -188,7 +316,17 @@ final routerProvider = Provider<GoRouter>((ref) {
               moduleRoute(ModuleCodes.adminEntreprise, () => const EntreprisePage()),
               moduleRoute(ModuleCodes.adminUtilisateurs, () => const UtilisateursPage()),
               moduleRoute(ModuleCodes.adminPerimetres, () => const PerimetresPage()),
-              moduleRoute(ModuleCodes.adminAbonnement, () => const AbonnementPage()),
+              GoRoute(
+                path: 'abonnement',
+                redirect: (_, _) => guardModule(ModuleCodes.adminAbonnement),
+                builder: (_, _) => const AbonnementPage(),
+                routes: [
+                  GoRoute(
+                    path: 'declassement',
+                    builder: (_, _) => const DeclassementPage(),
+                  ),
+                ],
+              ),
               moduleRoute(ModuleCodes.adminAudit, () => const AuditPage()),
             ],
           ),
@@ -252,6 +390,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const DocumentsPage(),
             routes: [
               GoRoute(
+                path: 'new',
+                builder: (_, state) => DocumentFormPage(
+                  initialType: TypeDocument.values
+                      .where((t) => t.name == state.uri.queryParameters['type'])
+                      .firstOrNull,
+                  initialContactId: state.uri.queryParameters['contact_id'],
+                ),
+              ),
+              GoRoute(
                 path: ':id',
                 builder: (_, state) => DocumentPage(documentId: state.pathParameters['id']!),
               ),
@@ -285,15 +432,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(path: 'categories', builder: (_, _) => const CategoriesPage()),
               GoRoute(
+                path: ':id/edit',
+                redirect: (_, _) => ref.read(droitsCommerceProvider).modifierProduits ? null : Routes.accessDenied,
+                builder: (_, state) => ProduitFormPage(produitId: state.pathParameters['id']),
+              ),
+              GoRoute(
                 path: ':id',
                 builder: (_, state) => ProduitPage(produitId: state.pathParameters['id']!),
-                routes: [
-                  GoRoute(
-                    path: 'edit',
-                    redirect: (_, _) => ref.read(droitsCommerceProvider).modifierProduits ? null : Routes.accessDenied,
-                    builder: (_, state) => ProduitFormPage(produitId: state.pathParameters['id']),
-                  ),
-                ],
               ),
             ],
           ),
@@ -308,18 +453,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, state) => AchatFormPage(
                   fournisseurId: state.uri.queryParameters['fournisseur'],
                   produitId: state.uri.queryParameters['produit'],
+                  bonCommandeId: state.uri.queryParameters['bon_commande'],
                 ),
+              ),
+              GoRoute(
+                path: ':id/edit',
+                redirect: (_, _) => ref.read(droitsCommerceProvider).receptionner ? null : Routes.accessDenied,
+                builder: (_, state) => AchatFormPage(achatId: state.pathParameters['id']),
               ),
               GoRoute(
                 path: ':id',
                 builder: (_, state) => AchatPage(achatId: state.pathParameters['id']!),
-                routes: [
-                  GoRoute(
-                    path: 'edit',
-                    redirect: (_, _) => ref.read(droitsCommerceProvider).receptionner ? null : Routes.accessDenied,
-                    builder: (_, state) => AchatFormPage(achatId: state.pathParameters['id']),
-                  ),
-                ],
               ),
             ],
           ),
@@ -344,6 +488,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
+            path: Routes.commerceIntelligence,
+            redirect: (_, _) => guardModule(ModuleCodes.commerceIntelligence),
+            builder: (_, _) => const IntelligenceCommercialePage(),
+          ),
+          GoRoute(
             path: Routes.servicesAccueil,
             redirect: (_, _) => guardModule(ModuleCodes.servicesPrestations),
             builder: (_, _) => const ServicesAccueilPage(),
@@ -354,23 +503,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, state) => PrestationsPage(statutInitial: state.uri.queryParameters['statut']),
             routes: [
               GoRoute(
-                path: 'new',
-                redirect: (_, _) => ref.read(droitsServicesProvider).peutCreerPrestations ? null : Routes.accessDenied,
-                builder: (_, state) => PrestationFormPage(
-                  initialContactId: state.uri.queryParameters['contactId'],
-                  initialDate: state.uri.queryParameters['date'],
-                ),
-              ),
-              GoRoute(
                 path: ':id',
                 builder: (_, state) => PrestationDetailsPage(prestationId: state.pathParameters['id']!),
-                routes: [
-                  GoRoute(
-                    path: 'edit',
-                    redirect: (_, _) => ref.read(droitsServicesProvider).peutModifierPrestations ? null : Routes.accessDenied,
-                    builder: (_, state) => PrestationFormPage(prestationId: state.pathParameters['id']),
-                  ),
-                ],
               ),
             ],
           ),
@@ -378,6 +512,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: Routes.servicesPlanning,
             redirect: (_, _) => guardModule(ModuleCodes.servicesPrestations),
             builder: (_, state) => ServicesPlanningPage(vueInitiale: state.uri.queryParameters['vue']),
+            routes: [
+              GoRoute(
+                path: 'new',
+                redirect: (_, _) => ref.read(droitsServicesProvider).peutCreerPrestations ? null : Routes.accessDenied,
+                builder: (_, state) => PlanningInterventionFormPage(
+                  initialDate: state.uri.queryParameters['date'],
+                  initialContactId: state.uri.queryParameters['contactId'],
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: Routes.servicesCatalogue,
@@ -402,11 +546,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const ServicesDevisPage(),
             routes: [
               GoRoute(
-                path: 'new',
-                redirect: (_, _) => ref.read(droitsServicesProvider).peutCreerDevis ? null : Routes.accessDenied,
-                builder: (_, state) => DevisFormPage(initialContactId: state.uri.queryParameters['contactId']),
-              ),
-              GoRoute(
                 path: ':id',
                 builder: (_, state) => DevisDetailsPage(devisId: state.pathParameters['id']!),
               ),
@@ -418,31 +557,95 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const ServicesRapportPage(),
           ),
           GoRoute(
-            path: Routes.contacts,
-            // La garde du module s'applique aussi aux sous-routes.
-            redirect: (_, _) => guardModule(ModuleCodes.communContacts),
-            builder: (_, _) => const ContactsPage(),
+            path: Routes.immobilierBiens,
+            redirect: (_, _) => guardModule(ModuleCodes.immobilierBiens),
+            builder: (_, _) => const BiensPage(),
             routes: [
               GoRoute(
-                path: 'new',
-                redirect: (_, _) => ref.read(droitsContactsProvider).creer ? null : Routes.accessDenied,
-                builder: (_, state) => ContactFormPage(
-                  relation: switch (state.uri.queryParameters['relation']) {
-                    final String r => RelationContact.tryParse(r),
-                    _ => null,
-                  },
+                path: ':id',
+                builder: (_, state) => BienDetailsPage(bienId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.immobilierProprietaires,
+            redirect: (_, _) => guardModule(ModuleCodes.immobilierProprietaires),
+            builder: (_, _) => const ProprietairesPage(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => ProprietaireDetailsPage(proprietaireId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.immobilierLocataires,
+            redirect: (_, _) => guardModule(ModuleCodes.immobilierLocataires),
+            builder: (_, _) => const LocatairesPage(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => LocataireDetailsPage(locataireId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.immobilierLocations,
+            redirect: (_, _) => guardModule(ModuleCodes.immobilierLocations),
+            builder: (_, _) => const LocationsPage(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => LocationDetailsPage(locationId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.immobilierContrats,
+            redirect: (_, _) => guardModule(ModuleCodes.immobilierContrats),
+            builder: (_, _) => const ContratsPage(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, state) => ContratDetailsPage(contratId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.immobilierLoyers,
+            redirect: (_, _) => guardModule(ModuleCodes.immobilierLoyers),
+            builder: (_, _) => const LoyersPage(),
+            routes: [
+              GoRoute(
+                path: 'recevoir',
+                builder: (_, state) => RecevoirLoyerPage(
+                  echeanceIdInitiale: state.uri.queryParameters['echeanceId'],
+                  bienIdInitial: state.uri.queryParameters['bienId'],
+                  locataireIdInitial: state.uri.queryParameters['locataireId'],
                 ),
               ),
               GoRoute(
                 path: ':id',
+                builder: (_, state) => EcheanceDetailsPage(echeanceId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: Routes.immobilierDashboard,
+            redirect: (_, _) => guardModule(ModuleCodes.immobilierBiens),
+            builder: (_, _) => const ImmobilierDashboardPage(),
+          ),
+          GoRoute(
+            path: Routes.contacts,
+            // La garde du module s'applique aussi aux sous-routes.
+            redirect: (_, _) => guardModule(ModuleCodes.communContacts),
+            builder: (_, state) => ContactsPage(
+              initialRelation: RelationContact.tryParse(state.uri.queryParameters['relation'] ?? ''),
+            ),
+            routes: [
+              GoRoute(
+                path: ':id',
                 builder: (_, state) => ContactDetailPage(contactId: state.pathParameters['id']!),
-                routes: [
-                  GoRoute(
-                    path: 'edit',
-                    redirect: (_, _) => ref.read(droitsContactsProvider).modifier ? null : Routes.accessDenied,
-                    builder: (_, state) => ContactFormPage(contactId: state.pathParameters['id']),
-                  ),
-                ],
               ),
             ],
           ),

@@ -48,6 +48,7 @@ class GererServices {
   // --- PRESTATIONS ---
 
   Future<Prestation> creerPrestation({
+    String? id,
     required String entrepriseId,
     String? perimetreId,
     String? contactId,
@@ -64,15 +65,21 @@ class GererServices {
     String? responsableId,
     String? lieu,
     String? note,
+    int montantRegle = 0,
+    List<PhotoPrestation> photos = const [],
+    Map<String, dynamic> champsMetier = const {},
+    MetierCode metierCode = MetierCode.generique,
   }) {
     final sousTotal = lignes.fold<int>(0, (sum, l) => sum + l.totalLigne);
     final total = (sousTotal - remise).clamp(0, 1000000000000);
 
     final prestation = Prestation(
-      id: _uuid.v4(),
+      id: id ?? _uuid.v4(),
       entrepriseId: entrepriseId,
       perimetreId: perimetreId,
       contactId: contactId,
+      metierCode: metierCode,
+      champsMetier: champsMetier,
       titre: titre.trim(),
       description: description?.trim(),
       lignes: lignes,
@@ -88,6 +95,8 @@ class GererServices {
       responsableId: responsableId,
       lieu: lieu?.trim(),
       note: note?.trim(),
+      montantRegle: montantRegle,
+      photos: photos,
     );
 
     return _repository.creerPrestation(prestation);

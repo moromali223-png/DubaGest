@@ -21,7 +21,8 @@ abstract interface class SyncQueueStore {
   });
 
   /// Opérations prêtes à être envoyées pour cet utilisateur, dans l'ordre.
-  Future<List<SyncOperation>> due(String userId, DateTime now);
+  /// Si [force] est vrai, ignore le délai de backoff pour réessayez immédiatement.
+  Future<List<SyncOperation>> due(String userId, DateTime now, {bool force = false});
   Future<void> markSyncing(String opId);
   Future<void> remove(String opId);
   Future<void> markFailed(String opId, String error, DateTime nextAttemptAt);

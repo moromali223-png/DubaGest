@@ -13,7 +13,7 @@ import '../../domain/services/etat_commerce.dart';
 import '../commerce_providers.dart';
 import '../widgets/choix_contact.dart';
 import '../widgets/commerce_widgets.dart';
-import '../widgets/mouvement_tuile.dart';
+import '../widgets/historique_entite.dart';
 import '../widgets/operation_stock.dart';
 import 'produit_form_page.dart' show libelleAttribut;
 
@@ -76,12 +76,10 @@ class _Fiche extends ConsumerWidget {
     final p = produit;
     final droits = ref.watch(droitsCommerceProvider);
     final visibles = ref.watch(boutiquesVisiblesProvider);
-    final toutes = [for (final b in ref.watch(boutiquesProvider)) b.id];
     final q = etat.quantite(p.id, visibles);
     final statut = etat.statut(p, q);
     final categorie = etat.categorie(p.categorieId);
     final racine = etat.racine(p.categorieId);
-    final mouvements = etat.mouvementsDe(produitId: p.id, boutiques: toutes);
     final fournisseurs = {
       ?p.fournisseurId,
       for (final a in etat.achats)
@@ -103,7 +101,7 @@ class _Fiche extends ConsumerWidget {
                   onPressed: () => context.push(Routes.produitModifier(p.id)),
                   icon: const Icon(Icons.edit_outlined),
                 ),
-              if (droits.modifierProduits)
+              if (droits.peutArchiverProduits)
                 PopupMenuButton<String>(
                   onSelected: (_) => _archiver(context, ref),
                   itemBuilder: (_) => [
@@ -145,6 +143,43 @@ class _Fiche extends ConsumerWidget {
                             Text('· ${p.reference}', style: const TextStyle(color: AppColors.muted)),
                           if (p.codeBarres != null)
                             Text('· ▥ ${p.codeBarres}', style: const TextStyle(color: AppColors.muted)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: p.estGlobal
+                                  ? const Color(0xFF01226C).withValues(alpha: 0.08)
+                                  : const Color(0xFFDF9540).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: p.estGlobal
+                                    ? const Color(0xFF01226C).withValues(alpha: 0.2)
+                                    : const Color(0xFFDF9540).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  p.estGlobal ? Icons.public_rounded : Icons.storefront_rounded,
+                                  size: 13,
+                                  color: p.estGlobal ? const Color(0xFF01226C) : const Color(0xFFDF9540),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  p.estGlobal
+                                      ? 'Catalogue Global'
+                                      : (p.perimetresIds.length > 1
+                                          ? '${p.perimetresIds.length} boutiques'
+                                          : nomBoutique(ref, p.perimetreId ?? '')),
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: p.estGlobal ? const Color(0xFF01226C) : const Color(0xFFDF9540),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           if (!p.estActif)
                             Chip(label: Text(l10n.comArchived), visualDensity: VisualDensity.compact),
                         ],
@@ -200,24 +235,9 @@ class _Fiche extends ConsumerWidget {
                       ],
                       const SizedBox(height: AppSpacing.md),
                       SectionCarte(
-                        titre: l10n.comLastMovements,
+                        titre: l10n.rcpTraceability,
                         icone: Icons.history_rounded,
-                        action: mouvements.isEmpty
-                            ? null
-                            : TextButton(
-                                onPressed: () => context.push(Routes.mouvementsProduit(p.id)),
-                                child: Text(l10n.comSeeAll),
-                              ),
-                        child: mouvements.isEmpty
-                            ? Padding(
-                                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                                child: Text(l10n.comNoMovement, style: const TextStyle(color: AppColors.muted)),
-                              )
-                            : Column(
-                                children: [
-                                  for (final m in mouvements.take(5)) MouvementTuile(mouvement: m, avecProduit: false),
-                                ],
-                              ),
+                        child: HistoriqueEntiteView(entiteType: 'PRODUIT', entiteId: p.id),
                       ),
                       const SizedBox(height: AppSpacing.xl),
                     ],
@@ -357,22 +377,23 @@ class _Actions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final d = ref.watch(droitsCommerceProvider);
+    final courante = ref.watch(boutiqueCouranteProvider);
     final actions = <(String, IconData, Color, VoidCallback)>[
       if (d.vendre) (l10n.comSell, Icons.shopping_cart_outlined, AppColors.green, () => context.push(Routes.venteAvec(produit.id))),
       if (d.creerAchats)
         (l10n.comBuy, Icons.receipt_long_outlined, AppColors.gold, () => context.push(Routes.achatNouveau(produitId: produit.id))),
       if (d.entreeSortie) ...[
         (l10n.comEntry, Icons.add_circle_outline, AppColors.positive,
-            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.entree)),
+            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.entree, perimetreId: courante)),
         (l10n.comExit, Icons.remove_circle_outline, AppColors.negative,
-            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.sortie)),
+            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.sortie, perimetreId: courante)),
       ],
       if (d.transferer)
         (l10n.comTransfer, Icons.swap_horiz_rounded, const Color(0xFF2563EB),
-            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.transfert)),
+            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.transfert, perimetreId: courante)),
       if (d.ajuster)
         (l10n.comInventory, Icons.fact_check_outlined, AppColors.ink,
-            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.inventaire)),
+            () => ouvrirOperationStock(context, produit: produit, operation: OperationStock.inventaire, perimetreId: courante)),
     ];
     if (actions.isEmpty) return const SizedBox.shrink();
     return GridView.count(

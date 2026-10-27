@@ -23,6 +23,7 @@ class Invitation {
     required this.statut,
     required this.expiresAt,
     required this.createdAt,
+    this.perimetreIds = const [],
   });
 
   final String id;
@@ -31,6 +32,7 @@ class Invitation {
   final InvitationStatut statut;
   final DateTime expiresAt;
   final DateTime createdAt;
+  final List<String> perimetreIds;
 
   /// Une invitation en attente dont la date est passée est expirée.
   InvitationStatut statutEffectif(DateTime now) =>

@@ -70,6 +70,26 @@ class ListerInvitations {
   }
 }
 
+class RenvoyerInvitation {
+  const RenvoyerInvitation(this._repository);
+  final InvitationRepository _repository;
+
+  Future<InvitationCreee> call(ContexteSession ctx, Invitation invitation) {
+    _verifier(ctx.permissionEngine.check(PermissionCodes.usersInvite));
+    return _repository.renvoyer(invitation.id);
+  }
+}
+
+class SupprimerInvitation {
+  const SupprimerInvitation(this._repository);
+  final InvitationRepository _repository;
+
+  Future<void> call(ContexteSession ctx, Invitation invitation) {
+    _verifier(ctx.permissionEngine.check(PermissionCodes.usersInvite));
+    return _repository.supprimer(invitation.id);
+  }
+}
+
 class AnnulerInvitation {
   const AnnulerInvitation(this._repository);
   final InvitationRepository _repository;

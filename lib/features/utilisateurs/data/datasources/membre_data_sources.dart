@@ -33,19 +33,62 @@ class MembreRemoteDataSource {
       .eq('perimetre_id', perimetreId);
 
   Future<void> modifierRole({
+    String? entrepriseId,
     required String membreId,
     required String roleCode,
-  }) =>
-      _client.from('membres_entreprise').update({'role_code': roleCode}).eq('id', membreId);
+    List<String>? perimetreIds,
+  }) async {
+    try {
+      if (entrepriseId != null) {
+        await _client.rpc<void>('modifier_membre', params: {
+          'p_entreprise_id': entrepriseId,
+          'p_membre_id': membreId,
+          'p_role_code': roleCode,
+          if (perimetreIds != null) 'p_perimetre_ids': perimetreIds,
+        });
+        return;
+      }
+    } catch (_) {}
+    await _client.from('membres_entreprise').update({'role_code': roleCode}).eq('id', membreId);
+  }
 
   Future<void> modifierStatut({
+    String? entrepriseId,
     required String membreId,
     required String statut,
-  }) =>
-      _client.from('membres_entreprise').update({'statut': statut}).eq('id', membreId);
+    String? motif,
+  }) async {
+    try {
+      if (entrepriseId != null) {
+        await _client.rpc<void>('changer_statut_membre', params: {
+          'p_entreprise_id': entrepriseId,
+          'p_membre_id': membreId,
+          'p_statut': statut,
+          if (motif != null) 'p_motif': motif,
+        });
+        return;
+      }
+    } catch (_) {}
+    await _client.from('membres_entreprise').update({'statut': statut}).eq('id', membreId);
+  }
 
-  Future<void> supprimer({required String membreId}) =>
-      _client.from('membres_entreprise').delete().eq('id', membreId);
+  Future<void> supprimer({
+    String? entrepriseId,
+    required String membreId,
+    String? motif,
+  }) async {
+    try {
+      if (entrepriseId != null) {
+        await _client.rpc<void>('retirer_membre', params: {
+          'p_entreprise_id': entrepriseId,
+          'p_membre_id': membreId,
+          if (motif != null) 'p_motif': motif,
+        });
+        return;
+      }
+    } catch (_) {}
+    await _client.from('membres_entreprise').delete().eq('id', membreId);
+  }
 }
 
 class MembreLocalDataSource {

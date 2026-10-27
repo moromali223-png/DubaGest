@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/sync/sync_models.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
 import '../../../contacts/domain/entities/contact.dart';
@@ -22,6 +21,9 @@ import '../recus/recu_vente.dart';
 import '../recus/recu_vente_widgets.dart';
 import '../widgets/choix_contact.dart';
 import '../widgets/commerce_widgets.dart';
+import '../widgets/historique_entite.dart';
+import '../../../documents/domain/entities/document.dart';
+import '../../../documents/presentation/providers/documents_providers.dart';
 
 /// Reçus de toutes les ventes accessibles, prêts pour la recherche.
 List<IndexRecu> indexRecus(WidgetRef ref, EtatCommerce etat, List<String> boutiques) {
@@ -551,7 +553,9 @@ class VenteDetailPage extends ConsumerWidget {
     final creance = finances?.engagements.where((e) => e.id == v.id).map(finances.suivi).firstOrNull;
     final annulable = droits.annulerVentes && !v.annulee && (creance == null ? v.total == 0 : creance.regle == 0);
     final recu = donneesRecu(context, ref, v);
-    final locale = Localizations.localeOf(context).toString();
+    final documents = ref.watch(documentsProvider).value ?? const <Document>[];
+    final facture = documents.where((d) => d.origineId == v.id && d.type == TypeDocument.facture && !d.refuse).firstOrNull;
+    final droitsDocs = ref.watch(droitsDocumentsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -588,6 +592,24 @@ class VenteDetailPage extends ConsumerWidget {
                   ),
                 ),
               const SizedBox(height: AppSpacing.md),
+              if (facture != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: FilledButton.tonalIcon(
+                    onPressed: () => context.push(Routes.document(facture.id)),
+                    icon: const Icon(Icons.receipt_long),
+                    label: Text('Facture officielle ${facture.numero}'),
+                  ),
+                )
+              else if (droitsDocs.creer && !v.annulee)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: OutlinedButton.icon(
+                    onPressed: () => _emettreFacture(context, ref, v, recu),
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text('Émettre une facture officielle'),
+                  ),
+                ),
               ActionsRecu(recu: recu),
               const SizedBox(height: AppSpacing.md),
               RecuVenteTicket(recu: recu),
@@ -595,20 +617,7 @@ class VenteDetailPage extends ConsumerWidget {
               SectionCarte(
                 titre: l10n.rcpTraceability,
                 icone: Icons.history_rounded,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _Evenement(
-                      icone: Icons.point_of_sale_rounded,
-                      texte: l10n.rcpCreatedBy(v.auteurNom ?? '—'),
-                      date: DateFormat.yMd(locale).add_Hm().format(v.date.toLocal()),
-                    ),
-                    if (v.syncStatus == RecordSyncStatus.pendingSync)
-                      _Evenement(icone: Icons.cloud_upload_outlined, texte: l10n.rcpOnDevice),
-                    if (v.annulee)
-                      _Evenement(icone: Icons.block, texte: recu.annulation ?? l10n.comCancelled, couleur: AppColors.negative),
-                  ],
-                ),
+                child: HistoriqueEntiteView(entiteType: 'VENTE', entiteId: v.id),
               ),
               const SizedBox(height: AppSpacing.lg),
             ],
@@ -616,6 +625,67 @@ class VenteDetailPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _emettreFacture(BuildContext context, WidgetRef ref, Vente v, DonneesRecu recu) async {
+    final ctx = ref.read(contexteActifProvider);
+    if (ctx == null) return;
+    final profil = await ref.read(profilEntrepriseProvider.future).catchError((_) => null);
+    final appareilId = ref.read(appareilIdProvider);
+
+    try {
+      final doc = await ref.read(emettreDocumentProvider).call(
+            ctx,
+            type: TypeDocument.facture,
+            origineType: 'VENTE',
+            origineId: v.id,
+            contactId: v.contactId,
+            perimetreId: v.perimetreId,
+            montant: v.total,
+            appareilId: appareilId,
+            contenu: {
+              'entreprise': {
+                'nom': recu.entreprise,
+                'telephone': recu.telephone,
+                'adresse': recu.adresse,
+                'identifiant_fiscal': recu.identifiantFiscal,
+                'registre_commerce': recu.registreCommerce,
+                'devise': recu.devise,
+              },
+              'contact': recu.client == null
+                  ? null
+                  : {
+                      'nom': recu.client,
+                      'telephone': recu.clientTelephone,
+                    },
+              'titre': 'Vente — ${recu.boutique}',
+              'reference_metier': recu.numero,
+              'date_document': v.date.toIso8601String(),
+              'lignes': [
+                for (final l in recu.lignes)
+                  {
+                    'libelle': l.produit,
+                    'quantite': l.quantite,
+                    'prix_unitaire': l.prixUnitaire,
+                    'montant': l.montant,
+                  }
+              ],
+              'sous_total': recu.sousTotal,
+              'remise': recu.remise,
+              'total': recu.total,
+              'paye': recu.paye,
+              'reste': recu.reste,
+              'pied': profil?.piedRecu,
+            },
+          );
+      if (context.mounted) {
+        await context.push(Routes.document(doc.id));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        signalerErreur(context, e);
+      }
+    }
   }
 
   Future<void> _annuler(BuildContext context, WidgetRef ref, Vente v) async {
@@ -635,25 +705,6 @@ class VenteDetailPage extends ConsumerWidget {
       if (context.mounted) signalerErreur(context, e);
     }
   }
-}
-
-class _Evenement extends StatelessWidget {
-  const _Evenement({required this.icone, required this.texte, this.date, this.couleur});
-  final IconData icone;
-  final String texte;
-  final String? date;
-  final Color? couleur;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icone, size: 18, color: couleur ?? AppColors.muted),
-          const SizedBox(width: 8),
-          Expanded(child: Text(texte, style: TextStyle(color: couleur, fontWeight: FontWeight.w600))),
-          if (date != null) Text(date!, style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
-        ]),
-      );
 }
 
 /// Motif d'annulation ; renvoie le motif (éventuellement vide) ou `null`.

@@ -33,7 +33,7 @@ class FinanceTresoreriePage extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF01226C),
+                    color: AppColors.ink,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(

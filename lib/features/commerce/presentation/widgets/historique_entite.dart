@@ -38,7 +38,7 @@ class HistoriqueEntiteView extends ConsumerWidget {
       data: (entrees) {
         // 1. Récupérer les mouvements liés si nécessaire
         final mouvements = inclureMouvements && etatCommerce != null
-            ? etatCommerce.mouvements.where((m) => m.origineId == entiteId).toList()
+            ? etatCommerce.mouvements.where((m) => entiteType == 'PRODUIT' ? m.produitId == entiteId : m.origineId == entiteId).toList()
             : <MouvementStock>[];
 
         // 2. Fusionner et trier par date décroissante

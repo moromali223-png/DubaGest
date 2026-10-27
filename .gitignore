@@ -56,3 +56,9 @@ supabase/.temp
 *.keystore
 **/key.properties
 
+# Wrangler / Cloudflare
+.wrangler/
+
+# Tools binaries
+tools/bin/
+*.exe

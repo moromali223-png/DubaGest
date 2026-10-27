@@ -103,8 +103,10 @@ class CarteDossierDette extends ConsumerWidget {
                       radius: 20,
                       backgroundColor: dossier.estEnRetard
                           ? AppColors.negativeSoft
-                          : const Color(0xFF01226C).withValues(alpha: 0.1),
-                      foregroundColor: dossier.estEnRetard ? AppColors.negative : const Color(0xFF01226C),
+                          : (estRecevoir ? AppColors.greenSoft : AppColors.detteSoft),
+                      foregroundColor: dossier.estEnRetard
+                          ? AppColors.negative
+                          : (estRecevoir ? AppColors.green : AppColors.dette),
                       child: Text(
                         initiales,
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
@@ -163,7 +165,7 @@ class CarteDossierDette extends ConsumerWidget {
                           value: 'dossier',
                           child: Row(
                             children: [
-                              Icon(Icons.folder_open_rounded, size: 18, color: Color(0xFF01226C)),
+                              Icon(Icons.folder_open_rounded, size: 18, color: AppColors.ink),
                               SizedBox(width: 8),
                               Text('Voir le dossier'),
                             ],
@@ -177,7 +179,7 @@ class CarteDossierDette extends ConsumerWidget {
                                 Icon(
                                   estRecevoir ? Icons.add_circle_outline_rounded : Icons.payment_rounded,
                                   size: 18,
-                                  color: AppColors.green,
+                                  color: estRecevoir ? AppColors.green : AppColors.dette,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(estRecevoir ? 'Recevoir un paiement' : 'Effectuer un paiement'),
@@ -203,31 +205,39 @@ class CarteDossierDette extends ConsumerWidget {
                 // 2. Montant restant + Badge de statut
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          estRecevoir ? 'À recevoir' : 'À payer',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.muted,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            estRecevoir ? 'À recevoir' : 'À payer',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          l10n.montant(dossier.reste, devise),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF01226C),
-                            letterSpacing: -0.3,
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              l10n.montant(dossier.reste, devise),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: dossier.estEnRetard
+                                    ? AppColors.negative
+                                    : (estRecevoir ? AppColors.green : AppColors.dette),
+                                letterSpacing: -0.3,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: AppSpacing.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
@@ -255,40 +265,54 @@ class CarteDossierDette extends ConsumerWidget {
 
                 const Divider(height: 20, color: AppColors.border),
 
-                // 3. Bas de carte : Nombre de dettes & Prochaine échéance
+                // 3. Bas de carte : Nombre de dettes & Prochaine échéance (Sécurisé anti-débordement)
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      [labelDettes, ?labelEcheances].join(' · '),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (dossier.prochaineEcheance != null && dossier.reste > 0) ...[
-                          const Icon(Icons.calendar_today_rounded, size: 12, color: AppColors.muted),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Échéance: ${l10n.date(dossier.prochaineEcheance!)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: dossier.estEnRetard ? AppColors.negative : AppColors.muted,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          size: 18,
+                    Expanded(
+                      child: Text(
+                        [labelDettes, ?labelEcheances].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.muted,
                         ),
-                      ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    if (dossier.prochaineEcheance != null && dossier.reste > 0) ...[
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              size: 12,
+                              color: dossier.estEnRetard ? AppColors.negative : AppColors.muted,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                'Échéance: ${l10n.date(dossier.prochaineEcheance!)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: dossier.estEnRetard ? AppColors.negative : AppColors.muted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: AppColors.muted,
                     ),
                   ],
                 ),

@@ -8,6 +8,7 @@ import 'package:dubagest/features/finances/presentation/pages/paiement_form_page
 import 'package:dubagest/features/finances/presentation/providers/finances_providers.dart';
 import 'package:dubagest/features/finances/presentation/widgets/carte_dossier_dette.dart';
 import 'package:dubagest/features/finances/presentation/widgets/finances_widgets.dart';
+import 'package:dubagest/features/finances/presentation/widgets/workspace_finances_vendeur.dart';
 import 'package:dubagest/features/navigation/presentation/providers/navigation_providers.dart';
 import 'package:dubagest/features/navigation/domain/services/navigation_builder.dart';
 import 'package:dubagest/features/perimetres/presentation/providers/perimetres_providers.dart';
@@ -219,5 +220,45 @@ void main() {
     );
     expect(find.text('للتحصيل'), findsWidgets);
     expect(Directionality.of(tester.element(find.byType(CarteDossierDette))), TextDirection.rtl);
+  });
+
+  testWidgets('Finances vendeur : workspace adapté caisse & encaissements, sans tableau de bord DAF', (tester) async {
+    await pumpApp(
+      tester,
+      const FinancesPage(),
+      overrides: overrides(
+        _Repo(),
+        role: 'VENDEUR',
+        permissions: {...vendeurPermissions, 'cash.close'},
+      ).cast(),
+      size: const Size(420, 1600),
+    );
+
+    expect(find.byType(WorkspaceFinancesVendeur), findsOneWidget);
+    expect(find.text('Point de Caisse'), findsOneWidget);
+    expect(find.text('Direction Financière'), findsNothing);
+    expect(find.text('Score Santé Financière'), findsNothing);
+    expect(find.text('Marge Nette'), findsNothing);
+    expect(find.text('Caisse ouverte'), findsOneWidget);
+    expect(find.text('Clôturer la caisse'), findsOneWidget);
+    expect(find.byKey(const Key('onglet-finances.creances')), findsOneWidget);
+    expect(find.byKey(const Key('onglet-finances.paiements')), findsOneWidget);
+    expect(find.byKey(const Key('onglet-finances.depenses')), findsNothing);
+  });
+
+  testWidgets('Créances vendeur : les dettes fournisseurs ne sont pas affichées', (tester) async {
+    await pumpApp(
+      tester,
+      const FinancesPage(onglet: 'finances.creances'),
+      overrides: overrides(
+        _Repo(),
+        role: 'VENDEUR',
+        permissions: vendeurPermissions,
+      ).cast(),
+      size: const Size(420, 1200),
+    );
+
+    expect(find.text('À payer'), findsNothing);
+    expect(find.byKey(const Key('filtre-sens-dette')), findsNothing);
   });
 }

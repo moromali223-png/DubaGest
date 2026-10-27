@@ -9,6 +9,7 @@ import '../../../../shared/widgets/responsive_body.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../../perimetres/presentation/providers/perimetres_providers.dart';
+import '../../../contacts/domain/entities/contact.dart';
 import '../../domain/entities/finances.dart';
 import '../../domain/usecases/gerer_finances.dart';
 import '../providers/finances_providers.dart';
@@ -108,6 +109,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
               ChampContact(
                 contactId: _contactId,
                 label: recevoir ? l10n.debtWhoOwes : l10n.debtOwedTo,
+                relation: recevoir ? RelationContact.client : RelationContact.fournisseur,
                 onChanged: (id) => setState(() => _contactId = id),
               ),
               espace,

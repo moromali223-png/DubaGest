@@ -31,23 +31,25 @@ class ServicesRepositoryImpl implements ServicesRepository {
   // --- CATALOGUE ---
 
   @override
-  Stream<List<ServiceCatalogue>> observerCatalogue(String entrepriseId) {
-    _catalogueControllers[entrepriseId] ??= StreamController<List<ServiceCatalogue>>.broadcast(
-      onListen: () => _rafraichirCatalogue(entrepriseId),
-    );
-
+  Stream<List<ServiceCatalogue>> observerCatalogue(String entrepriseId) async* {
     if (_catalogueCache.containsKey(entrepriseId)) {
-      Future.microtask(() => _catalogueControllers[entrepriseId]?.add(_catalogueCache[entrepriseId]!));
-    } else {
-      _rafraichirCatalogue(entrepriseId);
+      yield _catalogueCache[entrepriseId]!;
+    } else if (_local != null) {
+      try {
+        final itemsLocaux = await _local.chargerCatalogue(entrepriseId);
+        _catalogueCache[entrepriseId] = itemsLocaux;
+        yield itemsLocaux;
+      } catch (_) {}
     }
 
-    return _catalogueControllers[entrepriseId]!.stream;
+    _catalogueControllers[entrepriseId] ??= StreamController<List<ServiceCatalogue>>.broadcast();
+    unawaited(_rafraichirCatalogue(entrepriseId));
+    yield* _catalogueControllers[entrepriseId]!.stream;
   }
 
   Future<void> _rafraichirCatalogue(String entrepriseId) async {
-    // 1. Charger depuis le cache local Drift immédiatement
-    if (_local != null) {
+    // 1. Charger depuis le cache local Drift si pas encore en mémoire
+    if (!_catalogueCache.containsKey(entrepriseId) && _local != null) {
       try {
         final itemsLocaux = await _local.chargerCatalogue(entrepriseId);
         _catalogueCache[entrepriseId] = itemsLocaux;
@@ -56,20 +58,25 @@ class ServicesRepositoryImpl implements ServicesRepository {
         _catalogueCache[entrepriseId] ??= [];
         _catalogueControllers[entrepriseId]?.add(_catalogueCache[entrepriseId]!);
       }
-    } else {
-      _catalogueCache[entrepriseId] ??= [];
-      _catalogueControllers[entrepriseId]?.add(_catalogueCache[entrepriseId]!);
     }
 
     // 2. Synchroniser avec le serveur
     try {
-      final items = await _remote.chargerCatalogue(entrepriseId);
-      _catalogueCache[entrepriseId] = items;
-      _catalogueControllers[entrepriseId]?.add(items);
-      _local?.sauvegarderCatalogue(entrepriseId, items);
+      final remoteItems = await _remote.chargerCatalogue(entrepriseId);
+      final currentLocal = _catalogueCache[entrepriseId] ?? [];
+      final remoteIds = remoteItems.map((s) => s.id).toSet();
+      // Conserver les services locaux qui ne sont pas encore sur le serveur distant
+      final localOnly = currentLocal.where((s) => !remoteIds.contains(s.id)).toList();
+      final merged = [...remoteItems, ...localOnly];
+
+      _catalogueCache[entrepriseId] = merged;
+      _catalogueControllers[entrepriseId]?.add(merged);
+      await _local?.sauvegarderCatalogue(entrepriseId, merged);
     } catch (_) {
-      // Offline fallback
-      _catalogueControllers[entrepriseId]?.add(_catalogueCache[entrepriseId] ?? []);
+      // Offline fallback : on conserve le cache local actuel
+      if (_catalogueCache.containsKey(entrepriseId)) {
+        _catalogueControllers[entrepriseId]?.add(_catalogueCache[entrepriseId]!);
+      }
     }
   }
 
@@ -129,26 +136,28 @@ class ServicesRepositoryImpl implements ServicesRepository {
   // --- PRESTATIONS ---
 
   @override
-  Stream<List<Prestation>> observerPrestations(String entrepriseId, {String? perimetreId}) {
+  Stream<List<Prestation>> observerPrestations(String entrepriseId, {String? perimetreId}) async* {
     final key = '$entrepriseId:${perimetreId ?? "all"}';
-    _prestationsControllers[key] ??= StreamController<List<Prestation>>.broadcast(
-      onListen: () => _rafraichirPrestations(entrepriseId, perimetreId: perimetreId),
-    );
-
     if (_prestationsCache.containsKey(key)) {
-      Future.microtask(() => _prestationsControllers[key]?.add(_prestationsCache[key]!));
-    } else {
-      _rafraichirPrestations(entrepriseId, perimetreId: perimetreId);
+      yield _prestationsCache[key]!;
+    } else if (_local != null) {
+      try {
+        final locaux = await _local.chargerPrestations(entrepriseId, perimetreId: perimetreId);
+        _prestationsCache[key] = locaux;
+        yield locaux;
+      } catch (_) {}
     }
 
-    return _prestationsControllers[key]!.stream;
+    _prestationsControllers[key] ??= StreamController<List<Prestation>>.broadcast();
+    unawaited(_rafraichirPrestations(entrepriseId, perimetreId: perimetreId));
+    yield* _prestationsControllers[key]!.stream;
   }
 
   Future<void> _rafraichirPrestations(String entrepriseId, {String? perimetreId}) async {
     final key = '$entrepriseId:${perimetreId ?? "all"}';
 
-    // 1. Lecture locale immédiate
-    if (_local != null) {
+    // 1. Lecture locale immédiate si pas en mémoire
+    if (!_prestationsCache.containsKey(key) && _local != null) {
       try {
         final locaux = await _local.chargerPrestations(entrepriseId, perimetreId: perimetreId);
         _prestationsCache[key] = locaux;
@@ -157,20 +166,25 @@ class ServicesRepositoryImpl implements ServicesRepository {
         _prestationsCache[key] ??= [];
         _prestationsControllers[key]?.add(_prestationsCache[key]!);
       }
-    } else {
-      _prestationsCache[key] ??= [];
-      _prestationsControllers[key]?.add(_prestationsCache[key]!);
     }
 
     // 2. Synchroniser avec le serveur
     try {
-      final items = await _remote.chargerPrestations(entrepriseId, perimetreId: perimetreId);
-      _prestationsCache[key] = items;
-      _prestationsControllers[key]?.add(items);
-      _local?.sauvegarderPrestations(entrepriseId, items, perimetreId: perimetreId);
+      final remoteItems = await _remote.chargerPrestations(entrepriseId, perimetreId: perimetreId);
+      final currentLocal = _prestationsCache[key] ?? [];
+      final remoteIds = remoteItems.map((p) => p.id).toSet();
+      // Conserver les prestations locales non encore présentes sur le serveur
+      final localOnly = currentLocal.where((p) => !remoteIds.contains(p.id)).toList();
+      final merged = [...remoteItems, ...localOnly];
+
+      _prestationsCache[key] = merged;
+      _prestationsControllers[key]?.add(merged);
+      await _local?.sauvegarderPrestations(entrepriseId, merged, perimetreId: perimetreId);
     } catch (_) {
-      // Offline fallback
-      _prestationsControllers[key]?.add(_prestationsCache[key] ?? []);
+      // Offline fallback : on conserve le cache local actuel
+      if (_prestationsCache.containsKey(key)) {
+        _prestationsControllers[key]?.add(_prestationsCache[key]!);
+      }
     }
   }
 
@@ -190,11 +204,21 @@ class ServicesRepositoryImpl implements ServicesRepository {
   @override
   Future<Prestation> creerPrestation(Prestation prestation) => _guard(() async {
         final key = '${prestation.entrepriseId}:${prestation.perimetreId ?? "all"}';
-        final list = List<Prestation>.from(_prestationsCache[key] ?? []);
-        list.insert(0, prestation);
-        _prestationsCache[key] = list;
-        _prestationsControllers[key]?.add(list);
-        await _local?.sauvegarderPrestations(prestation.entrepriseId, list, perimetreId: prestation.perimetreId);
+        final allKey = '${prestation.entrepriseId}:all';
+
+        void insererDansCache(String k, String? perimetre) {
+          final list = List<Prestation>.from(_prestationsCache[k] ?? []);
+          list.removeWhere((p) => p.id == prestation.id);
+          list.insert(0, prestation);
+          _prestationsCache[k] = list;
+          _prestationsControllers[k]?.add(list);
+          _local?.sauvegarderPrestations(prestation.entrepriseId, list, perimetreId: perimetre);
+        }
+
+        insererDansCache(key, prestation.perimetreId);
+        if (key != allKey) {
+          insererDansCache(allKey, null);
+        }
 
         try {
           final res = await _remote.creerPrestation(prestation);
@@ -215,16 +239,25 @@ class ServicesRepositoryImpl implements ServicesRepository {
   @override
   Future<Prestation> modifierPrestation(Prestation prestation) => _guard(() async {
         final key = '${prestation.entrepriseId}:${prestation.perimetreId ?? "all"}';
-        final list = List<Prestation>.from(_prestationsCache[key] ?? []);
-        final index = list.indexWhere((p) => p.id == prestation.id);
-        if (index >= 0) {
-          list[index] = prestation;
-        } else {
-          list.insert(0, prestation);
+        final allKey = '${prestation.entrepriseId}:all';
+
+        void mettreAJourCache(String k, String? perimetre) {
+          final list = List<Prestation>.from(_prestationsCache[k] ?? []);
+          final index = list.indexWhere((p) => p.id == prestation.id);
+          if (index >= 0) {
+            list[index] = prestation;
+          } else {
+            list.insert(0, prestation);
+          }
+          _prestationsCache[k] = list;
+          _prestationsControllers[k]?.add(list);
+          _local?.sauvegarderPrestations(prestation.entrepriseId, list, perimetreId: perimetre);
         }
-        _prestationsCache[key] = list;
-        _prestationsControllers[key]?.add(list);
-        await _local?.sauvegarderPrestations(prestation.entrepriseId, list, perimetreId: prestation.perimetreId);
+
+        mettreAJourCache(key, prestation.perimetreId);
+        if (key != allKey) {
+          mettreAJourCache(allKey, null);
+        }
 
         try {
           final res = await _remote.modifierPrestation(prestation);
@@ -336,26 +369,28 @@ class ServicesRepositoryImpl implements ServicesRepository {
   // --- DEVIS ---
 
   @override
-  Stream<List<DevisPrestation>> observerDevis(String entrepriseId, {String? perimetreId}) {
+  Stream<List<DevisPrestation>> observerDevis(String entrepriseId, {String? perimetreId}) async* {
     final key = '$entrepriseId:${perimetreId ?? "all"}';
-    _devisControllers[key] ??= StreamController<List<DevisPrestation>>.broadcast(
-      onListen: () => _rafraichirDevis(entrepriseId, perimetreId: perimetreId),
-    );
-
     if (_devisCache.containsKey(key)) {
-      Future.microtask(() => _devisControllers[key]?.add(_devisCache[key]!));
-    } else {
-      _rafraichirDevis(entrepriseId, perimetreId: perimetreId);
+      yield _devisCache[key]!;
+    } else if (_local != null) {
+      try {
+        final locaux = await _local.chargerDevis(entrepriseId, perimetreId: perimetreId);
+        _devisCache[key] = locaux;
+        yield locaux;
+      } catch (_) {}
     }
 
-    return _devisControllers[key]!.stream;
+    _devisControllers[key] ??= StreamController<List<DevisPrestation>>.broadcast();
+    unawaited(_rafraichirDevis(entrepriseId, perimetreId: perimetreId));
+    yield* _devisControllers[key]!.stream;
   }
 
   Future<void> _rafraichirDevis(String entrepriseId, {String? perimetreId}) async {
     final key = '$entrepriseId:${perimetreId ?? "all"}';
 
-    // 1. Lecture locale immédiate
-    if (_local != null) {
+    // 1. Lecture locale immédiate si pas en mémoire
+    if (!_devisCache.containsKey(key) && _local != null) {
       try {
         final locaux = await _local.chargerDevis(entrepriseId, perimetreId: perimetreId);
         _devisCache[key] = locaux;
@@ -364,31 +399,45 @@ class ServicesRepositoryImpl implements ServicesRepository {
         _devisCache[key] ??= [];
         _devisControllers[key]?.add(_devisCache[key]!);
       }
-    } else {
-      _devisCache[key] ??= [];
-      _devisControllers[key]?.add(_devisCache[key]!);
     }
 
     // 2. Synchroniser avec le serveur
     try {
-      final items = await _remote.chargerDevis(entrepriseId, perimetreId: perimetreId);
-      _devisCache[key] = items;
-      _devisControllers[key]?.add(items);
-      _local?.sauvegarderDevis(entrepriseId, items, perimetreId: perimetreId);
+      final remoteItems = await _remote.chargerDevis(entrepriseId, perimetreId: perimetreId);
+      final currentLocal = _devisCache[key] ?? [];
+      final remoteIds = remoteItems.map((d) => d.id).toSet();
+      final localOnly = currentLocal.where((d) => !remoteIds.contains(d.id)).toList();
+      final merged = [...remoteItems, ...localOnly];
+
+      _devisCache[key] = merged;
+      _devisControllers[key]?.add(merged);
+      await _local?.sauvegarderDevis(entrepriseId, merged, perimetreId: perimetreId);
     } catch (_) {
-      // Offline fallback
-      _devisControllers[key]?.add(_devisCache[key] ?? []);
+      // Offline fallback : on conserve le cache local actuel
+      if (_devisCache.containsKey(key)) {
+        _devisControllers[key]?.add(_devisCache[key]!);
+      }
     }
   }
 
   @override
   Future<DevisPrestation> creerDevis(DevisPrestation devis) => _guard(() async {
         final key = '${devis.entrepriseId}:${devis.perimetreId ?? "all"}';
-        final list = List<DevisPrestation>.from(_devisCache[key] ?? []);
-        list.insert(0, devis);
-        _devisCache[key] = list;
-        _devisControllers[key]?.add(list);
-        await _local?.sauvegarderDevis(devis.entrepriseId, list, perimetreId: devis.perimetreId);
+        final allKey = '${devis.entrepriseId}:all';
+
+        void insererDansCache(String k, String? perimetre) {
+          final list = List<DevisPrestation>.from(_devisCache[k] ?? []);
+          list.removeWhere((d) => d.id == devis.id);
+          list.insert(0, devis);
+          _devisCache[k] = list;
+          _devisControllers[k]?.add(list);
+          _local?.sauvegarderDevis(devis.entrepriseId, list, perimetreId: perimetre);
+        }
+
+        insererDansCache(key, devis.perimetreId);
+        if (key != allKey) {
+          insererDansCache(allKey, null);
+        }
 
         try {
           final res = await _remote.creerDevis(devis);
@@ -409,16 +458,25 @@ class ServicesRepositoryImpl implements ServicesRepository {
   @override
   Future<DevisPrestation> modifierDevis(DevisPrestation devis) => _guard(() async {
         final key = '${devis.entrepriseId}:${devis.perimetreId ?? "all"}';
-        final list = List<DevisPrestation>.from(_devisCache[key] ?? []);
-        final index = list.indexWhere((d) => d.id == devis.id);
-        if (index >= 0) {
-          list[index] = devis;
-        } else {
-          list.insert(0, devis);
+        final allKey = '${devis.entrepriseId}:all';
+
+        void mettreAJourCache(String k, String? perimetre) {
+          final list = List<DevisPrestation>.from(_devisCache[k] ?? []);
+          final index = list.indexWhere((d) => d.id == devis.id);
+          if (index >= 0) {
+            list[index] = devis;
+          } else {
+            list.insert(0, devis);
+          }
+          _devisCache[k] = list;
+          _devisControllers[k]?.add(list);
+          _local?.sauvegarderDevis(devis.entrepriseId, list, perimetreId: perimetre);
         }
-        _devisCache[key] = list;
-        _devisControllers[key]?.add(list);
-        await _local?.sauvegarderDevis(devis.entrepriseId, list, perimetreId: devis.perimetreId);
+
+        mettreAJourCache(key, devis.perimetreId);
+        if (key != allKey) {
+          mettreAJourCache(allKey, null);
+        }
 
         try {
           final res = await _remote.modifierDevis(devis);

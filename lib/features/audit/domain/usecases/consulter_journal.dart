@@ -9,9 +9,19 @@ class ConsulterJournal {
 
   static const permission = 'audit.view';
 
-  Future<List<EntreeAudit>> call(ContexteSession ctx, {int? avantId}) {
+  Future<List<EntreeAudit>> call(
+    ContexteSession ctx, {
+    int? avantId,
+    String? entiteType,
+    String? entiteId,
+  }) {
     final decision = ctx.permissionEngine.check(permission);
     if (decision case AccessDenied()) throw decision.toFailure();
-    return _repository.lister(ctx.entreprise!.id, avantId: avantId);
+    return _repository.lister(
+      ctx.entreprise!.id,
+      avantId: avantId,
+      entiteType: entiteType,
+      entiteId: entiteId,
+    );
   }
 }

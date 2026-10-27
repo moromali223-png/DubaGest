@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/app_header_buttons.dart';
@@ -167,8 +166,8 @@ class ServicesAccueilPage extends ConsumerWidget {
                     Expanded(
                       child: _ActionBouton(
                         titre: '+ Prestation',
-                        sousTitre: 'Nouvelle intervention',
-                        icone: Icons.add_task_rounded,
+                        sousTitre: 'Nouveau contrat de service',
+                        icone: Icons.add_circle_outline_rounded,
                         couleur: const Color(0xFF01226C),
                         onTap: droits.peutCreerPrestations ? () => context.push(Routes.prestationNouvelle) : null,
                       ),
@@ -176,11 +175,35 @@ class ServicesAccueilPage extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _ActionBouton(
+                        titre: '📑 Contrats de service',
+                        sousTitre: 'Locations & suivis actifs',
+                        icone: Icons.assignment_outlined,
+                        couleur: const Color(0xFF1E3A8A),
+                        onTap: droits.peutVoirPrestations ? () => context.push(Routes.servicesPrestations) : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ActionBouton(
                         titre: '📅 Planning',
-                        sousTitre: 'Calendrier des tâches',
-                        icone: Icons.calendar_month_rounded,
+                        sousTitre: 'Missions terrain & planning',
+                        icone: Icons.calendar_today_outlined,
                         couleur: const Color(0xFF0284C7),
                         onTap: droits.peutVoirPrestations ? () => context.push(Routes.servicesPlanning) : null,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _ActionBouton(
+                        titre: '🏷️ Catalogue',
+                        sousTitre: 'Référentiel des tarifs',
+                        icone: Icons.category_outlined,
+                        couleur: const Color(0xFFDF9540),
+                        onTap: droits.peutVoirServices ? () => context.push(Routes.servicesCatalogue) : null,
                       ),
                     ),
                   ],
@@ -200,24 +223,16 @@ class ServicesAccueilPage extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _ActionBouton(
-                        titre: '🏷️ Catalogue',
-                        sousTitre: 'Tarifs des services',
-                        icone: Icons.category_outlined,
-                        couleur: const Color(0xFFDF9540),
-                        onTap: droits.peutVoirServices ? () => context.push(Routes.servicesCatalogue) : null,
+                        titre: '📊 Rentabilité',
+                        sousTitre: 'CA, marge & conversion',
+                        icone: Icons.analytics_outlined,
+                        couleur: const Color(0xFF0F766E),
+                        onTap: (droits.peutVoirServices || droits.peutVoirPrestations)
+                            ? () => context.push(Routes.servicesRapports)
+                            : null,
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                _ActionBouton(
-                  titre: '📊 Rapports & Rentabilité',
-                  sousTitre: 'Analyses du CA, marge, pièces et conversion',
-                  icone: Icons.analytics_outlined,
-                  couleur: const Color(0xFF0F766E),
-                  onTap: (droits.peutVoirServices || droits.peutVoirPrestations)
-                      ? () => context.push(Routes.servicesRapports)
-                      : null,
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
@@ -290,7 +305,7 @@ class ServicesAccueilPage extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Dernières prestations',
+                        'Derniers contrats & interventions',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w900,
                           fontSize: 17,

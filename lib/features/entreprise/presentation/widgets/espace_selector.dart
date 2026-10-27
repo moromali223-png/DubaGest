@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../activites/domain/entities/activite.dart';
 import '../../../perimetres/domain/services/boutiques_naming_service.dart';
 import '../../domain/entities/espace_courant.dart';
+import '../../../navigation/presentation/widgets/module_visuals.dart';
 import '../providers/contexte_providers.dart';
 import '../providers/espace_providers.dart';
 
@@ -27,14 +27,16 @@ class EspaceSelector extends ConsumerWidget {
     final espace = ref.watch(espaceCourantProvider);
     if (ctx == null) return const SizedBox.shrink();
 
+    final actives = ctx.activites.where((a) => a.estActive).toList();
+    final aPlusieursActivites = actives.length > 1;
     final sitesAutorises = EspaceCourant.sitesPour(ctx, espace.activite);
     final estMonosite = sitesAutorises.length <= 1;
 
     final estVueConsolidee = BoutiquesNamingService.estVueConsolidee(espace);
     final nomBoutique = BoutiquesNamingService.libelleBoutique(ctx: ctx, perimetreId: espace.perimetreId);
 
-    // CAS 1 : 1 seule boutique accessible -> Affichage direct sans interaction superflue
-    if (estMonosite) {
+    // CAS 1 : 1 seule activité et 1 seule boutique accessible -> Affichage direct sans dropdown
+    if (!aPlusieursActivites && estMonosite) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
@@ -64,7 +66,19 @@ class EspaceSelector extends ConsumerWidget {
       );
     }
 
-    // CAS 2 : Multi-boutiques -> Sélecteur interactif professionnel
+    final String libelleAffichage;
+    if (aPlusieursActivites) {
+      if (espace.activite == null) {
+        libelleAffichage = l10n.espaceGlobal;
+      } else {
+        final nomAct = l10n.activite(espace.activite!);
+        libelleAffichage = (estMonosite || sitesAutorises.isEmpty) ? nomAct : '$nomAct · $nomBoutique';
+      }
+    } else {
+      libelleAffichage = nomBoutique;
+    }
+
+    // CAS 2 : Multi-activités ou Multi-boutiques -> Sélecteur interactif professionnel
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -101,7 +115,7 @@ class EspaceSelector extends ConsumerWidget {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  nomBoutique,
+                  libelleAffichage,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -136,8 +150,14 @@ class _EspaceSheet extends ConsumerWidget {
     final controller = ref.read(espaceCourantProvider.notifier);
     if (ctx == null) return const SizedBox.shrink();
 
+    final actives = ctx.activites.where((a) => a.estActive).toList();
+    final aPlusieursActivites = actives.length > 1;
     final sites = EspaceCourant.sitesPour(ctx, espace.activite);
     final estConsolidee = espace.perimetreId == null;
+
+    final sheetTitle = aPlusieursActivites && sites.isEmpty
+        ? 'Sélectionner une activité'
+        : (!aPlusieursActivites ? 'Sélectionner une boutique' : 'Sélectionner un espace');
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -158,131 +178,194 @@ class _EspaceSheet extends ConsumerWidget {
                   child: const Icon(Icons.store_mall_directory_rounded, color: Color(0xFF01226C), size: 20),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'Sélectionner une boutique',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // 1. OPTION VUE CONSOLIDÉE
-            Container(
-              decoration: BoxDecoration(
-                color: estConsolidee ? const Color(0xFF01226C).withValues(alpha: 0.08) : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: estConsolidee ? const Color(0xFF01226C) : AppColors.border,
-                  width: estConsolidee ? 1.5 : 1,
-                ),
-              ),
-              child: ListTile(
-                key: const Key('espace-site-tous'),
-                onTap: () {
-                  controller.choisirSite(null);
-                  Navigator.pop(context);
-                },
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: estConsolidee ? const Color(0xFF01226C) : AppColors.background,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.grid_view_rounded,
-                    size: 20,
-                    color: estConsolidee ? Colors.white : AppColors.muted,
-                  ),
-                ),
-                title: const Text(
-                  'Toutes les boutiques',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                ),
-                subtitle: Text(
-                  'Vue consolidée · Cumul des ${sites.length} boutiques actives',
-                  style: const TextStyle(fontSize: 12, color: AppColors.muted),
-                ),
-                trailing: estConsolidee
-                    ? const Icon(Icons.check_circle_rounded, color: Color(0xFF01226C))
-                    : null,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Séparateur
-            Row(
-              children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                Expanded(
                   child: Text(
-                    'BOUTIQUES PHYSIQUES (${sites.length})',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.muted, letterSpacing: 0.5),
+                    sheetTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
                   ),
                 ),
-                const Expanded(child: Divider()),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
 
-            // 2. LISTE DES BOUTIQUES RÉELLES
-            for (var i = 0; i < sites.length; i++) ...[
-              Builder(builder: (context) {
-                final p = sites[i];
-                final estSelectionne = espace.perimetreId == p.id;
-                final lettre = BoutiquesNamingService.lettreBoutique(i);
-
-                return Container(
+            // ACTIVITÉS (si multi-activités)
+            if (aPlusieursActivites) ...[
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      'ACTIVITÉS (${actives.length})',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.muted, letterSpacing: 0.5),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: espace.activite == null ? const Color(0xFF01226C).withValues(alpha: 0.08) : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: espace.activite == null ? const Color(0xFF01226C) : AppColors.border,
+                    width: espace.activite == null ? 1.5 : 1,
+                  ),
+                ),
+                child: ListTile(
+                  key: const ValueKey('espace-null'),
+                  onTap: () => controller.choisirActivite(null),
+                  leading: const Icon(Icons.public_rounded, color: Color(0xFF01226C)),
+                  title: Text(l10n.espaceGlobal, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                  trailing: espace.activite == null ? const Icon(Icons.check_circle_rounded, color: Color(0xFF01226C)) : null,
+                ),
+              ),
+              for (final a in actives) ...[
+                Container(
                   margin: const EdgeInsets.only(bottom: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: estSelectionne ? const Color(0xFF01226C).withValues(alpha: 0.08) : Colors.white,
+                    color: espace.activite == a.activite ? const Color(0xFF01226C).withValues(alpha: 0.08) : Colors.white,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: estSelectionne ? const Color(0xFF01226C) : AppColors.border,
-                      width: estSelectionne ? 1.5 : 1,
+                      color: espace.activite == a.activite ? const Color(0xFF01226C) : AppColors.border,
+                      width: espace.activite == a.activite ? 1.5 : 1,
                     ),
                   ),
                   child: ListTile(
-                    key: Key('espace-site-${p.id}'),
-                    onTap: () {
-                      controller.choisirSite(p.id);
-                      Navigator.pop(context);
-                    },
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: estSelectionne ? const Color(0xFF01226C) : AppColors.background,
-                        borderRadius: BorderRadius.circular(10),
+                    key: ValueKey('espace-${a.activite.code}'),
+                    onTap: () => controller.choisirActivite(a.activite),
+                    leading: Icon(activiteIcon(a.activite), color: const Color(0xFF01226C)),
+                    title: Text(l10n.activite(a.activite), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    trailing: espace.activite == a.activite ? const Icon(Icons.check_circle_rounded, color: Color(0xFF01226C)) : null,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+            ],
+
+            if (sites.isNotEmpty) ...[
+              // 1. OPTION VUE CONSOLIDÉE
+              Container(
+                decoration: BoxDecoration(
+                  color: estConsolidee ? const Color(0xFF01226C).withValues(alpha: 0.08) : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: estConsolidee ? const Color(0xFF01226C) : AppColors.border,
+                    width: estConsolidee ? 1.5 : 1,
+                  ),
+                ),
+                child: ListTile(
+                  key: const Key('espace-site-tous'),
+                  onTap: () {
+                    controller.choisirSite(null);
+                    Navigator.pop(context);
+                  },
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: estConsolidee ? const Color(0xFF01226C) : AppColors.background,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.grid_view_rounded,
+                      size: 20,
+                      color: estConsolidee ? Colors.white : AppColors.muted,
+                    ),
+                  ),
+                  title: const Text(
+                    'Toutes les boutiques',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                  ),
+                  subtitle: Text(
+                    'Vue consolidée · Cumul des ${sites.length} boutiques actives',
+                    style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                  ),
+                  trailing: estConsolidee
+                      ? const Icon(Icons.check_circle_rounded, color: Color(0xFF01226C))
+                      : null,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Séparateur
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      'BOUTIQUES PHYSIQUES (${sites.length})',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.muted, letterSpacing: 0.5),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+
+              // 2. LISTE DES BOUTIQUES RÉELLES
+              for (var i = 0; i < sites.length; i++) ...[
+                Builder(builder: (context) {
+                  final p = sites[i];
+                  final estSelectionne = espace.perimetreId == p.id;
+                  final lettre = BoutiquesNamingService.lettreBoutique(i);
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: estSelectionne ? const Color(0xFF01226C).withValues(alpha: 0.08) : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: estSelectionne ? const Color(0xFF01226C) : AppColors.border,
+                        width: estSelectionne ? 1.5 : 1,
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        lettre,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: estSelectionne ? Colors.white : const Color(0xFF01226C),
+                    ),
+                    child: ListTile(
+                      key: Key('espace-site-${p.id}'),
+                      onTap: () {
+                        controller.choisirSite(p.id);
+                        Navigator.pop(context);
+                      },
+                      leading: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: estSelectionne ? const Color(0xFF01226C) : AppColors.background,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          lettre,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: estSelectionne ? Colors.white : const Color(0xFF01226C),
+                          ),
                         ),
                       ),
-                    ),
-                    title: Text(
-                      p.nom,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: estSelectionne ? const Color(0xFF01226C) : AppColors.ink,
+                      title: Text(
+                        p.nom,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: estSelectionne ? const Color(0xFF01226C) : AppColors.ink,
+                        ),
                       ),
+                      subtitle: Text(
+                        p.code != null ? 'Code: ${p.code} · ${l10n.activite(p.activite)}' : l10n.activite(p.activite),
+                        style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                      ),
+                      trailing: estSelectionne
+                          ? const Icon(Icons.check_circle_rounded, color: Color(0xFF01226C))
+                          : null,
                     ),
-                    subtitle: Text(
-                      p.code != null ? 'Code: ${p.code} · ${l10n.activite(p.activite)}' : l10n.activite(p.activite),
-                      style: const TextStyle(fontSize: 11, color: AppColors.muted),
-                    ),
-                    trailing: estSelectionne
-                        ? const Icon(Icons.check_circle_rounded, color: Color(0xFF01226C))
-                        : null,
-                  ),
-                );
-              }),
+                  );
+                }),
+              ],
             ],
           ],
         ),

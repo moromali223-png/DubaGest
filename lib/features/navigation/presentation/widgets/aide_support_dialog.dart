@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../app/theme/app_theme.dart';
 
 /// Dialogue modal professionnel pour l'Aide & Support DubaGest.
@@ -169,8 +170,12 @@ class _AideSupportDialogState extends State<AideSupportDialog> with SingleTicker
           iconColor: Colors.green,
           title: 'Assistance WhatsApp Directe',
           subtitle: 'Discutez avec nos conseillers techniques 7j/7 pour un dépannage rapide.',
-          actionLabel: '+223 70 00 00 00',
+          actionLabel: '+223 98 02 84 99',
           badge: 'Recommandé',
+          onTap: () => launchUrl(
+            Uri.parse('https://wa.me/22398028499'),
+            mode: LaunchMode.externalApplication,
+          ),
         ),
         const SizedBox(height: 12),
         _CardAction(
@@ -178,7 +183,11 @@ class _AideSupportDialogState extends State<AideSupportDialog> with SingleTicker
           iconColor: Colors.blue,
           title: 'Support par Email',
           subtitle: 'Envoyez vos questions détaillées ou demandes d\'assistance.',
-          actionLabel: 'support@dubagest.com',
+          actionLabel: 'sphereduba@gmail.com',
+          onTap: () => launchUrl(
+            Uri(scheme: 'mailto', path: 'sphereduba@gmail.com'),
+            mode: LaunchMode.externalApplication,
+          ),
         ),
         const SizedBox(height: 12),
         _CardAction(
@@ -186,7 +195,11 @@ class _AideSupportDialogState extends State<AideSupportDialog> with SingleTicker
           iconColor: Colors.orange,
           title: 'Service Client Téléphonique',
           subtitle: 'Du lundi au samedi, de 08h00 à 19h00 (Heure de Bamako / GMT).',
-          actionLabel: '+223 20 00 00 00',
+          actionLabel: '+223 98 02 84 99',
+          onTap: () => launchUrl(
+            Uri(scheme: 'tel', path: '+22398028499'),
+            mode: LaunchMode.externalApplication,
+          ),
         ),
         const SizedBox(height: 16),
         Container(
@@ -307,6 +320,7 @@ class _CardAction extends StatelessWidget {
     required this.subtitle,
     required this.actionLabel,
     this.badge,
+    this.onTap,
   });
 
   final IconData icon;
@@ -315,80 +329,88 @@ class _CardAction extends StatelessWidget {
   final String subtitle;
   final String actionLabel;
   final String? badge;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: iconColor, size: 22),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.ink),
+                          ),
+                        ),
+                        if (badge != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.greenSoft,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              badge!,
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.green),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 12, color: AppColors.muted, height: 1.3),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.inkRaised,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Text(
-                        title,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.ink),
+                        actionLabel,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.greenOnDark,
+                        ),
                       ),
                     ),
-                    if (badge != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.greenSoft,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          badge!,
-                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.green),
-                        ),
-                      ),
                   ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 12, color: AppColors.muted, height: 1.3),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.inkRaised,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    actionLabel,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.greenOnDark,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

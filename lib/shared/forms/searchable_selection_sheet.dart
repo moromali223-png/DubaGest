@@ -264,14 +264,14 @@ class _SearchableSingleSelectionSheetState<T>
                                   height: 36,
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? const Color(0xFF01226C).withValues(alpha: 0.1)
+                                        ? AppColors.greenSoft
                                         : AppColors.background,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(
                                     opt.icon,
                                     size: 20,
-                                    color: isSelected ? const Color(0xFF01226C) : AppColors.ink,
+                                    color: isSelected ? AppColors.green : AppColors.ink,
                                   ),
                                 )
                               : null,
@@ -280,14 +280,14 @@ class _SearchableSingleSelectionSheetState<T>
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected ? const Color(0xFF01226C) : AppColors.ink,
+                              color: isSelected ? AppColors.green : AppColors.ink,
                             ),
                           ),
                           subtitle: opt.subtitle != null
                               ? Text(opt.subtitle!, style: const TextStyle(fontSize: 12.5, color: AppColors.muted))
                               : null,
                           trailing: isSelected
-                              ? const Icon(Icons.check_circle_rounded, color: Color(0xFF01226C), size: 22)
+                              ? const Icon(Icons.check_circle_rounded, color: AppColors.green, size: 22)
                               : opt.badge != null
                                   ? Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -410,7 +410,7 @@ class _MultiSelectSheetState<T> extends State<_MultiSelectSheet<T>> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF01226C).withValues(alpha: 0.1),
+                              color: AppColors.greenSoft,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -418,7 +418,7 @@ class _MultiSelectSheetState<T> extends State<_MultiSelectSheet<T>> {
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF01226C),
+                                color: AppColors.green,
                               ),
                             ),
                           ),
@@ -532,21 +532,21 @@ class _MultiSelectSheetState<T> extends State<_MultiSelectSheet<T>> {
                         return CheckboxListTile(
                           value: isSelected,
                           enabled: opt.enabled,
-                          activeColor: const Color(0xFF01226C),
+                          activeColor: AppColors.green,
                           secondary: opt.icon != null
                               ? Container(
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? const Color(0xFF01226C).withValues(alpha: 0.1)
+                                        ? AppColors.greenSoft
                                         : AppColors.background,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Icon(
                                     opt.icon,
                                     size: 20,
-                                    color: isSelected ? const Color(0xFF01226C) : AppColors.ink,
+                                    color: isSelected ? AppColors.green : AppColors.ink,
                                   ),
                                 )
                               : null,
@@ -555,7 +555,7 @@ class _MultiSelectSheetState<T> extends State<_MultiSelectSheet<T>> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected ? const Color(0xFF01226C) : AppColors.ink,
+                              color: isSelected ? AppColors.green : AppColors.ink,
                             ),
                           ),
                           subtitle: opt.subtitle != null
@@ -601,7 +601,7 @@ class _MultiSelectSheetState<T> extends State<_MultiSelectSheet<T>> {
                     flex: 2,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF01226C),
+                        backgroundColor: AppColors.green,
                         minimumSize: const Size(0, 48),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -677,18 +677,18 @@ class SmartMultiSelectChips<T> extends StatelessWidget {
               InputChip(
                 label: Text(itemLabelBuilder(item)),
                 selected: true,
-                selectedColor: const Color(0xFF01226C).withValues(alpha: 0.1),
+                selectedColor: AppColors.greenSoft,
                 labelStyle: const TextStyle(
-                  color: Color(0xFF01226C),
+                  color: AppColors.green,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
-                deleteIcon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF01226C)),
+                deleteIcon: const Icon(Icons.close_rounded, size: 16, color: AppColors.green),
                 onDeleted: () => onRemoveItem(item),
                 onPressed: onTapOpenSheet,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: const Color(0xFF01226C).withValues(alpha: 0.2)),
+                  side: BorderSide(color: AppColors.green.withValues(alpha: 0.2)),
                 ),
               ),
             ActionChip(

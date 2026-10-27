@@ -39,15 +39,24 @@ class _TousLesModulesSheetState extends ConsumerState<TousLesModulesSheet> {
     if (nav == null) return const SizedBox.shrink();
 
     final contacts = nav.modulesCommuns.where((m) => m.code == ModuleCodes.communContacts).firstOrNull;
-    final hasCommerce = nav.sections.any((s) => s.activite == ActiviteCode.commerce);
-    final hasServices = nav.sections.any((s) => s.activite == ActiviteCode.services);
-    final clientsIntegres = contacts != null && (hasCommerce || hasServices);
 
     // Construction intelligente des modules par activité
     List<AppModule> modulesActivite(ModuleSection sec) {
-      if (sec.activite == ActiviteCode.commerce && contacts != null) {
-        final i = sec.modules.indexWhere((m) => m.code == ModuleCodes.commerceFournisseurs);
-        return [...sec.modules]..insert(i < 0 ? sec.modules.length : i + 1, contacts);
+      if (sec.activite == ActiviteCode.commerce) {
+        final liste = [...sec.modules];
+        if (contacts != null && !liste.any((m) => m.code == ModuleCodes.communContacts)) {
+          final i = liste.indexWhere((m) => m.code == ModuleCodes.commerceFournisseurs);
+          liste.insert(i < 0 ? liste.length : i + 1, contacts);
+        }
+        if (!liste.any((m) => m.code == ModuleCodes.commerceIntelligence)) {
+          liste.add(const AppModule(
+            code: ModuleCodes.commerceIntelligence,
+            activite: ActiviteCode.commerce,
+            permissionAcces: 'sales.view',
+            ordre: 16,
+          ));
+        }
+        return liste;
       }
 
       if (sec.activite == ActiviteCode.services) {
@@ -114,8 +123,11 @@ class _TousLesModulesSheetState extends ConsumerState<TousLesModulesSheet> {
     }
 
     String libelle(AppModule m, {ActiviteCode? activite}) {
-      if (m.code == ModuleCodes.communContacts && clientsIntegres) {
-        return l10n.moduleCommunContactsClients;
+      if (m.code == ModuleCodes.communContacts) {
+        if (activite == ActiviteCode.commerce || activite == ActiviteCode.services) {
+          return l10n.moduleCommunContactsClients;
+        }
+        return l10n.moduleCommunContacts;
       }
       return l10n.moduleCourt(m.code);
     }
@@ -327,11 +339,11 @@ class _TousLesModulesSheetState extends ConsumerState<TousLesModulesSheet> {
                     activite: sec.activite,
                   ),
 
-                // Outils communs (sans contacts si déjà dans l'activité)
+                // Outils communs (carnet d'adresses centralisé, documents, agenda, rapports)
                 section(
                   'Outils communs',
                   Icons.hub_outlined,
-                  [for (final m in nav.modulesCommuns) if (!clientsIntegres || m != contacts) m],
+                  nav.modulesCommuns,
                   couleur: AppColors.gold,
                 ),
 

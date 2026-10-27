@@ -15,6 +15,7 @@ abstract final class Routes {
   static const blocked = '/blocked';
   static const home = '/';
   static const administration = '/admin';
+  static const declassementAbonnement = '/admin/abonnement/declassement';
   static const finances = '/finances';
   static const settings = '/settings';
   static const changePassword = '/settings/password';
@@ -61,6 +62,10 @@ abstract final class Routes {
         queryParameters: {'cible_type': ?cibleType?.code, 'cible_id': ?cibleId, 'titre': ?titre},
       ).toString();
   static const documents = '/documents';
+  static String documentNouveau({String? type, String? contactId}) => Uri(
+        path: '/documents/new',
+        queryParameters: {'type': ?type, 'contact_id': ?contactId},
+      ).toString();
   static String document(String id) => '/documents/$id';
 
   static String contactNouveau({String? relation}) =>
@@ -81,9 +86,13 @@ abstract final class Routes {
   static String produitModifier(String id) => '/commerce/produits/$id/edit';
   static const categoriesProduits = '/commerce/produits/categories';
   static const achats = '/commerce/achats';
-  static String achatNouveau({String? fournisseurId, String? produitId}) => Uri(
+  static String achatNouveau({String? fournisseurId, String? produitId, String? bonCommandeId}) => Uri(
         path: '/commerce/achats/new',
-        queryParameters: {'fournisseur': ?fournisseurId, 'produit': ?produitId},
+        queryParameters: {
+          'fournisseur': ?fournisseurId,
+          'produit': ?produitId,
+          'bon_commande': ?bonCommandeId,
+        },
       ).toString();
   static String achat(String id) => '/commerce/achats/$id';
   static String achatModifier(String id) => '/commerce/achats/$id/edit';
@@ -93,6 +102,7 @@ abstract final class Routes {
   static String vente(String id) => '/commerce/ventes/$id';
   static const fournisseurs = '/commerce/fournisseurs';
   static String fournisseur(String id) => '/commerce/fournisseurs/$id';
+  static const commerceIntelligence = '/commerce/intelligence';
 
   // Services
   static const servicesAccueil = '/services';
@@ -101,6 +111,14 @@ abstract final class Routes {
   static String prestation(String id) => '/services/prestations/$id';
   static String prestationModifier(String id) => '/services/prestations/$id/edit';
   static const servicesPlanning = '/services/planning';
+  static const planningNouveau = '/services/planning/new';
+  static String planningNouveauAvecDate(DateTime date, {String? contactId}) => Uri(
+        path: '/services/planning/new',
+        queryParameters: {
+          'date': date.toIso8601String(),
+          'contactId': ?contactId,
+        },
+      ).toString();
   static const servicesCatalogue = '/services/catalogue';
   static const serviceNouveau = '/services/catalogue/new';
   static String serviceModifier(String id) => '/services/catalogue/$id/edit';
@@ -108,6 +126,42 @@ abstract final class Routes {
   static const devisNouveau = '/services/devis/new';
   static String devis(String id) => '/services/devis/$id';
   static const servicesRapports = '/services/rapports';
+
+  // Immobilier
+  static const immobilierBiens = '/immobilier/biens';
+  static const bienNouveau = '/immobilier/biens/new';
+  static String bienDetails(String id) => '/immobilier/biens/$id';
+  static String bienModifier(String id) => '/immobilier/biens/$id/edit';
+  static const immobilierProprietaires = '/immobilier/proprietaires';
+  static String proprietaireDetails(String id) => '/immobilier/proprietaires/$id';
+  static const immobilierLocataires = '/immobilier/locataires';
+  static String locataireDetails(String id) => '/immobilier/locataires/$id';
+  static const immobilierLocations = '/immobilier/locations';
+  static const locationNouvelle = '/immobilier/locations/new';
+  static String locationDetails(String id) => '/immobilier/locations/$id';
+  static const immobilierContrats = '/immobilier/contrats';
+  static const contratNouveau = '/immobilier/contrats/new';
+  static String contratDetails(String id) => '/immobilier/contrats/$id';
+  static String contratModifier(String id) => '/immobilier/contrats/$id/edit';
+  static const immobilierLoyers = '/immobilier/loyers';
+  static String loyerDetails(String id) => '/immobilier/loyers/$id';
+  static const loyerRecevoir = '/immobilier/loyers/recevoir';
+  static String loyerRecevoirAvec({String? echeanceId, String? bienId, String? locataireId}) => Uri(
+        path: loyerRecevoir,
+        queryParameters: {
+          'echeanceId': ?echeanceId,
+          'bienId': ?bienId,
+          'locataireId': ?locataireId,
+        },
+      ).toString();
+  static const immobilierDashboard = '/immobilier/dashboard';
+
+  // Administration Centrale DubaGest (Super Admin)
+  static const superAdmin = '/super-admin';
+  static const superAdminEntreprises = '/super-admin/entreprises';
+  static String superAdminEntreprise(String id) => '/super-admin/entreprises/$id';
+  static const superAdminSponsorises = '/super-admin/sponsorises';
+  static const superAdminAudit = '/super-admin/audit';
 
   /// Accessibles sans session.
   static const publicRoutes = {login, register, forgotPassword, joinCompany};
@@ -130,6 +184,7 @@ abstract final class ModuleRoutes {
     ModuleCodes.commerceAchats: Routes.achats,
     ModuleCodes.commerceVentes: Routes.ventes,
     ModuleCodes.commerceFournisseurs: Routes.fournisseurs,
+    ModuleCodes.commerceIntelligence: Routes.commerceIntelligence,
     ModuleCodes.communContacts: Routes.contacts,
     ModuleCodes.communDocuments: Routes.documents,
     ModuleCodes.communAgenda: Routes.agenda,
@@ -140,6 +195,12 @@ abstract final class ModuleRoutes {
     ModuleCodes.servicesDevis: Routes.servicesDevis,
     ModuleCodes.servicesRapports: Routes.servicesRapports,
     ModuleCodes.servicesFacturation: Routes.documents,
+    ModuleCodes.immobilierBiens: Routes.immobilierBiens,
+    ModuleCodes.immobilierProprietaires: Routes.immobilierProprietaires,
+    ModuleCodes.immobilierLocataires: Routes.immobilierLocataires,
+    ModuleCodes.immobilierLocations: Routes.immobilierLocations,
+    ModuleCodes.immobilierContrats: Routes.immobilierContrats,
+    ModuleCodes.immobilierLoyers: Routes.immobilierLoyers,
   };
 
   static String path(String moduleCode) =>

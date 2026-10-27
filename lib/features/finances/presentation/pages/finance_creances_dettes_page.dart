@@ -35,18 +35,18 @@ class FinanceCreancesDettesPage extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
-                          color: AppColors.gold.withValues(alpha: 0.1),
+                          color: AppColors.greenSoft,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+                          border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('À recevoir (Clients)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.goldDark)),
+                            const Text('À recevoir (Clients)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.green)),
                             const SizedBox(height: 4),
                             Text(
                               '${format.format(data.aRecevoir.valeurActuelle)} FCFA',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.green),
                             ),
                             const SizedBox(height: 2),
                             Text('${data.nombreClientsDebiteurs} clients concernés', style: const TextStyle(fontSize: 11, color: AppColors.muted)),
@@ -59,18 +59,18 @@ class FinanceCreancesDettesPage extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
-                          color: AppColors.negative.withValues(alpha: 0.08),
+                          color: AppColors.detteSoft,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.negative.withValues(alpha: 0.3)),
+                          border: Border.all(color: AppColors.dette.withValues(alpha: 0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('À payer (Fournisseurs)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.negative)),
+                            const Text('À payer (Fournisseurs)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.dette)),
                             const SizedBox(height: 4),
                             Text(
                               '${format.format(data.aPayer.valeurActuelle)} FCFA',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.dette),
                             ),
                             const SizedBox(height: 2),
                             Text('${data.nombreFournisseursCreanciers} fournisseurs concernés', style: const TextStyle(fontSize: 11, color: AppColors.muted)),

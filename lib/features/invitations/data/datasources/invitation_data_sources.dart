@@ -21,12 +21,18 @@ class InvitationRemoteDataSource {
   Future<List<Map<String, dynamic>>> lister(String entrepriseId) async {
     final rows = await _client
         .from('invitations')
-        .select('id, email, role_code, statut, expires_at, created_at')
+        .select('id, email, role_code, statut, expires_at, created_at, invitation_perimetres(perimetre_id)')
         .eq('entreprise_id', entrepriseId)
         .order('created_at', ascending: false)
         .limit(50);
     return List<Map<String, dynamic>>.from(rows);
   }
+
+  Future<Map<String, dynamic>> renvoyer(String invitationId) =>
+      _client.rpc<Map<String, dynamic>>('renvoyer_invitation', params: {'p_invitation_id': invitationId});
+
+  Future<void> supprimer(String invitationId) =>
+      _client.rpc<void>('supprimer_invitation', params: {'p_invitation_id': invitationId});
 
   Future<void> annuler(String invitationId) =>
       _client.rpc<void>('annuler_invitation', params: {'p_invitation_id': invitationId});

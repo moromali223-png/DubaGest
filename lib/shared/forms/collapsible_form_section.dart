@@ -98,7 +98,7 @@ class _CollapsibleFormSectionState extends State<CollapsibleFormSection>
   @override
   Widget build(BuildContext context) {
     final hasError = widget.errorText != null || widget.status == FormSectionStatus.error;
-    final color = widget.accentColor ?? const Color(0xFF01226C);
+    final color = widget.accentColor ?? AppColors.green;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -171,8 +171,9 @@ class _CollapsibleFormSectionState extends State<CollapsibleFormSection>
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 15,
-                                      fontWeight: widget.isExpanded ? FontWeight.w700 : FontWeight.w600,
+                                      fontWeight: widget.isExpanded ? FontWeight.w900 : FontWeight.w800,
                                       color: hasError ? AppColors.negative : AppColors.ink,
+                                      letterSpacing: -0.2,
                                     ),
                                   ),
                                 ),
@@ -182,7 +183,7 @@ class _CollapsibleFormSectionState extends State<CollapsibleFormSection>
                                     '*',
                                     style: TextStyle(
                                       fontSize: 15,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w900,
                                       color: AppColors.negative,
                                     ),
                                   ),
@@ -192,15 +193,15 @@ class _CollapsibleFormSectionState extends State<CollapsibleFormSection>
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: AppColors.background,
+                                      color: AppColors.greenSoft,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
                                       widget.badge!,
                                       style: const TextStyle(
                                         fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.muted,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.green,
                                       ),
                                     ),
                                   ),
@@ -217,6 +218,7 @@ class _CollapsibleFormSectionState extends State<CollapsibleFormSection>
                                 style: const TextStyle(
                                   fontSize: 12.5,
                                   color: AppColors.muted,
+                                  fontWeight: FontWeight.w500,
                                   height: 1.3,
                                 ),
                               ),
@@ -257,7 +259,7 @@ class _CollapsibleFormSectionState extends State<CollapsibleFormSection>
                 margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.negative.withValues(alpha: 0.08),
+                  color: AppColors.negative.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -269,7 +271,7 @@ class _CollapsibleFormSectionState extends State<CollapsibleFormSection>
                         widget.errorText!,
                         style: const TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.bold,
                           color: AppColors.negative,
                         ),
                       ),
@@ -312,62 +314,63 @@ class _StatusIndicatorBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     if (status == FormSectionStatus.emptyOptional) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: AppColors.muted.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: const Text(
           'Facultatif',
-          style: TextStyle(fontSize: 10.5, color: AppColors.muted, fontWeight: FontWeight.w500),
+          style: TextStyle(fontSize: 10, color: AppColors.muted, fontWeight: FontWeight.bold),
         ),
       );
     }
 
     if (status == FormSectionStatus.complete) {
       return Container(
-        padding: const EdgeInsets.all(3),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: AppColors.positive.withValues(alpha: 0.12),
-          shape: BoxShape.circle,
+          color: AppColors.positive.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
         ),
-        child: const Icon(
-          Icons.check_rounded,
-          size: 14,
-          color: AppColors.positive,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_rounded, size: 12, color: AppColors.positive),
+            SizedBox(width: 4),
+            Text(
+              'Prêt',
+              style: TextStyle(fontSize: 10, color: AppColors.positive, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
       );
     }
 
     if (status == FormSectionStatus.error || status == FormSectionStatus.emptyRequired) {
       return Container(
-        padding: const EdgeInsets.all(3),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: AppColors.negative.withValues(alpha: 0.12),
-          shape: BoxShape.circle,
+          color: AppColors.negative.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
         ),
-        child: const Icon(
-          Icons.priority_high_rounded,
-          size: 14,
-          color: AppColors.negative,
+        child: const Text(
+          'Requis',
+          style: TextStyle(fontSize: 10, color: AppColors.negative, fontWeight: FontWeight.bold),
         ),
       );
     }
 
     if (status == FormSectionStatus.partial) {
       return Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: AppColors.gold.withValues(alpha: 0.15),
-          shape: BoxShape.circle,
+          color: AppColors.gold.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
         ),
-        child: Container(
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: AppColors.gold,
-            shape: BoxShape.circle,
-          ),
+        child: const Text(
+          'Incomplet',
+          style: TextStyle(fontSize: 10, color: AppColors.gold, fontWeight: FontWeight.bold),
         ),
       );
     }

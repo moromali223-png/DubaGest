@@ -75,10 +75,6 @@ class CalculFinancesEngine {
       for (final p in financesFiltrees.paiements)
         if (financesFiltrees.compte(p) && !p.estTransfert && plageActuelle.contient(p.datePaiement)) p,
     ];
-    final paiementsPrecedents = [
-      for (final p in financesFiltrees.paiements)
-        if (financesFiltrees.compte(p) && !p.estTransfert && plagePrecedente.contient(p.datePaiement)) p,
-    ];
 
     // 3. Calcul du Chiffre d'Affaires
     final caCommerceActuel = ventesActuelles.fold(0, (s, v) => s + v.total);
@@ -124,10 +120,14 @@ class CalculFinancesEngine {
     final resultatEstimePrecedent = caTotalPrecedent - depensesTotalPrecedent;
 
     // 7. Trésorerie disponible (Argent disponible actuel)
-    final tresorerieActuelle = financesFiltrees.caisses
-        .map((c) => financesFiltrees.sessionOuverte(c.id))
-        .whereType<SessionCaisse>()
-        .fold(0, (t, s) => t + financesFiltrees.solde(s));
+    final soldeCaisses = financesFiltrees.caisses.fold<int>(0, (total, c) {
+      final ouverte = financesFiltrees.sessionOuverte(c.id);
+      if (ouverte != null) return total + financesFiltrees.solde(ouverte);
+      final derniere = (financesFiltrees.sessions.where((s) => s.caisseId == c.id).toList()
+        ..sort((a, b) => b.ouverteLe.compareTo(a.ouverteLe))).firstOrNull;
+      if (derniere != null) return total + (derniere.soldeReel ?? financesFiltrees.solde(derniere));
+      return total;
+    });
 
     // 8. Créances & Dettes actuelles
     var aRecevoirTotal = 0;
@@ -194,6 +194,7 @@ class CalculFinancesEngine {
     }
 
     final fluxNet = entreesReelles - sortiesReelles;
+    final tresorerieActuelle = soldeCaisses > 0 ? soldeCaisses : (fluxNet > 0 ? fluxNet : soldeCaisses);
 
     // 10. Calcul des évolutions comparatives
     double? calcEvolution(int actuel, int precedent) {
@@ -404,13 +405,21 @@ class CalculFinancesEngine {
         final dActuel = plageActuelle.debut.add(Duration(days: i));
         final dPrec = plagePrecedente.debut.add(Duration(days: i));
 
-        final totalActuel = ventesActuelles
+        final totalVentes = ventesActuelles
             .where((v) => _memeJour(v.date, dActuel))
             .fold(0, (s, v) => s + v.total);
+        final totalEngagements = engagements
+            .where((e) => !e.annule && !e.refuse && e.sens == SensEngagement.aRecevoir && e.origineType != 'VENTE' && _memeJour(e.dateEngagement, dActuel))
+            .fold(0, (s, e) => s + e.montantTotal);
+        final totalActuel = totalVentes + totalEngagements;
 
-        final totalPrec = ventesPrecedentes
+        final totalVentesPrec = ventesPrecedentes
             .where((v) => _memeJour(v.date, dPrec))
             .fold(0, (s, v) => s + v.total);
+        final totalEngagementsPrec = engagements
+            .where((e) => !e.annule && !e.refuse && e.sens == SensEngagement.aRecevoir && e.origineType != 'VENTE' && _memeJour(e.dateEngagement, dPrec))
+            .fold(0, (s, e) => s + e.montantTotal);
+        final totalPrec = totalVentesPrec + totalEngagementsPrec;
 
         points.add(
           PointSerieTemporelle(
@@ -428,9 +437,13 @@ class CalculFinancesEngine {
       while (!cur.isAfter(fin)) {
         final m = cur.month;
         final y = cur.year;
-        final totalMois = ventesActuelles
-            .where((v) => v.date.month == m && v.date.year == y)
+        final totalMoisVentes = ventesActuelles
+            .where((v) => v.date.toLocal().month == m && v.date.toLocal().year == y)
             .fold(0, (s, v) => s + v.total);
+        final totalMoisEngagements = engagements
+            .where((e) => !e.annule && !e.refuse && e.sens == SensEngagement.aRecevoir && e.origineType != 'VENTE' && e.dateEngagement.toLocal().month == m && e.dateEngagement.toLocal().year == y)
+            .fold(0, (s, e) => s + e.montantTotal);
+        final totalMois = totalMoisVentes + totalMoisEngagements;
 
         points.add(
           PointSerieTemporelle(
@@ -678,7 +691,7 @@ class CalculFinancesEngine {
       faits.add(
         FaitMarquantFinance(
           icone: 'warning',
-          texte: 'Des créances clients sont en retard d’échéance (${creancesEnRetard} FCFA au total).',
+          texte: 'Des créances clients sont en retard d’échéance ($creancesEnRetard FCFA au total).',
           positif: false,
         ),
       );
@@ -778,8 +791,11 @@ class CalculFinancesEngine {
     return alertes;
   }
 
-  bool _memeJour(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  bool _memeJour(DateTime a, DateTime b) {
+    final al = a.toLocal();
+    final bl = b.toLocal();
+    return al.year == bl.year && al.month == bl.month && al.day == bl.day;
+  }
 
   String _nomMoisCourt(int mois) => const [
         'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',

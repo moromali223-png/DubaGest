@@ -54,7 +54,7 @@ class CaisseTresorerieService {
           memeJour(p.datePaiement.toLocal(), e.dateEngagement)
               ? OrigineMouvement.achat
               : OrigineMouvement.paiementFournisseur,
-        'PRESTATION' => OrigineMouvement.prestation,
+        'PRESTATION' || 'INTERVENTION' => OrigineMouvement.prestation,
         'LOYER' => OrigineMouvement.loyer,
         'DEPENSE' => OrigineMouvement.depense,
         _ => entree ? OrigineMouvement.paiementClient : OrigineMouvement.paiementFournisseur,

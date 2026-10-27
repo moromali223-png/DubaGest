@@ -14,6 +14,10 @@ final invitationRepositoryProvider = Provider<InvitationRepository>((ref) => Inv
     ));
 
 final creerInvitationProvider = Provider((ref) => CreerInvitation(ref.watch(invitationRepositoryProvider)));
+final renvoyerInvitationProvider =
+    Provider((ref) => RenvoyerInvitation(ref.watch(invitationRepositoryProvider)));
+final supprimerInvitationProvider =
+    Provider((ref) => SupprimerInvitation(ref.watch(invitationRepositoryProvider)));
 final listerInvitationsProvider =
     Provider((ref) => ListerInvitations(ref.watch(invitationRepositoryProvider)));
 final annulerInvitationProvider =

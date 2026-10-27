@@ -44,7 +44,7 @@ class CardCreancesDettes extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.sync_alt_rounded, size: 20, color: AppColors.gold),
+              const Icon(Icons.sync_alt_rounded, size: 20, color: AppColors.green),
               const SizedBox(width: 8),
               const Text(
                 'Créances vs Dettes',
@@ -62,19 +62,19 @@ class CardCreancesDettes extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: AppColors.greenSoft, borderRadius: BorderRadius.circular(12)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(Icons.call_received_rounded, size: 16, color: AppColors.gold),
-                            const SizedBox(width: 6),
-                            const Flexible(
+                            Icon(Icons.call_received_rounded, size: 16, color: AppColors.green),
+                            SizedBox(width: 6),
+                            Flexible(
                               child: Text(
                                 'À recevoir',
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.green),
                               ),
                             ),
                           ],
@@ -82,7 +82,7 @@ class CardCreancesDettes extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           '${format.format(aRecevoir)} $devise',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.green),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -113,19 +113,19 @@ class CardCreancesDettes extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: AppColors.detteSoft, borderRadius: BorderRadius.circular(12)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(Icons.call_made_rounded, size: 16, color: AppColors.negative),
-                            const SizedBox(width: 6),
-                            const Flexible(
+                            Icon(Icons.call_made_rounded, size: 16, color: AppColors.dette),
+                            SizedBox(width: 6),
+                            Flexible(
                               child: Text(
                                 'À payer',
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.dette),
                               ),
                             ),
                           ],
@@ -133,7 +133,7 @@ class CardCreancesDettes extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           '${format.format(aPayer)} $devise',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.dette),
                         ),
                         const SizedBox(height: 4),
                         Text(

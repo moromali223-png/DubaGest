@@ -25,13 +25,19 @@ class PolicesPdf {
 
   static Future<PolicesPdf> charger() async {
     if (_cache case final p?) return p;
-    Future<pw.Font> f(String nom) async => pw.Font.ttf(await rootBundle.load('assets/fonts/$nom.ttf'));
-    return _cache = PolicesPdf._(
-      await f('NotoSans-Regular'),
-      await f('NotoSans-Bold'),
-      await f('NotoSansArabic-Regular'),
-      await f('NotoSansArabic-Bold'),
-    );
+    try {
+      Future<pw.Font> f(String nom) async => pw.Font.ttf(await rootBundle.load('assets/fonts/$nom.ttf'));
+      return _cache = PolicesPdf._(
+        await f('NotoSans-Regular'),
+        await f('NotoSans-Bold'),
+        await f('NotoSansArabic-Regular'),
+        await f('NotoSansArabic-Bold'),
+      );
+    } catch (_) {
+      final latin = pw.Font.helvetica();
+      final latinGras = pw.Font.helveticaBold();
+      return _cache = PolicesPdf._(latin, latinGras, latin, latinGras);
+    }
   }
 }
 

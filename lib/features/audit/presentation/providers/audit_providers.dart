@@ -17,3 +17,9 @@ final journalProvider = FutureProvider.autoDispose<List<EntreeAudit>>((ref) asyn
   if (ctx == null) return const [];
   return ref.watch(consulterJournalProvider).call(ctx);
 });
+
+final historiqueEntiteProvider = FutureProvider.autoDispose.family<List<EntreeAudit>, (String type, String id)>((ref, arg) async {
+  final ctx = ref.watch(contexteActifProvider);
+  if (ctx == null) return const [];
+  return ref.watch(consulterJournalProvider).call(ctx, entiteType: arg.$1, entiteId: arg.$2);
+});

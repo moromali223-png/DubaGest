@@ -35,7 +35,7 @@ class CardPerformanceActivites extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.category_outlined, size: 20, color: Color(0xFF01226C)),
+              Icon(Icons.category_outlined, size: 20, color: AppColors.green),
               SizedBox(width: 8),
               Text(
                 'Performance par activité',

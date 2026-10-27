@@ -34,6 +34,7 @@ final documentRepositoryProvider = Provider<DocumentRepository>((ref) => Documen
     ));
 
 final emettreRecuProvider = Provider((ref) => EmettreRecu(ref.watch(documentRepositoryProvider)));
+final emettreDocumentProvider = Provider((ref) => EmettreDocument(ref.watch(documentRepositoryProvider)));
 final assurerNumerosProvider = Provider((ref) => AssurerNumeros(ref.watch(documentRepositoryProvider)));
 final retirerDocumentProvider = Provider((ref) => RetirerDocumentRefuse(ref.watch(documentRepositoryProvider)));
 

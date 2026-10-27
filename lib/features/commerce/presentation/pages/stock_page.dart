@@ -65,6 +65,14 @@ class _StockPageState extends ConsumerState<StockPage> {
           const SyncStatusButton(),
         ],
       ),
+      floatingActionButton: !droits.creerProduits || (etatAsync.value?.catalogueVide ?? true)
+          ? null
+          : FloatingActionButton.extended(
+              key: const Key('stock-produit-ajouter'),
+              onPressed: () => context.push(Routes.produitNouveau()),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.comAddProduct),
+            ),
       body: AsyncValueView(
         value: etatAsync,
         onRetry: () => ref.invalidate(etatCommerceProvider),
@@ -79,9 +87,13 @@ class _StockPageState extends ConsumerState<StockPage> {
             );
           }
           final resume = etat.resume(boutiques);
+          final boutiqueCourante = ref.watch(boutiqueCouranteProvider);
+          final ensemble = boutiques.toSet();
           final produits = [
-            for (final p in etat.rechercher(_recherche, categorieId: _categorie))
-              if (_statut == null || etat.statutDans(p, boutiques) == _statut) p,
+            for (final p in etat.rechercher(_recherche, categorieId: _categorie, boutiqueId: boutiqueCourante))
+              if ((ensemble.isEmpty || ensemble.any(p.estVisibleDansBoutique)) &&
+                  (_statut == null || etat.statutDans(p, boutiques) == _statut))
+                p,
           ];
           if (_statut != null) {
             produits.sort((a, b) => etat.quantite(a.id, boutiques).brut.compareTo(etat.quantite(b.id, boutiques).brut));
@@ -273,7 +285,8 @@ class LigneStock extends ConsumerWidget {
       ),
     );
     if (choix != null && context.mounted) {
-      await ouvrirOperationStock(context, produit: produit, operation: choix);
+      final courante = ref.read(boutiqueCouranteProvider);
+      await ouvrirOperationStock(context, produit: produit, operation: choix, perimetreId: courante);
     }
   }
 
@@ -282,6 +295,7 @@ class LigneStock extends ConsumerWidget {
     final l10n = context.l10n;
     final p = produit;
     final boutiques = ref.watch(boutiquesVisiblesProvider);
+    final totalBoutiques = ref.watch(boutiquesProvider).length;
     final droits = ref.watch(droitsCommerceProvider);
     final q = etat.quantite(p.id, boutiques);
     final statut = etat.statut(p, q);
@@ -317,8 +331,28 @@ class LigneStock extends ConsumerWidget {
                         StockBadge(statut: statut, compact: true),
                       ],
                     ),
-                    if (categorie != null)
-                      Text(categorie.nom, style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                    Row(
+                      children: [
+                        if (categorie != null)
+                          Text(categorie.nom, style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                        if (totalBoutiques > 1) ...[
+                          if (categorie != null)
+                            const Text(' · ', style: TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                          Text(
+                            p.estGlobal
+                                ? '🌐 Global'
+                                : (p.perimetresIds.length > 1
+                                    ? '🏪 ${p.perimetresIds.length} boutiques'
+                                    : '🏪 ${nomBoutique(ref, p.perimetreId ?? "")}'),
+                            style: TextStyle(
+                              color: p.estGlobal ? const Color(0xFF01226C) : const Color(0xFFDF9540),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                     const SizedBox(height: 4),
                     Text.rich(
                       TextSpan(children: [

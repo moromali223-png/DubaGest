@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../commerce/presentation/widgets/commerce_widgets.dart' show montant;
+import '../../../contacts/presentation/providers/contacts_providers.dart';
+import '../../domain/entities/metier_template.dart';
 import '../../domain/entities/prestation.dart';
 import '../services_providers.dart';
 
@@ -162,96 +165,165 @@ class PrestationCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Material(
-      color: Colors.transparent,
+    final contact = prestation.contactId != null
+        ? ref.watch(contactProvider(prestation.contactId!)).value
+        : null;
+    final contactNom = contact?.nomAffiche ?? (prestation.contactId != null ? 'Client...' : 'Client non assigné');
+
+     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
+        child: Ink(
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+                color: AppColors.green.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Indicateur de statut vertical
+                Container(
+                  width: 6,
+                  decoration: BoxDecoration(
+                    color: _couleurStatut(prestation.statut),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          prestation.titre,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15.5, color: AppColors.ink),
-                        ),
-                        if (prestation.description != null && prestation.description!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              prestation.description!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                prestation.titre,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 16,
+                                  color: AppColors.ink,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
                             ),
+                            const SizedBox(width: 8),
+                            StatutPrestationBadge(statut: prestation.statut),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.person_outline, size: 14, color: AppColors.muted),
+                            const SizedBox(width: 4),
+                            Text(
+                              contactNom,
+                              style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                        if (prestation.estContrat) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF01226C).withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '📑 Contrat${prestation.metierCode != MetierCode.generique ? ' • ${prestation.metierCode.libelle}' : ''}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF01226C),
+                                  ),
+                                ),
+                              ),
+                              if (prestation.debutPrevu != null && prestation.echeanceJour != null) ...[
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${DateFormat('dd/MM/yy').format(prestation.debutPrevu!)} → ${DateFormat('dd/MM/yy').format(prestation.echeanceJour!)}'
+                                    '${prestation.dureeEstimee != null ? ' (${prestation.dureeEstimee} ${prestation.uniteDuree.name})' : ''}',
+                                    style: const TextStyle(fontSize: 11.5, color: AppColors.muted, fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
+                        ],
+                        const Divider(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                PrioriteEcheanceBadge(prestation: prestation, compact: true),
+                                if (prestation.responsableNom != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Resp: ${prestation.responsableNom}',
+                                    style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  montant(context, ref, prestation.total),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 17,
+                                    color: AppColors.green,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                StatutFinancierBadge(prestation: prestation),
+                              ],
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    montant(context, ref, prestation.total),
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF01226C)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  StatutPrestationBadge(statut: prestation.statut),
-                  StatutFinancierBadge(prestation: prestation),
-                  PrioriteEcheanceBadge(prestation: prestation),
-                  if (prestation.responsableNom != null && prestation.responsableNom!.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.person_outline_rounded, size: 12, color: AppColors.muted),
-                          const SizedBox(width: 3),
-                          Text(
-                            prestation.responsableNom!,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.muted),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Color _couleurStatut(StatutPrestation statut) {
+    return switch (statut) {
+      StatutPrestation.aFaire => const Color(0xFF64748B),
+      StatutPrestation.planifiee => const Color(0xFF0284C7),
+      StatutPrestation.enCours => AppColors.gold,
+      StatutPrestation.terminee => AppColors.positive,
+      StatutPrestation.livree => const Color(0xFF7C3AED),
+      StatutPrestation.annulee => AppColors.negative,
+    };
   }
 }

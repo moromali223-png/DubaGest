@@ -928,6 +928,52 @@ void main() {
       expect(find.text('Envoyé'), findsOneWidget);
     });
 
+    testWidgets('ServicesDevisPage ne déborde pas sur écran mobile étroit (360x700)', (tester) async {
+      FlutterErrorDetails? captured;
+      final oldOnError = FlutterError.onError;
+      FlutterError.onError = (details) {
+        captured = details;
+      };
+
+      final repo = InMemoryServicesRepository();
+      repo.devis.add(
+        DevisPrestation(
+          id: 'dev-brouillon-1',
+          entrepriseId: entrepriseId,
+          numero: 'DEV-202610-542066',
+          titre: 'Devis — Prestation de services',
+          lignes: [],
+          total: 18888,
+          statut: StatutDevis.brouillon,
+          dateEmission: DateTime(2026, 10, 10),
+        ),
+      );
+
+      final ctx = contexte(
+        activites: const ['SERVICES'],
+        role: 'GESTIONNAIRE_SERVICES',
+        permissions: {'services.view', 'prestations.view'},
+      );
+
+      await pumpApp(
+        tester,
+        const ServicesDevisPage(),
+        settle: false,
+        size: const Size(360, 700),
+        overrides: [
+          contexteActifProvider.overrideWithValue(ctx),
+          servicesRepositoryProvider.overrideWithValue(repo),
+        ],
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      FlutterError.onError = oldOnError;
+      expect(find.text('DEV-202610-542066'), findsOneWidget);
+      expect(find.text('Marquer accepté'), findsOneWidget);
+      expect(find.text('Créer la prestation'), findsOneWidget);
+      expect(captured, isNull);
+    });
+
     testWidgets('DevisDetailsPage affiche le chiffrage détaillé et permet la conversion en prestation', (tester) async {
       final repo = InMemoryServicesRepository();
       final d = DevisPrestation(

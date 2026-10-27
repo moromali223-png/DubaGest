@@ -1,3 +1,4 @@
+import '../../../../core/permissions/permission_codes.dart';
 import '../../../abonnement/domain/entities/abonnement.dart';
 import '../../../abonnement/domain/services/limites_engine.dart';
 import '../../../activites/domain/entities/activite.dart';
@@ -60,17 +61,36 @@ class ContexteSession {
     return ContexteEtat.pret;
   }
 
+  /// Indique si l'utilisateur a accès au périmètre donné (boutique/site).
+  bool aAccesAuPerimetre(String perimetreId) => perimetres.any((p) => p.id == perimetreId);
+
   Role? get role => membre == null ? null : roles[membre!.roleCode];
 
-  LimitesEngine limites([DateTime? now]) => LimitesEngine(
-        plan: plan,
-        abonnement: abonnement,
-        activites: activites,
-        roles: roles,
-        consommation: consommation,
-        entrepriseActive: entreprise?.statut == EntrepriseStatut.active,
-        now: now ?? DateTime.now(),
-      );
+  LimitesEngine limites([DateTime? now]) {
+    final effectivePlan = plan == null
+        ? null
+        : Plan(
+            code: plan!.code,
+            nom: plan!.nom,
+            maxActivites: plan!.maxActivites,
+            activites: plan!.activites,
+            quotasRoles: plan!.quotasRoles,
+            modules: {
+              ...plan!.modules,
+              ModuleCodes.commerceIntelligence,
+              ModuleCodes.servicesPlanning,
+            },
+          );
+    return LimitesEngine(
+      plan: effectivePlan,
+      abonnement: abonnement,
+      activites: activites,
+      roles: roles,
+      consommation: consommation,
+      entrepriseActive: entreprise?.statut == EntrepriseStatut.active,
+      now: now ?? DateTime.now(),
+    );
+  }
 
   PermissionEngine get permissionEngine => membre == null
       ? PermissionEngine.aucune
@@ -80,9 +100,37 @@ class ContexteSession {
           perimetreIds: {for (final p in perimetres) p.id},
         );
 
-  ModuleAccessPolicy accessPolicy([DateTime? now]) => ModuleAccessPolicy(
-        limites: limites(now),
-        permissions: permissionEngine,
-        catalogue: modules,
-      );
+  ModuleAccessPolicy accessPolicy([DateTime? now]) {
+    final cat = modules.map((m) {
+      if (m.code == ModuleCodes.servicesFacturation) {
+        return m.copyWith(ordre: 30);
+      }
+      return m;
+    }).toList();
+    if (activites.any((a) => a.activite == ActiviteCode.commerce && a.estActive)) {
+      if (!cat.any((m) => m.code == ModuleCodes.commerceIntelligence)) {
+        cat.add(const AppModule(
+          code: ModuleCodes.commerceIntelligence,
+          activite: ActiviteCode.commerce,
+          permissionAcces: PermissionCodes.salesView,
+          ordre: 16,
+        ));
+      }
+    }
+    if (activites.any((a) => a.activite == ActiviteCode.services && a.estActive)) {
+      if (!cat.any((m) => m.code == ModuleCodes.servicesPlanning)) {
+        cat.add(const AppModule(
+          code: ModuleCodes.servicesPlanning,
+          activite: ActiviteCode.services,
+          permissionAcces: PermissionCodes.prestationsView,
+          ordre: 24,
+        ));
+      }
+    }
+    return ModuleAccessPolicy(
+      limites: limites(now),
+      permissions: permissionEngine,
+      catalogue: cat,
+    );
+  }
 }

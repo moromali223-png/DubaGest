@@ -25,7 +25,7 @@ class NumberedSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: done ? AppColors.navy.withValues(alpha: 0.3) : AppColors.border),
+        border: Border.all(color: done ? AppColors.green.withValues(alpha: 0.3) : AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -38,9 +38,9 @@ class NumberedSection extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: done ? AppColors.navy : AppColors.background,
+                    color: done ? AppColors.green : AppColors.background,
                     shape: BoxShape.circle,
-                    border: Border.all(color: done ? AppColors.navy : AppColors.border),
+                    border: Border.all(color: done ? AppColors.green : AppColors.border),
                   ),
                   child: Center(
                     child: done
@@ -50,7 +50,7 @@ class NumberedSection extends StatelessWidget {
                             style: const TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 14,
-                              color: AppColors.navy,
+                              color: AppColors.green,
                             ),
                           ),
                   ),
@@ -62,16 +62,21 @@ class NumberedSection extends StatelessWidget {
                     children: [
                       Text(
                         title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
                           fontSize: 15,
-                          color: AppColors.navy,
+                          color: AppColors.ink,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       if (subtitle != null)
                         Text(
                           subtitle!,
-                          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w500),
                         ),
                     ],
                   ),

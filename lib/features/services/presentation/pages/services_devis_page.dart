@@ -165,7 +165,10 @@ class _DevisCard extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -178,7 +181,6 @@ class _DevisCard extends ConsumerWidget {
                       style: TextStyle(color: couleur, fontWeight: FontWeight.w800, fontSize: 11.5),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Text(
                     'Émis le ${DateFormat('dd/MM/yyyy').format(devis.dateEmission)}',
                     style: const TextStyle(fontSize: 12, color: AppColors.muted),
@@ -187,23 +189,89 @@ class _DevisCard extends ConsumerWidget {
               ),
               if (devis.statut == StatutDevis.envoye || devis.statut == StatutDevis.brouillon || devis.statut == StatutDevis.accepte) ...[
                 const Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (devis.statut != StatutDevis.accepte)
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(minimumSize: const Size(0, 38)),
-                        onPressed: () => _marquerAccepte(context, ref, devis.id),
-                        child: const Text('Marquer accepté'),
-                      ),
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                      label: const Text('Créer la prestation'),
-                      onPressed: () => _convertirEnPrestation(context, ref, devis.id),
-                    ),
-                  ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final estLarge = constraints.maxWidth > 420;
+                    if (devis.statut == StatutDevis.accepte) {
+                      return Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                          ),
+                          icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                          label: const Text('Créer la prestation'),
+                          onPressed: () => _convertirEnPrestation(context, ref, devis.id),
+                        ),
+                      );
+                    }
+
+                    if (estLarge) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                            ),
+                            onPressed: () => _marquerAccepte(context, ref, devis.id),
+                            child: const Text('Marquer accepté'),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                            ),
+                            icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                            label: const Text('Créer la prestation'),
+                            onPressed: () => _convertirEnPrestation(context, ref, devis.id),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            onPressed: () => _marquerAccepte(context, ref, devis.id),
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Marquer accepté'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            onPressed: () => _convertirEnPrestation(context, ref, devis.id),
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.arrow_forward_rounded, size: 16),
+                                  SizedBox(width: 6),
+                                  Text('Créer la prestation'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ],

@@ -42,7 +42,7 @@ class ChartEvolutionTresorerie extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.account_balance_wallet_rounded, size: 20, color: Color(0xFF01226C)),
+              const Icon(Icons.account_balance_wallet_rounded, size: 20, color: AppColors.green),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(

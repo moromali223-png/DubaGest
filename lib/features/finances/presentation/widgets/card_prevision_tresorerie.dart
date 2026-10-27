@@ -35,7 +35,7 @@ class CardPrevisionTresorerie extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_graph_rounded, size: 20, color: Color(0xFF01226C)),
+              const Icon(Icons.auto_graph_rounded, size: 20, color: AppColors.green),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(

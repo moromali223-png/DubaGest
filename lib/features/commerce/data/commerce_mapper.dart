@@ -172,7 +172,10 @@ abstract final class CommerceMapper {
         'reference': p.reference,
         'code_barres': p.codeBarres,
         'description': p.description,
-        'photos': p.photos,
+        'photos': [
+          for (final photo in p.photos)
+            if (photo.startsWith('${p.entrepriseId}/produits/${p.id}/')) photo,
+        ],
         'unite_base': p.uniteBase,
         'unites': [for (final u in p.unites) u.toJson()],
         'prix_detail': p.prixDetail,

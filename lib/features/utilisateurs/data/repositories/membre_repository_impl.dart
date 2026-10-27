@@ -48,7 +48,11 @@ class MembreRepositoryImpl implements MembreRepository {
     required String membreId,
     required String roleCode,
   }) =>
-      _guard(() => _remote.modifierRole(membreId: membreId, roleCode: roleCode));
+      _guard(() => _remote.modifierRole(
+            entrepriseId: entrepriseId,
+            membreId: membreId,
+            roleCode: roleCode,
+          ));
 
   @override
   Future<void> modifierStatut({
@@ -56,14 +60,21 @@ class MembreRepositoryImpl implements MembreRepository {
     required String membreId,
     required String statut,
   }) =>
-      _guard(() => _remote.modifierStatut(membreId: membreId, statut: statut));
+      _guard(() => _remote.modifierStatut(
+            entrepriseId: entrepriseId,
+            membreId: membreId,
+            statut: statut,
+          ));
 
   @override
   Future<void> supprimer({
     required String entrepriseId,
     required String membreId,
   }) =>
-      _guard(() => _remote.supprimer(membreId: membreId));
+      _guard(() => _remote.supprimer(
+            entrepriseId: entrepriseId,
+            membreId: membreId,
+          ));
 
   Future<void> _guard(Future<void> Function() action) async {
     try {

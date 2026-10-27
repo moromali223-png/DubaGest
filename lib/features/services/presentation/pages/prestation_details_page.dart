@@ -16,6 +16,9 @@ import '../widgets/bon_prise_en_charge_dialog.dart';
 import '../widgets/prestation_photos_section.dart';
 import '../widgets/prestation_rappel_dialog.dart';
 import '../widgets/services_widgets.dart';
+import '../../../documents/domain/entities/document.dart';
+import '../../../documents/presentation/providers/documents_providers.dart';
+import '../../../entreprise/presentation/providers/contexte_providers.dart';
 
 /// Fiche détaillée d'une prestation / ordre de travail multi-métiers.
 /// Double dimension indépendante : Statut Travail vs Statut Paiement.
@@ -28,10 +31,17 @@ class PrestationDetailsPage extends ConsumerWidget {
     final prestationsAsync = ref.watch(prestationsProvider);
     final historiqueAsync = ref.watch(historiquePrestationProvider(prestationId));
     final droits = ref.watch(droitsServicesProvider);
+    final documents = ref.watch(documentsProvider).value ?? const <Document>[];
+    final facture = documents.where((d) => d.origineId == prestationId && d.type == TypeDocument.facture && !d.refuse).firstOrNull;
+    final droitsDocs = ref.watch(droitsDocumentsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Détail prestation'),
+        title: Text(
+          prestationsAsync.value?.where((x) => x.id == prestationId).firstOrNull?.estContrat == true
+              ? 'Contrat de service'
+              : 'Rapport d\'intervention',
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.receipt_long_outlined),
@@ -90,11 +100,24 @@ class PrestationDetailsPage extends ConsumerWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(metierTemplate.code.icone, size: 16, color: const Color(0xFF01226C)),
+                                      Icon(
+                                        prestation.estContrat ? Icons.assignment_outlined : Icons.handyman_rounded,
+                                        size: 16,
+                                        color: prestation.estContrat ? const Color(0xFF01226C) : const Color(0xFF0284C7),
+                                      ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        metierTemplate.code.libelle,
-                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF01226C)),
+                                      Expanded(
+                                        child: Text(
+                                          prestation.estContrat
+                                              ? 'CONTRAT DE SERVICE${prestation.metierCode != MetierCode.generique ? ' • ${metierTemplate.code.libelle.toUpperCase()}' : ''}'
+                                              : 'INTERVENTION TERRAIN',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 11.5,
+                                            color: prestation.estContrat ? const Color(0xFF01226C) : const Color(0xFF0284C7),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -191,6 +214,18 @@ class PrestationDetailsPage extends ConsumerWidget {
                                   label: const Text('Remettre au client'),
                                   onPressed: () => _changerStatut(context, ref, prestation, StatutPrestation.livree),
                                 ),
+                              if (facture != null)
+                                FilledButton.tonalIcon(
+                                  icon: const Icon(Icons.receipt_long, size: 18),
+                                  label: Text('Facture ${facture.numero}'),
+                                  onPressed: () => context.push(Routes.document(facture.id)),
+                                )
+                              else if (droitsDocs.creer)
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                                  label: const Text('Émettre la facture'),
+                                  onPressed: () => _emettreFacture(context, ref, prestation),
+                                ),
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.receipt_long_outlined, size: 18),
                                 label: const Text('Bon de prise en charge'),
@@ -236,8 +271,12 @@ class PrestationDetailsPage extends ConsumerWidget {
                             children: [
                               Icon(metierTemplate.code.icone, size: 18, color: const Color(0xFF01226C)),
                               const SizedBox(width: 8),
-                              Text('Détails du dossier — ${metierTemplate.code.libelle}',
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                              Expanded(
+                                child: Text(
+                                  'Détails du dossier — ${metierTemplate.code.libelle}',
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -280,9 +319,9 @@ class PrestationDetailsPage extends ConsumerWidget {
                   PrestationPhotosSection(
                     photos: prestation.photos,
                     prestationId: prestation.id,
-                    onPhotosChanged: (photos) {
+                    onPhotosChanged: (photos) async {
                       final maj = prestation.copyWith(photos: photos);
-                      ref.read(servicesRepositoryProvider).modifierPrestation(maj);
+                      await ref.read(servicesRepositoryProvider).modifierPrestation(maj);
                       ref.invalidate(prestationsProvider);
                       ref.invalidate(prestationDetailProvider(prestation.id));
                     },
@@ -303,7 +342,9 @@ class PrestationDetailsPage extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Règlement & Caisse', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                            const Expanded(
+                              child: Text('Règlement & Caisse', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                            ),
                             if (prestation.soldeRestant > 0)
                               FilledButton.tonalIcon(
                                 style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
@@ -414,7 +455,10 @@ class PrestationDetailsPage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Planification & Contact', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                        Text(
+                          prestation.estContrat ? 'Durée & Engagement contractuel' : 'Planification & Intervention',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                        ),
                         const SizedBox(height: 10),
                         if (contact != null)
                           ListTile(
@@ -431,27 +475,48 @@ class PrestationDetailsPage extends ConsumerWidget {
                             child: Text('Client comptoir / Non renseigné', style: TextStyle(color: AppColors.muted)),
                           ),
                         const Divider(height: 16),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.muted),
-                            const SizedBox(width: 6),
-                            Text(
-                              prestation.echeanceJour != null
-                                  ? 'Date limite : ${DateFormat('dd/MM/yyyy').format(prestation.echeanceJour!)}${prestation.echeanceHeure != null ? ' à ${prestation.echeanceHeure}' : ''}'
-                                  : 'Sans date limite spécifiée',
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
+                        if (prestation.estContrat && prestation.debutPrevu != null && prestation.echeanceJour != null) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.date_range_rounded, size: 16, color: Color(0xFF01226C)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Période : Du ${DateFormat('dd/MM/yyyy').format(prestation.debutPrevu!)} au ${DateFormat('dd/MM/yyyy').format(prestation.echeanceJour!)}'
+                                  '${prestation.dureeEstimee != null ? ' (${prestation.dureeEstimee} ${prestation.uniteDuree.name})' : ''}',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF01226C)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                        ] else ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.muted),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  prestation.echeanceJour != null
+                                      ? 'Date prévue : ${DateFormat('dd/MM/yyyy').format(prestation.echeanceJour!)}${prestation.echeanceHeure != null ? ' à ${prestation.echeanceHeure}' : ''}${prestation.dureeMinutes != null ? ' (${prestation.dureeMinutes} min)' : ''}'
+                                      : 'Sans date limite spécifiée',
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         if (prestation.dateTerminaisonReelle != null) ...[
                           const SizedBox(height: 6),
                           Row(
                             children: [
                               const Icon(Icons.task_alt_rounded, size: 16, color: AppColors.green),
                               const SizedBox(width: 6),
-                              Text(
-                                'Travail terminé le : ${DateFormat('dd/MM/yyyy à HH:mm').format(prestation.dateTerminaisonReelle!)}',
-                                style: const TextStyle(fontSize: 13, color: AppColors.green, fontWeight: FontWeight.w700),
+                              Expanded(
+                                child: Text(
+                                  'Travail terminé le : ${DateFormat('dd/MM/yyyy à HH:mm').format(prestation.dateTerminaisonReelle!)}',
+                                  style: const TextStyle(fontSize: 13, color: AppColors.green, fontWeight: FontWeight.w700),
+                                ),
                               ),
                             ],
                           ),
@@ -462,9 +527,11 @@ class PrestationDetailsPage extends ConsumerWidget {
                             children: [
                               const Icon(Icons.handshake_outlined, size: 16, color: Color(0xFF7C3AED)),
                               const SizedBox(width: 6),
-                              Text(
-                                'Remis au client le : ${DateFormat('dd/MM/yyyy à HH:mm').format(prestation.dateRemiseReelle!)}',
-                                style: const TextStyle(fontSize: 13, color: Color(0xFF7C3AED), fontWeight: FontWeight.w700),
+                              Expanded(
+                                child: Text(
+                                  'Remis au client le : ${DateFormat('dd/MM/yyyy à HH:mm').format(prestation.dateRemiseReelle!)}',
+                                  style: const TextStyle(fontSize: 13, color: Color(0xFF7C3AED), fontWeight: FontWeight.w700),
+                                ),
                               ),
                             ],
                           ),
@@ -475,7 +542,9 @@ class PrestationDetailsPage extends ConsumerWidget {
                             children: [
                               const Icon(Icons.location_on_outlined, size: 16, color: AppColors.muted),
                               const SizedBox(width: 6),
-                              Text('Lieu : ${prestation.lieu}', style: const TextStyle(fontSize: 13)),
+                              Expanded(
+                                child: Text('Lieu : ${prestation.lieu}', style: const TextStyle(fontSize: 13)),
+                              ),
                             ],
                           ),
                         ],
@@ -667,6 +736,71 @@ class PrestationDetailsPage extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _emettreFacture(BuildContext context, WidgetRef ref, Prestation prestation) async {
+    final ctx = ref.read(contexteActifProvider);
+    if (ctx == null) return;
+    final profil = await ref.read(profilEntrepriseProvider.future).catchError((_) => null);
+    final contact = prestation.contactId != null ? ref.read(contactProvider(prestation.contactId!)).value : null;
+    final appareilId = ref.read(appareilIdProvider);
+
+    try {
+      final doc = await ref.read(emettreDocumentProvider).call(
+            ctx,
+            type: TypeDocument.facture,
+            origineType: 'PRESTATION',
+            origineId: prestation.id,
+            contactId: prestation.contactId,
+            perimetreId: prestation.perimetreId,
+            montant: prestation.total,
+            appareilId: appareilId,
+            contenu: {
+              'entreprise': {
+                'nom': profil?.nom ?? ctx.entreprise!.nom,
+                'telephone': profil?.telephone,
+                'adresse': profil?.adresse,
+                'ville': profil?.ville,
+                'identifiant_fiscal': profil?.identifiantFiscal,
+                'registre_commerce': profil?.registreCommerce,
+                'devise': profil?.devise ?? ctx.entreprise!.devise ?? 'XOF',
+              },
+              'contact': contact == null
+                  ? null
+                  : {
+                      'nom': contact.nomAffiche,
+                      'telephone': contact.telephone,
+                      'email': contact.email,
+                      'adresse': contact.adresse,
+                    },
+              'titre': prestation.titre,
+              'description': prestation.description,
+              'reference_metier': prestation.champsMetier['numero_dossier'] ?? prestation.champsMetier['immatriculation'],
+              'date_echeance': prestation.echeanceJour?.toUtc().toIso8601String(),
+              'lignes': [
+                for (final l in prestation.lignes)
+                  {
+                    'libelle': l.libelle,
+                    'quantite': l.quantite,
+                    'prix_unitaire': l.prixUnitaire,
+                    'montant': (l.quantite * l.prixUnitaire).round(),
+                  }
+              ],
+              'remise': prestation.remise,
+              'sous_total': prestation.lignes.fold<int>(0, (sum, l) => sum + (l.quantite * l.prixUnitaire).round()),
+              'paye': prestation.montantRegle,
+              'reste': prestation.soldeRestant,
+              'pied': profil?.piedRecu,
+            },
+          );
+      if (context.mounted) {
+        context.push(Routes.document(doc.id));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showFailureSnackBar(context, e);
+      }
+    }
+  }
 }
 
 class _SyntheseFinanciereBoite extends StatelessWidget {
@@ -687,9 +821,21 @@ class _SyntheseFinanciereBoite extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(titre, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: couleur)),
+          Text(
+            titre,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: couleur),
+          ),
           const SizedBox(height: 2),
-          Text(valeur, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: couleur)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              valeur,
+              style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: couleur),
+            ),
+          ),
         ],
       ),
     );

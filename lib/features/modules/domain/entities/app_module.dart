@@ -12,6 +12,7 @@ abstract final class ModuleCodes {
   static const commerceAchats = 'commerce.achats';
   static const commerceStock = 'commerce.stock';
   static const commerceFournisseurs = 'commerce.fournisseurs';
+  static const commerceIntelligence = 'commerce.intelligence';
   static const communContacts = 'commun.contacts';
   static const communDocuments = 'commun.documents';
   static const communAgenda = 'commun.agenda';
@@ -26,6 +27,12 @@ abstract final class ModuleCodes {
   static const servicesDevis = 'services.devis';
   static const servicesRapports = 'services.rapports';
   static const servicesFacturation = 'services.facturation';
+  static const immobilierBiens = 'immobilier.biens';
+  static const immobilierProprietaires = 'immobilier.proprietaires';
+  static const immobilierLocataires = 'immobilier.locataires';
+  static const immobilierLocations = 'immobilier.locations';
+  static const immobilierContrats = 'immobilier.contrats';
+  static const immobilierLoyers = 'immobilier.loyers';
 }
 
 /// Catégorie d'un module (`modules.categorie`).
@@ -71,10 +78,32 @@ class AppModule {
   final int ordre;
   final ModuleCategorie? _categorie;
 
-  ModuleCategorie get categorie =>
-      _categorie ?? (activite == null ? ModuleCategorie.administration : ModuleCategorie.metier);
+  ModuleCategorie get categorie {
+    if (_categorie != null) return _categorie;
+    if (code.startsWith('finances.')) return ModuleCategorie.finances;
+    if (code.startsWith('commun.')) return ModuleCategorie.commun;
+    if (code.startsWith('admin.')) return ModuleCategorie.administration;
+    return activite == null ? ModuleCategorie.administration : ModuleCategorie.metier;
+  }
 
   bool get estAdministration => categorie == ModuleCategorie.administration;
   bool get estCommun => categorie == ModuleCategorie.commun;
   bool get estFinances => categorie == ModuleCategorie.finances;
+
+  AppModule copyWith({
+    String? code,
+    ActiviteCode? activite,
+    String? permissionAcces,
+    int? ordre,
+    ModuleCategorie? categorie,
+  }) {
+    return AppModule(
+      code: code ?? this.code,
+      activite: activite ?? this.activite,
+      permissionAcces: permissionAcces ?? this.permissionAcces,
+      ordre: ordre ?? this.ordre,
+      categorie: categorie ?? _categorie,
+    );
+  }
 }
+

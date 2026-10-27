@@ -18,14 +18,23 @@ enum UniteDuree {
 
 /// Modèles métiers prédéfinis pour les prestations et ordres de travail.
 enum MetierCode {
-  generique('GENERIQUE', 'Générique / Prestation standard', Icons.handyman_outlined),
+  plomberie('PLOMBERIE', 'Plomberie & sanitaires', Icons.plumbing_outlined),
+  electricite('ELECTRICITE', 'Électricité générale', Icons.bolt_outlined),
+  solaire('SOLAIRE', 'Installation de panneaux solaires', Icons.solar_power_outlined),
+  maconnerie('MACONNERIE', 'Maçonnerie & construction', Icons.foundation_outlined),
+  climatisation('CLIMATISATION', 'Climatisation & réfrigération', Icons.ac_unit_outlined),
+  menuiserie('MENUISERIE', 'Menuiserie & aluminium', Icons.carpenter_outlined),
+  peinture('PEINTURE', 'Peinture & décoration', Icons.format_paint_outlined),
+  reparation('REPARATION', 'Réparation & maintenance', Icons.build_circle_outlined),
+  informatique('INFORMATIQUE', 'Installation informatique & réseau', Icons.computer_outlined),
+  nettoyage('NETTOYAGE', 'Nettoyage & entretien locaux', Icons.cleaning_services_outlined),
+  transport('TRANSPORT', 'Transport & livraison', Icons.local_shipping_outlined),
   incubation('INCUBATION', 'Incubation d\'œufs & Aviculture', Icons.egg_outlined),
   pressing('PRESSING', 'Pressing & Blanchisserie', Icons.local_laundry_service_outlined),
   couture('COUTURE', 'Couture, Confection & Retouches', Icons.content_cut_outlined),
-  reparation('REPARATION', 'Réparation & SAV (Téléphone, Auto, PC)', Icons.phonelink_setup_outlined),
-  menuiserie('MENUISERIE', 'Menuiserie & Fabrication sur commande', Icons.carpenter_outlined),
   entretien('ENTRETIEN', 'Entretien, Climatisation & Nettoyage', Icons.cleaning_services_outlined),
-  surMesure('SUR_MESURE', 'Fabrication artisanale sur-mesure', Icons.design_services_outlined);
+  surMesure('SUR_MESURE', 'Fabrication artisanale sur-mesure', Icons.design_services_outlined),
+  generique('GENERIQUE', 'Autre prestation', Icons.handyman_outlined);
 
   const MetierCode(this.code, this.libelle, this.icone);
   final String code;
@@ -277,6 +286,149 @@ class MetierTemplate {
           cle: 'materiaux_utilises',
           libelle: 'Matières premières et fournitures',
           hint: 'Cuir, Métal forgé, Résine...',
+        ),
+      ],
+    ),
+    MetierCode.plomberie: const MetierTemplate(
+      code: MetierCode.plomberie,
+      titreParDefaut: 'Travaux de plomberie',
+      dureeParDefaut: 2,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Vérifier la localisation des fuites, l\'état des canalisations et la pression.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'nature_plomberie',
+          libelle: 'Nature de l\'intervention',
+          hint: 'Réparation fuite, pose robinetterie, raccordement...',
+          options: ['Réparation fuite', 'Remplacement robinetterie', 'Installation sanitaire neuve', 'Débouchage', 'Chauffe-eau'],
+        ),
+        ChampMetierDefinition(
+          cle: 'lieu_plomberie',
+          libelle: 'Emplacement / Pièce',
+          hint: 'Salle de bain, cuisine, buanderie...',
+        ),
+      ],
+    ),
+    MetierCode.electricite: const MetierTemplate(
+      code: MetierCode.electricite,
+      titreParDefaut: 'Installation électrique',
+      dureeParDefaut: 3,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Vérifier le tableau électrique, la mise à la terre et couper l\'alimentation avant intervention.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'type_elec',
+          libelle: 'Nature des travaux',
+          hint: 'Installation neuve, dépannage, rénovation tableau...',
+          options: ['Dépannage / Panne', 'Installation neuve', 'Rénovation tableau', 'Éclairage & prises', 'Inverseur / Groupe'],
+        ),
+      ],
+    ),
+    MetierCode.solaire: const MetierTemplate(
+      code: MetierCode.solaire,
+      titreParDefaut: 'Installation de panneaux solaires',
+      dureeParDefaut: 3,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Calculer la puissance requise, l\'ensoleillement et l\'emplacement des batteries.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'puissance_solaire',
+          libelle: 'Puissance / Capacité estimée',
+          hint: 'Ex. Kit 3 kVA, 5 kWc...',
+        ),
+        ChampMetierDefinition(
+          cle: 'nb_panneaux',
+          libelle: 'Nombre de panneaux',
+          hint: 'Ex. 4, 8...',
+          type: TextInputType.number,
+        ),
+      ],
+    ),
+    MetierCode.maconnerie: const MetierTemplate(
+      code: MetierCode.maconnerie,
+      titreParDefaut: 'Travaux de maçonnerie & construction',
+      dureeParDefaut: 7,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Préciser les cotes, le type de fondation et les matériaux requis.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'ouvrage_maconnerie',
+          libelle: 'Ouvrage concerné',
+          hint: 'Clôture, chape, réfection mur, terrasse...',
+        ),
+      ],
+    ),
+    MetierCode.climatisation: const MetierTemplate(
+      code: MetierCode.climatisation,
+      titreParDefaut: 'Climatisation & réfrigération',
+      dureeParDefaut: 1,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Relever le type d\'appareil, le gaz réfrigérant et la puissance.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'type_equipement_clim',
+          libelle: 'Type d\'appareil',
+          hint: 'Split, armoire, chambre froide...',
+          options: ['Split mural', 'Armoire de climatisation', 'Chambre froide', 'Réfrigérateur commercial'],
+        ),
+      ],
+    ),
+    MetierCode.peinture: const MetierTemplate(
+      code: MetierCode.peinture,
+      titreParDefaut: 'Travaux de peinture & décoration',
+      dureeParDefaut: 4,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Mesurer les surfaces à peindre et évaluer la préparation des supports (enduit, ponçage).',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'surface_m2',
+          libelle: 'Surface estimée (m²)',
+          hint: 'Ex. 60 m²',
+          type: TextInputType.number,
+        ),
+      ],
+    ),
+    MetierCode.informatique: const MetierTemplate(
+      code: MetierCode.informatique,
+      titreParDefaut: 'Installation informatique & réseau',
+      dureeParDefaut: 1,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Lister les équipements concernés et sauvegarder les données avant intervention.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'domaine_it',
+          libelle: 'Domaine d\'intervention',
+          hint: 'Réseau, câblage, maintenance, caméras...',
+          options: ['Réseau & Wifi', 'Câblage informatique', 'Maintenance parc PC', 'Caméras de surveillance'],
+        ),
+      ],
+    ),
+    MetierCode.nettoyage: const MetierTemplate(
+      code: MetierCode.nettoyage,
+      titreParDefaut: 'Prestation de nettoyage',
+      dureeParDefaut: 1,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Préciser le type d\'espace et la surface à nettoyer.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'type_locaux',
+          libelle: 'Type de locaux',
+          hint: 'Bureaux, fin de chantier, résidentiel...',
+          options: ['Nettoyage fin de chantier', 'Bureaux & locaux pro', 'Résidentiel / Domicile', 'Désinfection & vitres'],
+        ),
+      ],
+    ),
+    MetierCode.transport: const MetierTemplate(
+      code: MetierCode.transport,
+      titreParDefaut: 'Transport & livraison',
+      dureeParDefaut: 1,
+      uniteParDefaut: UniteDuree.jours,
+      instructions: 'Préciser le lieu de chargement, la destination et le volume ou type de marchandises.',
+      champs: [
+        ChampMetierDefinition(
+          cle: 'trajet_transport',
+          libelle: 'Trajet / Destination',
+          hint: 'Ex. Bamako centre - Zone industrielle',
         ),
       ],
     ),

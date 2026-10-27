@@ -27,7 +27,6 @@ class KpiPrincipauxRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatCompact = NumberFormat.compact(locale: 'fr');
     final formatSeparateur = NumberFormat.decimalPattern('fr');
 
     String formaterMontant(int montant) {
@@ -70,7 +69,7 @@ class KpiPrincipauxRow extends StatelessWidget {
         comparaison: 'En caisse & comptes',
         comparaisonPositive: data.tresorerieDisponible.valeurActuelle > 0,
         icone: Icons.savings_outlined,
-        couleurAccent: const Color(0xFF01226C), // Bleu institutionnel Dubagest
+        couleurAccent: AppColors.green,
         onTap: onTapTresorerie,
       ),
       _KpiItem(
@@ -84,7 +83,7 @@ class KpiPrincipauxRow extends StatelessWidget {
             ? '${formaterMontant(data.creancesEnRetard)} $devise en retard'
             : null,
         icone: Icons.call_received_rounded,
-        couleurAccent: AppColors.gold,
+        couleurAccent: AppColors.green,
         onTap: onTapARecevoir,
       ),
       _KpiItem(
@@ -98,7 +97,7 @@ class KpiPrincipauxRow extends StatelessWidget {
             ? '${formaterMontant(data.dettesEnRetard)} $devise en retard'
             : null,
         icone: Icons.call_made_rounded,
-        couleurAccent: AppColors.negative,
+        couleurAccent: AppColors.dette,
         onTap: onTapAPayer,
       ),
     ];

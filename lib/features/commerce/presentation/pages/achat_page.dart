@@ -14,7 +14,10 @@ import '../../domain/services/etat_commerce.dart';
 import '../commerce_providers.dart';
 import '../widgets/choix_contact.dart';
 import '../widgets/commerce_widgets.dart';
+import '../widgets/historique_entite.dart';
 import 'achats_page.dart' show StatutAchatPuce;
+import '../../../documents/domain/entities/document.dart';
+import '../../../documents/presentation/providers/documents_providers.dart';
 
 /// Détail d'un achat : produits commandés / reçus, réceptions, dette fournisseur.
 class AchatPage extends ConsumerWidget {
@@ -35,12 +38,15 @@ class AchatPage extends ConsumerWidget {
     final finances = ref.watch(etatFinancesProvider).value;
     final dette = finances?.engagements.where((e) => e.id == achat.id).map(finances.suivi).firstOrNull;
     final receptions = etat.receptionsDe(achat.id);
+    final documents = ref.watch(documentsProvider).value ?? const <Document>[];
+    final bonCommande = documents.where((d) => (d.origineId == achat.id || (achat.reference != null && (achat.reference == d.numero || achat.reference == d.id))) && d.type == TypeDocument.bonCommande && !d.refuse).firstOrNull;
+    final droitsDocs = ref.watch(droitsDocumentsProvider);
     final peutRecevoir = achat.aRecevoir && droits.boutiquesReception.contains(achat.perimetreId);
     final modifiable = achat.statut == StatutAchat.commande && droits.boutiquesReception.contains(achat.perimetreId);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.comPurchaseOf(l10n.date(achat.dateAchat))),
+        title: Text('Achat de marchandises • ${l10n.date(achat.dateAchat)}'),
         actions: [
           const SyncStatusButton(),
           if (modifiable)
@@ -93,6 +99,34 @@ class AchatPage extends ConsumerWidget {
                       : () => context.push(Routes.fournisseur(achat.fournisseurId!)),
                 ),
               ),
+              if (bonCommande != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Card(
+                  elevation: 0,
+                  color: const Color(0xFFEFF6FF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFFBFDBFE)),
+                  ),
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFDBEAFE),
+                      child: Icon(Icons.shopping_bag_outlined, color: Color(0xFF1D4ED8), size: 20),
+                    ),
+                    title: const Text('Origine : Bon de commande fournisseur', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1D4ED8))),
+                    subtitle: Text(bonCommande.numero, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E3A8A))),
+                    trailing: FilledButton.tonalIcon(
+                      onPressed: () => context.push(Routes.document(bonCommande.id)),
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      label: const Text('Voir BC'),
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               SectionCarte(
                 titre: l10n.comProducts,
@@ -142,6 +176,24 @@ class AchatPage extends ConsumerWidget {
                             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
                       ],
                     ),
+                    if (bonCommande != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.sm),
+                        child: FilledButton.tonalIcon(
+                          onPressed: () => context.push(Routes.document(bonCommande.id)),
+                          icon: const Icon(Icons.shopping_cart_checkout),
+                          label: Text('Bon de commande ${bonCommande.numero}'),
+                        ),
+                      )
+                    else if (droitsDocs.creer)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.sm),
+                        child: OutlinedButton.icon(
+                          onPressed: () => _emettreBonCommande(context, ref, achat, etat),
+                          icon: const Icon(Icons.picture_as_pdf_outlined),
+                          label: const Text('Émettre le bon de commande'),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -205,11 +257,82 @@ class AchatPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 SectionCarte(child: Text(achat.note!)),
               ],
+              const SizedBox(height: AppSpacing.md),
+              SectionCarte(
+                titre: l10n.rcpTraceability,
+                icone: Icons.history_rounded,
+                child: HistoriqueEntiteView(entiteType: 'ACHAT', entiteId: achat.id),
+              ),
+              const SizedBox(height: AppSpacing.lg),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _emettreBonCommande(BuildContext context, WidgetRef ref, Achat achat, EtatCommerce etat) async {
+    final ctx = ref.read(contexteActifProvider);
+    if (ctx == null) return;
+    final profil = await ref.read(profilEntrepriseProvider.future).catchError((_) => null);
+    final fournisseur = achat.fournisseurId != null
+        ? ref.read(tousContactsProvider).value?.where((c) => c.id == achat.fournisseurId).firstOrNull
+        : null;
+    final appareilId = ref.read(appareilIdProvider);
+
+    try {
+      final doc = await ref.read(emettreDocumentProvider).call(
+            ctx,
+            type: TypeDocument.bonCommande,
+            origineType: 'ACHAT',
+            origineId: achat.id,
+            contactId: achat.fournisseurId,
+            perimetreId: achat.perimetreId,
+            montant: achat.total,
+            appareilId: appareilId,
+            contenu: {
+              'entreprise': {
+                'nom': profil?.nom ?? ctx.entreprise!.nom,
+                'telephone': profil?.telephone,
+                'adresse': profil?.adresse,
+                'ville': profil?.ville,
+                'identifiant_fiscal': profil?.identifiantFiscal,
+                'registre_commerce': profil?.registreCommerce,
+                'devise': profil?.devise ?? ctx.entreprise!.devise ?? 'XOF',
+              },
+              'contact': fournisseur == null
+                  ? null
+                  : {
+                      'nom': fournisseur.nomAffiche,
+                      'telephone': fournisseur.telephone,
+                      'email': fournisseur.email,
+                      'adresse': fournisseur.adresse,
+                    },
+              'titre': 'Bon de commande — ${nomBoutique(ref, achat.perimetreId)}',
+              'reference_metier': achat.reference,
+              'date_document': achat.dateAchat.toIso8601String(),
+              'lignes': [
+                for (final l in achat.lignes)
+                  if (etat.produit(l.produitId) case final p?)
+                    {
+                      'libelle': p.nom,
+                      'quantite': l.quantite.valeur,
+                      'prix_unitaire': l.prixUnitaire,
+                      'montant': l.montant,
+                    }
+              ],
+              'total': achat.total,
+              'pied': profil?.piedRecu,
+            },
+          );
+      if (context.mounted) {
+        await context.push(Routes.document(doc.id));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        signalerErreur(context, e);
+      }
+    }
   }
 
   Future<void> _annuler(BuildContext context, WidgetRef ref, Achat achat) async {

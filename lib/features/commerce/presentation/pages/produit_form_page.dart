@@ -39,7 +39,17 @@ class ProduitFormPage extends ConsumerWidget {
       AsyncData(value: final e) => e.produit(produitId!) == null
           ? Scaffold(appBar: AppBar(), body: EmptyView(message: context.l10n.comProductNotFound))
           : _Formulaire(etat: e, initial: e.produit(produitId!)),
-      _ => Scaffold(appBar: AppBar(), body: const LoadingView()),
+      AsyncError(:final error) => Scaffold(
+          appBar: AppBar(title: Text(produitId == null ? context.l10n.comNewProduct : context.l10n.comEditProduct)),
+          body: ErrorView(
+            error: error,
+            onRetry: () => ref.invalidate(etatCommerceProvider),
+          ),
+        ),
+      _ => Scaffold(
+          appBar: AppBar(title: Text(produitId == null ? context.l10n.comNewProduct : context.l10n.comEditProduct)),
+          body: const LoadingView(),
+        ),
     };
   }
 }
@@ -114,6 +124,8 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
   late bool _venteGros = widget.initial?.venteEnGros ?? (widget.initial == null && widget.etat.venteEnGros);
 
   String? _boutique;
+  late bool _estCatalogueGlobal = widget.initial?.estGlobal ?? true;
+  late final Set<String> _boutiquesAssignees = {...widget.initial?.perimetresIds ?? const <String>[]};
   Qte? _stockInitial;
   UniteVente? _uniteStock;
   late Qte _seuil = widget.initial?.seuilAlerte ?? Qte.zero;
@@ -144,9 +156,33 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
   @override
   void initState() {
     super.initState();
+    _recupererPhotoPerdue();
     final droits = ref.read(droitsCommerceProvider);
     final courante = ref.read(boutiqueCouranteProvider);
     _boutique = droits.boutiquesEntreeSortie.contains(courante) ? courante : droits.boutiquesEntreeSortie.firstOrNull;
+    if (_boutiquesAssignees.isEmpty) {
+      if (_boutique != null) {
+        _boutiquesAssignees.add(_boutique!);
+      } else {
+        final premiere = ref.read(boutiquesProvider).firstOrNull?.id;
+        if (premiere != null) _boutiquesAssignees.add(premiere);
+      }
+    }
+  }
+
+  Future<void> _recupererPhotoPerdue() async {
+    try {
+      final response = await ImagePicker().retrieveLostData();
+      if (response.isEmpty || response.file == null) return;
+      if (!mounted) return;
+      final ctx = ref.read(contexteActifProvider);
+      final eid = ctx?.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
+      if (eid == null || eid.isEmpty) return;
+      final chemin = await ref
+          .read(photosProduitsProvider)
+          .ajouter(entrepriseId: eid, produitId: _id, octets: await response.file!.readAsBytes());
+      if (mounted) setState(() => _photos.add(chemin));
+    } catch (_) {}
   }
 
   @override
@@ -201,10 +237,14 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
   }
 
   Produit _produit() {
-    final ctx = ref.read(contexteActifProvider)!;
+    final ctx = ref.read(contexteActifProvider);
+    final entrepriseId = widget.initial?.entrepriseId ??
+        ctx?.entreprise?.id ??
+        widget.etat.produits.firstOrNull?.entrepriseId ??
+        '';
     return Produit(
       id: _id,
-      entrepriseId: widget.initial?.entrepriseId ?? ctx.entreprise!.id,
+      entrepriseId: entrepriseId,
       categorieId: _categorieId,
       nom: _nom.text.trim(),
       reference: _reference.text.trim(),
@@ -232,7 +272,12 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
       seuilAlerte: _seuil,
       attributs: {
         for (final MapEntry(:key, :value) in _attributs.entries)
-          if (value.text.trim().isNotEmpty) key: value.text.trim(),
+          if (value.text.trim().isNotEmpty && key != 'perimetre_id' && key != 'perimetres_ids')
+            key: value.text.trim(),
+        if (!_estCatalogueGlobal && _boutiquesAssignees.isNotEmpty) ...{
+          'perimetres_ids': _boutiquesAssignees.join(','),
+          'perimetre_id': _boutiquesAssignees.first,
+        },
       },
       fournisseurId: _fournisseurId,
       estActif: widget.initial?.estActif ?? true,
@@ -288,9 +333,11 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     try {
       final x = await ImagePicker().pickImage(source: source, maxWidth: 1024, imageQuality: 75);
       if (x == null) return;
+      final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
+      if (eid == null || eid.isEmpty) return;
       final chemin = await ref
           .read(photosProduitsProvider)
-          .ajouter(entrepriseId: ctx.entreprise!.id, produitId: _id, octets: await x.readAsBytes());
+          .ajouter(entrepriseId: eid, produitId: _id, octets: await x.readAsBytes());
       if (mounted) setState(() => _photos.add(chemin));
     } catch (e) {
       if (mounted) signalerErreur(context, e);
@@ -430,6 +477,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
   List<Widget> _etapeProduit() {
     final l10n = context.l10n;
     final etat = ref.watch(etatCommerceProvider).value ?? widget.etat;
+    final droits = ref.watch(droitsCommerceProvider);
 
     return [
       // 1. Zone Médias / Upload Box Moderne
@@ -533,50 +581,76 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
       const SizedBox(height: AppSpacing.md),
 
       // 4. Emballages & Lots
-      _Section(
-        icone: Icons.inventory_outlined,
-        titre: l10n.comPackagingTitle,
-        aide: l10n.comPackagingHint2,
-        children: [
-          for (final (i, e) in _emballages.indexed) ...[
-            _CarteEmballage(
-              numero: i + 1,
-              emballage: e,
-              uniteBase: _uniteBase,
-              onChanged: () => setState(() {}),
-              onRetirer: () => setState(() {
-                _emballages.remove(e);
-                e.dispose();
-              }),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              for (final s in [l10n.comUnitCarton, l10n.comUnitPaquet, l10n.comUnitSac, l10n.comUnitDouzaine])
-                if (s != _uniteBase && !_emballages.any((e) => e.nom.text.trim() == s))
-                  ActionChip(
-                    avatar: const Icon(Icons.add, size: 18, color: AppColors.green),
-                    label: Text(s),
-                    onPressed: () => setState(() => _emballages.add(_Emballage(id: const Uuid().v4(), nom: s))),
-                  ),
-              ActionChip(
-                key: const Key('unite-ajouter'),
-                avatar: const Icon(Icons.add, size: 18, color: AppColors.green),
-                label: Text(l10n.comAddPackaging),
-                onPressed: () => setState(() => _emballages.add(_Emballage(id: const Uuid().v4()))),
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.copy_all_outlined, size: 18),
-                label: Text(l10n.comCopyUnits),
-                onPressed: _copierUnites,
-              ),
+      if (_emballages.isNotEmpty || droits.peutModifierConversions)
+        _Section(
+          icone: Icons.inventory_outlined,
+          titre: l10n.comPackagingTitle,
+          aide: droits.peutModifierConversions
+              ? l10n.comPackagingHint2
+              : 'Unités et règles de conversion définies par l\'administrateur (lecture seule).',
+          children: [
+            for (final (i, e) in _emballages.indexed) ...[
+              droits.peutModifierConversions
+                  ? _CarteEmballage(
+                      numero: i + 1,
+                      emballage: e,
+                      uniteBase: _uniteBase,
+                      onChanged: () => setState(() {}),
+                      onRetirer: () => setState(() {
+                        _emballages.remove(e);
+                        e.dispose();
+                      }),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory_2_outlined, size: 20, color: AppColors.muted),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '1 ${e.nom.text.trim()} = ${e.facteur.text.trim()} $_uniteBase',
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                            ),
+                          ),
+                          const Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.muted),
+                        ],
+                      ),
+                    ),
+              const SizedBox(height: AppSpacing.sm),
             ],
-          ),
-        ],
-      ),
+            if (droits.peutModifierConversions)
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final s in [l10n.comUnitCarton, l10n.comUnitPaquet, l10n.comUnitSac, l10n.comUnitDouzaine])
+                    if (s != _uniteBase && !_emballages.any((e) => e.nom.text.trim() == s))
+                      ActionChip(
+                        avatar: const Icon(Icons.add, size: 18, color: AppColors.green),
+                        label: Text(s),
+                        onPressed: () => setState(() => _emballages.add(_Emballage(id: const Uuid().v4(), nom: s))),
+                      ),
+                  ActionChip(
+                    key: const Key('unite-ajouter'),
+                    avatar: const Icon(Icons.add, size: 18, color: AppColors.green),
+                    label: Text(l10n.comAddPackaging),
+                    onPressed: () => setState(() => _emballages.add(_Emballage(id: const Uuid().v4()))),
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.copy_all_outlined, size: 18),
+                    label: Text(l10n.comCopyUnits),
+                    onPressed: _copierUnites,
+                  ),
+                ],
+              ),
+          ],
+        ),
     ];
   }
 
@@ -663,65 +737,68 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
         : null;
 
     return [
-      // 1. Section « Prix & Rentabilité »
+      // 1. Section « Prix & Tarification »
       _Section(
         icone: Icons.monetization_on_outlined,
         couleur: AppColors.gold,
-        titre: 'Prix & Rentabilité',
-        aide: 'Fixez les tarifs d\'achat et de vente, et surveillez votre rentabilité.',
+        titre: 'Prix & Tarification',
+        aide: droits.peutModifierPrixAchat
+            ? 'Fixez les tarifs d\'achat et de vente, et surveillez votre rentabilité.'
+            : 'Fixez le tarif de vente de détail pour vos clients.',
         children: [
           _Libelle('${l10n.comRetailPrice} *', aide: l10n.comRetailPriceHint),
           _SaisiePrix(cle: 'detail', prix: _detail, unites: unites, onChanged: () => setState(() {})),
-          const SizedBox(height: AppSpacing.md),
-          _Libelle(l10n.comPurchasePrice, aide: l10n.comPurchasePriceHint),
-          _SaisiePrix(cle: 'achat', prix: _achat, unites: unites, onChanged: () => setState(() {})),
-
-          // Badge dynamique de rentabilité
-          if (margeMontant != null) ...[
+          if (droits.peutModifierPrixAchat) ...[
             const SizedBox(height: AppSpacing.md),
-            _BadgeRentabilite(margeMontant: margeMontant, margePourcent: margePourcent),
+            _Libelle(l10n.comPurchasePrice, aide: l10n.comPurchasePriceHint),
+            _SaisiePrix(cle: 'achat', prix: _achat, unites: unites, onChanged: () => setState(() {})),
+            if (margeMontant != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              _BadgeRentabilite(margeMontant: margeMontant, margePourcent: margePourcent),
+            ],
           ],
         ],
       ),
-      const SizedBox(height: AppSpacing.md),
-
-      // 2. Section « Vente en gros » avec Toggle Switch Ecomiq
-      _Section(
-        icone: Icons.local_shipping_outlined,
-        couleur: const Color(0xFF2563EB),
-        titre: l10n.comWholesalePrice,
-        aide: 'Activez un tarif préférentiel pour les clients grossistes.',
-        action: Switch(
-          key: const Key('produit-gros'),
-          value: _venteGros,
-          onChanged: (v) => setState(() {
-            _venteGros = v;
-            if (v && _gros.valeur == null && unites.length > 1) {
-              _gros.uniteId = unites.last.$1;
-            }
-          }),
-        ),
-        children: [
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: _venteGros ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            firstChild: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text(
-                'La vente en gros est désactivée pour ce produit. Activez l\'interrupteur pour renseigner le prix de gros (par carton ou par lot).',
-                style: TextStyle(fontSize: 13, color: AppColors.muted.withValues(alpha: 0.9), height: 1.3),
+      if (droits.peutModifierPrixGros) ...[
+        const SizedBox(height: AppSpacing.md),
+        // 2. Section « Vente en gros » avec Toggle Switch Ecomiq
+        _Section(
+          icone: Icons.local_shipping_outlined,
+          couleur: const Color(0xFF2563EB),
+          titre: l10n.comWholesalePrice,
+          aide: 'Activez un tarif préférentiel pour les clients grossistes.',
+          action: Switch(
+            key: const Key('produit-gros'),
+            value: _venteGros,
+            onChanged: (v) => setState(() {
+              _venteGros = v;
+              if (v && _gros.valeur == null && unites.length > 1) {
+                _gros.uniteId = unites.last.$1;
+              }
+            }),
+          ),
+          children: [
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 250),
+              crossFadeState: _venteGros ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              firstChild: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  'La vente en gros est désactivée pour ce produit. Activez l\'interrupteur pour renseigner le prix de gros (par carton ou par lot).',
+                  style: TextStyle(fontSize: 13, color: AppColors.muted.withValues(alpha: 0.9), height: 1.3),
+                ),
+              ),
+              secondChild: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _Libelle(l10n.comWholesalePrice, aide: l10n.comWholesalePriceHint),
+                  _SaisiePrix(cle: 'gros', prix: _gros, unites: unites, onChanged: () => setState(() {})),
+                ],
               ),
             ),
-            secondChild: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _Libelle(l10n.comWholesalePrice, aide: l10n.comWholesalePriceHint),
-                _SaisiePrix(cle: 'gros', prix: _gros, unites: unites, onChanged: () => setState(() {})),
-              ],
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
 
       // 3. Tableau Récapitulatif si prix renseignés
       if (_detail.valeur != null) ...[
@@ -742,7 +819,165 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
         titre: l10n.comStockAndAlert,
         aide: 'Gérez le stock de départ et les seuils automatiques de réapprovisionnement.',
         children: [
-          if (_creation && droits.entreeSortie) ...[
+          // Périmètre du produit (Catalogue global vs Boutique(s) spécifique(s))
+          Builder(builder: (context) {
+            final toutesBoutiques = ref.watch(boutiquesProvider);
+            if (toutesBoutiques.length <= 1) {
+              final nomSeuleBoutique = toutesBoutiques.firstOrNull?.nom ?? 'Boutique principale';
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _Libelle('Boutique de rattachement', aide: 'Produit rattaché automatiquement à votre boutique.'),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.storefront_rounded, size: 20, color: Color(0xFF01226C)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            nomSeuleBoutique,
+                            style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF01226C)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              );
+            }
+
+            if (!droits.peutDefinirPerimetreMultiBoutiques) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _Libelle('Périmètre du catalogue', aide: 'Produit géré dans vos boutiques autorisées.'),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.storefront_rounded, size: 20, color: Color(0xFF01226C)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _estCatalogueGlobal
+                                ? 'Catalogue Global'
+                                : _boutiquesAssignees.map((id) => nomBoutique(ref, id)).join(', '),
+                            style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF01226C)),
+                          ),
+                        ),
+                        const Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.muted),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              );
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _Libelle(
+                  'Périmètre du catalogue',
+                  aide: 'Déterminez si ce produit est accessible par toutes les boutiques ou réservé à des boutiques sélectionnées.',
+                ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ChoiceChip(
+                              key: const Key('perimetre-global'),
+                              label: const Text('Catalogue global'),
+                              avatar: const Icon(Icons.public_rounded, size: 18),
+                              selected: _estCatalogueGlobal,
+                              onSelected: (val) {
+                                if (val) setState(() => _estCatalogueGlobal = true);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ChoiceChip(
+                              key: const Key('perimetre-specifique'),
+                              label: const Text('Boutiques choisies'),
+                              avatar: const Icon(Icons.storefront_rounded, size: 18),
+                              selected: !_estCatalogueGlobal,
+                              onSelected: (val) {
+                                if (val) {
+                                  setState(() {
+                                    _estCatalogueGlobal = false;
+                                    if (_boutiquesAssignees.isEmpty && toutesBoutiques.isNotEmpty) {
+                                      _boutiquesAssignees.add(toutesBoutiques.first.id);
+                                    }
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (!_estCatalogueGlobal) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Cochez la ou les boutiques autorisées :',
+                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final b in toutesBoutiques)
+                              FilterChip(
+                                key: Key('chip-boutique-${b.id}'),
+                                label: Text(b.nom),
+                                selected: _boutiquesAssignees.contains(b.id),
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _boutiquesAssignees.add(b.id);
+                                    } else if (_boutiquesAssignees.length > 1) {
+                                      _boutiquesAssignees.remove(b.id);
+                                    }
+                                    if (_boutique != null && !_boutiquesAssignees.contains(_boutique)) {
+                                      _boutique = _boutiquesAssignees.firstOrNull;
+                                    }
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+            );
+          }),
+          const SizedBox(height: AppSpacing.md),
+          if (_creation && droits.peutSaisirStockInitial) ...[
             _Libelle(l10n.comInitialStock, aide: l10n.comInitialStockHint),
             if (droits.boutiquesEntreeSortie.length > 1) ...[
               ChampBoutique(
@@ -1224,7 +1459,7 @@ class _BoxUploadMedias extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: ProduitImage(produit: produit, chemin: photos.first, taille: double.infinity, rayon: 0),
+                child: ProduitImage(produit: produit, chemin: photos.first, taille: 180, rayon: 0),
               ),
             ),
             PositionedDirectional(

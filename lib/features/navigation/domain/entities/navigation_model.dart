@@ -47,6 +47,7 @@ class NavigationModel {
     this.activiteActive,
     this.isWorkspaceVendeur = false,
     this.isWorkspaceGestionnaireStock = false,
+    this.isWorkspaceSuperviseur = false,
   });
 
   final List<NavDestination> destinations;
@@ -69,4 +70,5 @@ class NavigationModel {
   final ActiviteCode? activiteActive;
   final bool isWorkspaceVendeur;
   final bool isWorkspaceGestionnaireStock;
+  final bool isWorkspaceSuperviseur;
 }

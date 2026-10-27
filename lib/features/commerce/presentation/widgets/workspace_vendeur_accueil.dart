@@ -10,16 +10,10 @@ import '../../../../shared/widgets/app_header_buttons.dart';
 import '../../../../shared/widgets/responsive_body.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
 import '../../../contacts/domain/entities/contact.dart';
-import '../../../entreprise/domain/entities/contexte_session.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../../entreprise/presentation/providers/espace_providers.dart';
-import '../../../finances/domain/entities/finances.dart' show ModePaiement;
-import '../../../finances/presentation/providers/finances_providers.dart';
 import '../../domain/entities/commerce.dart';
-import '../../domain/services/etat_commerce.dart';
 import '../commerce_providers.dart';
-import '../recus/recu_vente.dart';
-import '../recus/recu_vente_widgets.dart';
 import 'choix_contact.dart';
 import 'commerce_widgets.dart';
 
@@ -114,6 +108,18 @@ class WorkspaceVendeurAccueil extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        ctx.entreprise?.nom ?? 'DubaGest',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
                         'Bonjour $prenom',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w900,
@@ -121,24 +127,24 @@ class WorkspaceVendeurAccueil extends ConsumerWidget {
                           fontSize: 18,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF01226C).withValues(alpha: 0.08),
+                              color: AppColors.greenSoft,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFF01226C)),
+                                const Icon(Icons.storefront_rounded, size: 14, color: AppColors.green),
                                 const SizedBox(width: 4),
                                 Text(
                                   nomBoutiqueAffichee,
                                   style: const TextStyle(
-                                    color: Color(0xFF01226C),
+                                    color: AppColors.green,
                                     fontWeight: FontWeight.w800,
                                     fontSize: 12,
                                   ),
@@ -234,7 +240,57 @@ class WorkspaceVendeurAccueil extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.md),
+
+            // Actions Rapides Vendeur
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionCard(
+                    icone: Icons.inventory_2_rounded,
+                    couleur: const Color(0xFF01226C),
+                    titre: 'Produits',
+                    sousTitre: 'Catalogue & stocks',
+                    onTap: () => context.push(Routes.produits),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ActionCard(
+                    icone: Icons.receipt_long_rounded,
+                    couleur: const Color(0xFFDF9540),
+                    titre: 'Mes ventes',
+                    sousTitre: 'Reçus & historique',
+                    onTap: () => context.push(Routes.historiqueVentes),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionCard(
+                    icone: Icons.people_alt_rounded,
+                    couleur: AppColors.green,
+                    titre: 'Clients',
+                    sousTitre: 'Fiches & contacts',
+                    onTap: () => context.push(Routes.contacts),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ActionCard(
+                    icone: Icons.point_of_sale_rounded,
+                    couleur: const Color(0xFF8B5CF6),
+                    titre: 'Caisse',
+                    sousTitre: totalVendu > 0 ? montant(context, ref, totalVendu) : 'Modes de paiement',
+                    onTap: () => context.push(Routes.historiqueVentes),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
 
             // 3. Section « Ma journée » (4 KPIs)
             Row(
@@ -600,6 +656,83 @@ class _ReglementChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({
+    required this.icone,
+    required this.couleur,
+    required this.titre,
+    required this.sousTitre,
+    required this.onTap,
+  });
+
+  final IconData icone;
+  final Color couleur;
+  final String titre;
+  final String sousTitre;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: couleur.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icone, size: 20, color: couleur),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      titre,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                        color: AppColors.ink,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      sousTitre,
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

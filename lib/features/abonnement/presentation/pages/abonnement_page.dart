@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/localization/l10n.dart';
+import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/permissions/permission_codes.dart';
 import '../../../../shared/widgets/responsive_body.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
@@ -27,6 +30,8 @@ class AbonnementPage extends ConsumerWidget {
                 child: Builder(builder: (context) {
                   final limites = ctx.limites();
                   final usage = ctx.consommation;
+                  final peutGerer = ctx.permissionEngine.has(PermissionCodes.entrepriseManage);
+
                   return ListView(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     children: [
@@ -56,6 +61,14 @@ class AbonnementPage extends ConsumerWidget {
                                     Text(l10n.subscriptionUntil(l10n.date(abonnement.dateFin!))),
                                 ],
                               ),
+                              if (peutGerer) ...[
+                                const SizedBox(height: AppSpacing.md),
+                                OutlinedButton.icon(
+                                  onPressed: () => context.push(Routes.declassementAbonnement),
+                                  icon: const Icon(Icons.swap_vert),
+                                  label: const Text('Changer de formule d\'abonnement'),
+                                ),
+                              ],
                             ],
                           ),
                         ),
