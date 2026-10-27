@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
@@ -137,6 +138,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                key: const Key('go-vitrine-link'),
+                onPressed: () => launchUrl(
+                  Uri.parse('https://dubagest-ml.vercel.app'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.language_rounded, size: 16, color: AppColors.muted),
+                label: const Text(
+                  'Visiter le site officiel DubaGest',
+                  style: TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),

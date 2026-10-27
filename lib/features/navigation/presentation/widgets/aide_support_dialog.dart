@@ -191,6 +191,18 @@ class _AideSupportDialogState extends State<AideSupportDialog> with SingleTicker
         ),
         const SizedBox(height: 12),
         _CardAction(
+          icon: Icons.language_rounded,
+          iconColor: AppColors.green,
+          title: 'Site Web & Vitrine Officielle',
+          subtitle: 'Découvrez les modules, tarifs et guides complets sur notre portail.',
+          actionLabel: 'dubagest-ml.vercel.app',
+          onTap: () => launchUrl(
+            Uri.parse('https://dubagest-ml.vercel.app'),
+            mode: LaunchMode.externalApplication,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _CardAction(
           icon: Icons.phone_in_talk_rounded,
           iconColor: Colors.orange,
           title: 'Service Client Téléphonique',
