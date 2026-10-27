@@ -29,6 +29,7 @@ class AppConfig {
   static const _defaultPublishableKey = 'sb_publishable_7K7N1LDRynPSG0Lm8v27cg_Uj7Ttq_a';
   static const _defaultSupabaseUrl = 'https://zqvfksqfjsdfrykokpsd.supabase.co';
   static const _localAppUrl = 'http://127.0.0.1:3000';
+  static const _prodAppUrl = 'https://dubagest-app.pages.dev';
 
   factory AppConfig.fromEnvironment() {
     const url = String.fromEnvironment('SUPABASE_URL');
@@ -36,10 +37,13 @@ class AppConfig {
     const appUrl = String.fromEnvironment('APP_URL');
     const redirect = String.fromEnvironment('AUTH_REDIRECT_URL');
 
-    if (kReleaseMode && (url.isEmpty || key.isEmpty || appUrl.isEmpty)) {
-      throw StateError('SUPABASE_URL, SUPABASE_KEY et APP_URL sont obligatoires en release.');
-    }
-    final effectiveAppUrl = appUrl.isNotEmpty ? appUrl : (kIsWeb ? Uri.base.origin : _localAppUrl);
+    final effectiveAppUrl = appUrl.isNotEmpty
+        ? appUrl
+        : (kIsWeb
+            ? (Uri.base.origin.isNotEmpty && !Uri.base.origin.startsWith('null')
+                ? Uri.base.origin
+                : _prodAppUrl)
+            : (kReleaseMode ? _prodAppUrl : _localAppUrl));
 
     // Détermination de l'URL de retour OAuth :
     // Sur Web, toujours l'origine courante du navigateur (ex: http://localhost:3000 ou https://dubagest.ml)
@@ -49,7 +53,9 @@ class AppConfig {
       if (redirect.isNotEmpty && !redirect.startsWith('io.dubagest://')) {
         effectiveRedirect = redirect;
       } else {
-        effectiveRedirect = Uri.base.origin;
+        effectiveRedirect = Uri.base.origin.isNotEmpty && !Uri.base.origin.startsWith('null')
+            ? Uri.base.origin
+            : _prodAppUrl;
       }
     } else {
       effectiveRedirect = redirect.isNotEmpty ? redirect : _defaultRedirect(effectiveAppUrl);
