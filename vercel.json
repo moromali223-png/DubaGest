@@ -18,6 +18,14 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/app", "destination": "https://dubagest-app.pages.dev", "permanent": false },
+    { "source": "/pwa", "destination": "https://dubagest-app.pages.dev", "permanent": false },
+    { "source": "/login", "destination": "https://dubagest-app.pages.dev/login", "permanent": false },
+    { "source": "/register", "destination": "https://dubagest-app.pages.dev/register", "permanent": false },
+    { "source": "/connexion", "destination": "https://dubagest-app.pages.dev/login", "permanent": false },
+    { "source": "/inscription", "destination": "https://dubagest-app.pages.dev/register", "permanent": false }
+  ],
   "rewrites": [
     {
       "source": "/",
@@ -33,4 +41,3 @@
     }
   ]
 }
-
