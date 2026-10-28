@@ -42,6 +42,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = context.l10n;
     final action = ref.watch(signInControllerProvider);
     final loading = action.isLoading;
@@ -106,7 +107,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  backgroundColor: AppColors.green,
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
                 ),
                 onPressed: loading ? null : _submit,
                 child: loading
@@ -118,7 +120,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 onPressed: loading ? null : () => context.push(Routes.forgotPassword),
                 child: Text(
                   l10n.authForgotPassword,
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.muted),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
               const OrDivider(),
@@ -128,13 +130,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 alignment: WrapAlignment.center,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(l10n.authNoAccount, style: const TextStyle(color: AppColors.muted)),
+                  Text(l10n.authNoAccount, style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
                   TextButton(
                     key: const Key('go-register'),
                     onPressed: loading ? null : () => context.go(Routes.register),
                     child: Text(
                       l10n.authRegisterLink,
-                      style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green),
+                      style: TextStyle(fontWeight: FontWeight.w800, color: theme.colorScheme.primary),
                     ),
                   ),
                 ],
@@ -146,10 +148,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   Uri.parse('https://dubagest-ml.vercel.app'),
                   mode: LaunchMode.externalApplication,
                 ),
-                icon: const Icon(Icons.language_rounded, size: 16, color: AppColors.muted),
-                label: const Text(
+                icon: Icon(Icons.language_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                label: Text(
                   'Visiter le site officiel DubaGest',
-                  style: TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12.5, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -167,14 +169,25 @@ class _Notice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final bg = isError
+        ? (isDark ? scheme.errorContainer : scheme.error.withValues(alpha: 0.1))
+        : (isDark ? scheme.primaryContainer : AppColors.greenSoft);
+    final borderColor = isError ? scheme.error.withValues(alpha: 0.4) : scheme.primary.withValues(alpha: 0.4);
+    final iconColor = isError ? scheme.error : scheme.primary;
+    final textColor = isError
+        ? (isDark ? scheme.onErrorContainer : const Color(0xFF991B1B))
+        : (isDark ? scheme.onPrimaryContainer : AppColors.ink);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
       decoration: BoxDecoration(
-        color: isError ? AppColors.negative.withValues(alpha: 0.1) : AppColors.greenSoft,
+        color: bg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isError ? AppColors.negative.withValues(alpha: 0.3) : AppColors.green.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,14 +195,14 @@ class _Notice extends StatelessWidget {
           Icon(
             isError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
             size: 20,
-            color: isError ? AppColors.negative : AppColors.green,
+            color: iconColor,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                color: isError ? const Color(0xFF991B1B) : AppColors.ink,
+                color: textColor,
                 fontWeight: FontWeight.w500,
                 fontSize: 13.5,
                 height: 1.3,

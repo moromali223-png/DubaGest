@@ -36,19 +36,21 @@ class FloatingNavBar extends StatelessWidget {
       children.insert(children.length ~/ 2 + children.length % 2, Expanded(child: _Center(item: centerAction!)));
     }
 
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+        padding: EdgeInsets.fromLTRB(12, 4, 12, bottomInset > 0 ? 4 : 12),
         child: Material(
           color: AppColors.ink,
           elevation: 8,
           shadowColor: AppColors.ink.withValues(alpha: 0.4),
           shape: const StadiumBorder(),
           child: SizedBox(
-            height: 68,
+            height: 66,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Row(children: children),
             ),
           ),
@@ -85,14 +87,16 @@ class _Tab extends StatelessWidget {
                 children: [
                   Icon(item.selected ? item.selectedIcon : item.icon, color: color, size: 22),
                   const SizedBox(height: 3),
-                  Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 11,
-                      fontWeight: item.selected ? FontWeight.w800 : FontWeight.w600,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      item.label,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 11,
+                        fontWeight: item.selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
                     ),
                   ),
                   if (item.selected) ...[
@@ -147,13 +151,16 @@ class _Center extends StatelessWidget {
               child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
             ),
             const SizedBox(height: 2),
-            Text(
-              item.label,
-              maxLines: 1,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                item.label,
+                maxLines: 1,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],

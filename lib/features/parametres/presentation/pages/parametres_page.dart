@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../app/theme/theme_controller.dart';
 import '../../../../core/di/sync_providers.dart';
 import '../../../../core/sync/sync_models.dart';
 import '../../../../shared/widgets/language_selector.dart';
@@ -105,6 +106,39 @@ class ParametresPage extends ConsumerWidget {
                 ),
               ]),
             section(l10n.languageLabel, const [LanguageList()]),
+            section('Affichage & Thème', [
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final currentMode = ref.watch(themeModeControllerProvider);
+                    return SegmentedButton<ThemeMode>(
+                      segments: const [
+                        ButtonSegment(
+                          value: ThemeMode.system,
+                          icon: Icon(Icons.brightness_auto_rounded),
+                          label: Text('Système'),
+                        ),
+                        ButtonSegment(
+                          value: ThemeMode.light,
+                          icon: Icon(Icons.light_mode_rounded),
+                          label: Text('Clair'),
+                        ),
+                        ButtonSegment(
+                          value: ThemeMode.dark,
+                          icon: Icon(Icons.dark_mode_rounded),
+                          label: Text('Sombre'),
+                        ),
+                      ],
+                      selected: {currentMode},
+                      onSelectionChanged: (selected) {
+                        ref.read(themeModeControllerProvider.notifier).setThemeMode(selected.first);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ]),
             if (ctx != null)
               section(l10n.settingsEntreprise, [
                 ListTile(

@@ -129,16 +129,6 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
         _ => const Color(0xFF01226C),
       };
 
-  IconData get _iconeTheme => switch (_typeSelectionne) {
-        TypeDocument.devis => Icons.request_quote_outlined,
-        TypeDocument.facture => Icons.receipt_long_outlined,
-        TypeDocument.bonCommande => Icons.shopping_cart_checkout,
-        TypeDocument.avoir => Icons.assignment_return_outlined,
-        TypeDocument.recu => Icons.receipt_outlined,
-        TypeDocument.bonTravail => Icons.build_circle_outlined,
-        _ => Icons.description_outlined,
-      };
-
   @override
   void initState() {
     super.initState();
@@ -376,13 +366,6 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
         _ => '',
       };
 
-  String _titreBoutonSuivant() => switch (_etapeCourante) {
-        0 => 'Suivant : Articles',
-        1 => 'Suivant : Règlement',
-        2 => 'Suivant : Aperçu',
-        _ => 'Valider',
-      };
-
   Future<void> _emettreDocument({required bool estBrouillon}) async {
     final ctx = ref.read(contexteActifProvider);
     if (ctx == null) return;
@@ -532,8 +515,8 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
           appBar: AppBar(
             elevation: 0,
             leading: IconButton(
-              icon: Icon(_etapeCourante > 0 ? Icons.arrow_back_rounded : Icons.close_rounded),
-              tooltip: _etapeCourante > 0 ? 'Étape précédente' : 'Quitter',
+              icon: const Icon(Icons.arrow_back_rounded),
+              tooltip: _etapeCourante > 0 ? 'Étape précédente' : 'Annuler',
               onPressed: _reculerEtape,
             ),
             title: Column(
@@ -550,25 +533,57 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
               ],
             ),
             actions: [
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _couleurTheme.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(_iconeTheme, size: 14, color: _couleurTheme),
-                    const SizedBox(width: 6),
-                    Text(
-                      _libelleType(_typeSelectionne).toUpperCase(),
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: _couleurTheme, letterSpacing: 0.5),
+              if (_etapeCourante < 3) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  child: FilledButton.icon(
+                    onPressed: _avancerEtape,
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                    label: Text(
+                      _etapeCourante == 2 ? 'Aperçu' : 'Suivant',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
-                  ],
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _couleurTheme,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                      minimumSize: const Size(0, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
                 ),
-              ),
+              ] else ...[
+                TextButton(
+                  onPressed: _enSauvegarde ? null : () => _emettreDocument(estBrouillon: true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.muted,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                    minimumSize: const Size(0, 36),
+                  ),
+                  child: const Text('Brouillon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 10, top: 8, bottom: 8),
+                  child: FilledButton.icon(
+                    onPressed: _enSauvegarde ? null : () => _emettreDocument(estBrouillon: false),
+                    icon: _enSauvegarde
+                        ? const SizedBox.square(
+                            dimension: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check_circle_rounded, size: 16),
+                    label: Text(
+                      _enSauvegarde ? '...' : 'Émettre',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _couleurTheme,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                      minimumSize: const Size(0, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(48),
@@ -593,7 +608,6 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
               _buildEtape3Recapitulatif(ctx, contactActuel),
             ],
           ),
-          bottomNavigationBar: _buildDockedFooter(),
         ),
       ),
     );
@@ -670,100 +684,6 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
     );
   }
 
-  /// Footer fixé au bas de l'écran (Docked Action Bar)
-  Widget _buildDockedFooter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            if (_etapeCourante > 0)
-              OutlinedButton.icon(
-                onPressed: _reculerEtape,
-                icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: Text(_etapeCourante == 3 ? 'Retour' : 'Précédent'),
-                style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: _etapeCourante == 3 ? 10 : 16, vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              )
-            else
-              TextButton.icon(
-                onPressed: () => Navigator.of(context).maybePop(),
-                icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.muted),
-                label: const Text('Annuler', style: TextStyle(color: AppColors.muted)),
-              ),
-            const SizedBox(width: 8),
-            if (_etapeCourante < 3) ...[
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _avancerEtape,
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                  label: Text(
-                    _titreBoutonSuivant(),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _couleurTheme,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-            ] else ...[
-              OutlinedButton(
-                onPressed: _enSauvegarde ? null : () => _emettreDocument(estBrouillon: true),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.muted,
-                  side: const BorderSide(color: Color(0xFFCBD5E1)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Brouillon', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _enSauvegarde ? null : () => _emettreDocument(estBrouillon: false),
-                  icon: _enSauvegarde
-                      ? const SizedBox.square(
-                          dimension: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.check_circle_rounded, size: 18),
-                  label: Text(
-                    _enSauvegarde ? 'Émission...' : 'Émettre',
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _couleurTheme,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   // ===========================================================================
   // ÉTAPE 0 : INFORMATIONS & DESTINATAIRE
   // ===========================================================================
@@ -771,7 +691,7 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
     final estBonCommande = _typeSelectionne == TypeDocument.bonCommande;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       child: ResponsiveBody(
         maxWidth: 800,
         child: Column(
@@ -1221,7 +1141,7 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
   // ===========================================================================
   Widget _buildEtape1Articles() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       child: ResponsiveBody(
         maxWidth: 800,
         child: Column(
@@ -1308,7 +1228,7 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
   // ===========================================================================
   Widget _buildEtape2Reglement() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       child: ResponsiveBody(
         maxWidth: 800,
         child: Column(
@@ -1542,7 +1462,7 @@ class _DocumentFormPageState extends ConsumerState<DocumentFormPage> {
   // ===========================================================================
   Widget _buildEtape3Recapitulatif(ContexteSession? ctx, Contact? contactActuel) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       child: ResponsiveBody(
         maxWidth: 850,
         child: Column(

@@ -27,9 +27,11 @@ class AuthFormScaffold extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= 860;
 
+    final isDark = theme.brightness == Brightness.dark;
+
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         body: Row(
           children: [
             // Volet de marque gauche (Desktop / Grand écran)
@@ -64,12 +66,14 @@ class AuthFormScaffold extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(AppSpacing.xl),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: theme.colorScheme.surface,
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(color: theme.colorScheme.outlineVariant),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
+                                color: isDark
+                                    ? Colors.black.withValues(alpha: 0.35)
+                                    : Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
@@ -83,7 +87,7 @@ class AuthFormScaffold extends StatelessWidget {
                                 title,
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.ink,
+                                  color: theme.colorScheme.onSurface,
                                   letterSpacing: -0.5,
                                 ),
                               ),
@@ -92,7 +96,7 @@ class AuthFormScaffold extends StatelessWidget {
                                 Text(
                                   subtitle!,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.muted,
+                                    color: theme.colorScheme.onSurfaceVariant,
                                     height: 1.4,
                                   ),
                                 ),
@@ -115,7 +119,7 @@ class AuthFormScaffold extends StatelessWidget {
 
     // Version Mobile & Tablette
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: showBack,
         backgroundColor: Colors.transparent,
@@ -144,12 +148,14 @@ class AuthFormScaffold extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.green.withValues(alpha: 0.05),
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.3)
+                              : AppColors.green.withValues(alpha: 0.05),
                           blurRadius: 18,
                           offset: const Offset(0, 6),
                         ),
@@ -162,7 +168,7 @@ class AuthFormScaffold extends StatelessWidget {
                           title,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: AppColors.ink,
+                            color: theme.colorScheme.onSurface,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -171,7 +177,7 @@ class AuthFormScaffold extends StatelessWidget {
                           Text(
                             subtitle!,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.muted,
+                              color: theme.colorScheme.onSurfaceVariant,
                               height: 1.35,
                             ),
                           ),

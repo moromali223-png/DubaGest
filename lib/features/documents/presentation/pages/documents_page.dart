@@ -929,39 +929,84 @@ _${entrepriseNom}_
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final isCompact = constraints.maxWidth < 460;
+                                    final numeroWidget = Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            d.numero,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 18,
+                                              color: AppColors.ink,
+                                            ),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.copy, size: 16, color: AppColors.muted),
+                                          visualDensity: VisualDensity.compact,
+                                          padding: const EdgeInsets.all(4),
+                                          constraints: const BoxConstraints(),
+                                          tooltip: 'Copier le numéro',
+                                          onPressed: () {
+                                            Clipboard.setData(ClipboardData(text: d.numero));
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Numéro copié dans le presse-papier')),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    );
+
+                                    final statutWidget = Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: couleurStatut.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        libelleStatut,
+                                        style: TextStyle(
+                                          color: couleurStatut,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    );
+
+                                    if (isCompact) {
+                                      return Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Row(
+                                            crossAxisAlignment: CrossAxisAlignment.center,
                                             children: [
-                                              Text(
-                                                d.numero,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: 18,
-                                                  color: AppColors.ink,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.copy, size: 16, color: AppColors.muted),
-                                                tooltip: 'Copier le numéro',
-                                                onPressed: () {
-                                                  Clipboard.setData(ClipboardData(text: d.numero));
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Numéro copié dans le presse-papier')),
-                                                  );
-                                                },
-                                              ),
+                                              Expanded(child: numeroWidget),
+                                              const SizedBox(width: 8),
+                                              statutWidget,
                                             ],
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            d.titre ?? l10n.typeDocument(d.type),
-                                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  d.titre ?? l10n.typeDocument(d.type),
+                                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Émis le ${DateFormat('dd/MM/yyyy').format(d.date)}',
+                                                style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                                              ),
+                                            ],
                                           ),
                                           if (c['reference_metier'] case final String refMetier when refMetier.isNotEmpty)
                                             Padding(
@@ -972,34 +1017,48 @@ _${entrepriseNom}_
                                               ),
                                             ),
                                         ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      );
+                                    }
+
+                                    return Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: couleurStatut.withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            libelleStatut,
-                                            style: TextStyle(
-                                              color: couleurStatut,
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 12,
-                                            ),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              numeroWidget,
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                d.titre ?? l10n.typeDocument(d.type),
+                                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                              ),
+                                              if (c['reference_metier'] case final String refMetier when refMetier.isNotEmpty)
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 4),
+                                                  child: Text(
+                                                    'Réf. externe : $refMetier',
+                                                    style: const TextStyle(fontSize: 13, color: AppColors.muted),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Émis le ${DateFormat('dd/MM/yyyy').format(d.date)}',
-                                          style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                                        const SizedBox(width: 12),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            statutWidget,
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              'Émis le ${DateFormat('dd/MM/yyyy').format(d.date)}',
+                                              style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                                            ),
+                                          ],
                                         ),
                                       ],
-                                    ),
-                                  ],
+                                    );
+                                  },
                                 ),
                                 const Divider(height: 24),
 

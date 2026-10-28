@@ -404,7 +404,49 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: _etape > 0 ? l10n.comPrevious : l10n.commonCancel,
+          onPressed: () {
+            if (_etape > 0) {
+              _allerA(_etape - 1);
+            } else {
+              context.pop();
+            }
+          },
+        ),
         title: Text(_creation ? l10n.comNewProduct : l10n.comEditProduct),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: FilledButton.icon(
+              key: Key(derniere ? 'produit-enregistrer' : 'produit-suivant'),
+              onPressed: _enCours || !_etape1Valide
+                  ? null
+                  : derniere
+                      ? _enregistrer
+                      : () => _allerA(_etape + 1),
+              iconAlignment: derniere ? IconAlignment.start : IconAlignment.end,
+              icon: _enCours
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Icon(derniere ? Icons.check_rounded : Icons.arrow_forward_rounded, size: 16),
+              label: Text(
+                derniere ? (_creation ? l10n.comSaveProduct : l10n.comSaveChanges) : l10n.comNext,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.green,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                minimumSize: const Size(0, 36),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(64),
           child: _Progression(etapes: etapes, courante: _etape, onTap: (i) {
@@ -413,58 +455,18 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _defilement,
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xl),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: AppBreakpoints.contentMaxWidth),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: _etape == 0 ? _etapeProduit() : _etapePrixStock(),
-                    ),
-                  ),
-                ),
+        child: SingleChildScrollView(
+          controller: _defilement,
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 80),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: AppBreakpoints.contentMaxWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _etape == 0 ? _etapeProduit() : _etapePrixStock(),
               ),
             ),
-            _BarreActions(
-              children: [
-                if (_etape > 0)
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52)),
-                    onPressed: () => _allerA(_etape - 1),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    label: Text(l10n.comPrevious),
-                  )
-                else
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52)),
-                    onPressed: () => context.pop(),
-                    child: Text(l10n.commonCancel),
-                  ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton.icon(
-                    key: Key(derniere ? 'produit-enregistrer' : 'produit-suivant'),
-                    onPressed: _enCours || !_etape1Valide
-                        ? null
-                        : derniere
-                            ? _enregistrer
-                            : () => _allerA(_etape + 1),
-                    iconAlignment: derniere ? IconAlignment.start : IconAlignment.end,
-                    icon: _enCours
-                        ? const SizedBox(
-                            width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                        : Icon(derniere ? Icons.check_rounded : Icons.arrow_forward_rounded),
-                    label: Text(derniere ? (_creation ? l10n.comSaveProduct : l10n.comSaveChanges) : l10n.comNext),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1359,27 +1361,6 @@ class _Progression extends StatelessWidget {
               ),
             ],
           ],
-        ),
-      );
-}
-
-class _BarreActions extends StatelessWidget {
-  const _BarreActions({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: const Border(top: BorderSide(color: AppColors.border)),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, -3))],
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: AppBreakpoints.contentMaxWidth),
-            child: Row(children: children),
-          ),
         ),
       );
 }

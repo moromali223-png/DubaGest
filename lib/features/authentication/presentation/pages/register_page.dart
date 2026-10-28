@@ -91,25 +91,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       );
     }
 
+    final theme = Theme.of(context);
     InputDecoration deco(String label, {IconData? icon, Widget? suffixIcon}) => InputDecoration(
           labelText: label,
-          prefixIcon: icon != null ? Icon(icon, size: 20, color: AppColors.muted) : null,
+          prefixIcon: icon != null ? Icon(icon, size: 20) : null,
           suffixIcon: suffixIcon,
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.green, width: 2),
-          ),
         );
 
     return AuthFormScaffold(
@@ -257,8 +243,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 key: const Key('register-submit'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
-                  backgroundColor: AppColors.green,
-                  foregroundColor: Colors.white,
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
@@ -277,13 +263,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 children: [
                   Text(
                     l10n.authHaveAccount,
-                    style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                   ),
                   TextButton(
                     onPressed: loading ? null : () => context.go(Routes.login),
                     child: Text(
                       l10n.authSignInLink,
-                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.green),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
                     ),
                   ),
                 ],

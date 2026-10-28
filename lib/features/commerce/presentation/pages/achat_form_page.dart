@@ -332,13 +332,18 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
 
   // --- Statuts et Résumés dynamiques des sections ---
   FormSectionStatus get _fournisseurStatus {
-    if (_fournisseurId != null || _boutique != null) return FormSectionStatus.complete;
-    return FormSectionStatus.emptyOptional;
+    if (_boutique == null) return FormSectionStatus.emptyRequired;
+    if (_modeReglement != _ModeReglement.comptant && _fournisseurId == null) {
+      return FormSectionStatus.emptyRequired;
+    }
+    return FormSectionStatus.complete;
   }
 
   String _fournisseurSummary(AppLocalizations l10n) {
+    final fournisseurNom = nomContact(ref, _fournisseurId) ??
+        (_modeReglement != _ModeReglement.comptant ? 'Fournisseur requis (Crédit)' : 'Fournisseur facultatif');
     final elements = [
-      nomContact(ref, _fournisseurId) ?? 'Fournisseur non sélectionné',
+      fournisseurNom,
       l10n.date(_date),
       if (_bonCommandeId != null) 'Lié au BC' else if (_reference.text.trim().isNotEmpty) 'Réf: ${_reference.text.trim()}',
     ];
@@ -347,6 +352,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
 
   FormSectionStatus get _lignesStatus {
     if (_lignes.isEmpty) return FormSectionStatus.emptyRequired;
+    if (_lignes.any((l) => l.prixUnitaire <= 0)) return FormSectionStatus.emptyRequired;
     return FormSectionStatus.complete;
   }
 
@@ -354,21 +360,37 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     if (_lignes.isEmpty) return 'Aucun article ajouté (Requis)';
     final count = _lignes.length;
     final total = totalLignes(_lignes);
-    return '$count article${count > 1 ? 's' : ''} • ${montant(context, ref, total)}';
+    final sansPrix = _lignes.where((l) => l.prixUnitaire <= 0).length;
+    if (sansPrix > 0) {
+      return '$count article${count > 1 ? 's' : ''} • ⚠️ $sansPrix sans prix d\'achat';
+    }
+    return '$count article${count > 1 ? 's' : ''} • Total: ${montant(context, ref, total)}';
   }
 
-  FormSectionStatus get _reglementStatus => FormSectionStatus.complete;
+  FormSectionStatus get _reglementStatus {
+    if (_lignes.isEmpty) return FormSectionStatus.emptyRequired;
+    if (_modeReglement != _ModeReglement.comptant && _fournisseurId == null) {
+      return FormSectionStatus.emptyRequired;
+    }
+    if (_modeReglement == _ModeReglement.acompte) {
+      final total = totalLignes(_lignes);
+      final acompte = int.tryParse(_acompteCtrl.text.trim()) ?? 0;
+      if (acompte <= 0 || acompte > total) return FormSectionStatus.emptyRequired;
+    }
+    return FormSectionStatus.complete;
+  }
 
   String _reglementSummary(AppLocalizations l10n) {
     final total = totalLignes(_lignes);
+    if (total == 0) return 'En attente d\'articles (Total: 0 FCFA)';
     return switch (_modeReglement) {
-      _ModeReglement.credit => 'À crédit • Solde dû: ${montant(context, ref, total)}',
+      _ModeReglement.credit => 'À crédit intégral • Dette: ${montant(context, ref, total)}',
       _ModeReglement.comptant => 'Comptant (${l10n.modePaiement(_modePaiement)}) • 100% payé',
       _ModeReglement.acompte => () {
-        final a = (int.tryParse(_acompteCtrl.text.trim()) ?? 0).clamp(0, total);
-        final r = (total - a).clamp(0, total);
-        return 'Acompte: ${montant(context, ref, a)} • Reste dû: ${montant(context, ref, r)}';
-      }(),
+          final a = (int.tryParse(_acompteCtrl.text.trim()) ?? 0).clamp(0, total);
+          final r = (total - a).clamp(0, total);
+          return 'Acompte: ${montant(context, ref, a)} • Reste dû: ${montant(context, ref, r)}';
+        }(),
     };
   }
 
@@ -384,6 +406,17 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     if (ctx == null || etat == null || _boutique == null) return;
     if (_lignes.isEmpty) {
       _formController.scrollToSection(1);
+      signalerErreur(context, 'Veuillez ajouter au moins un article à la réception.');
+      return;
+    }
+    if (_modeReglement != _ModeReglement.comptant && _fournisseurId == null) {
+      _formController.scrollToSection(0);
+      signalerErreur(context, 'Veuillez sélectionner un fournisseur pour un achat à crédit ou avec acompte.');
+      return;
+    }
+    if (_lignes.any((l) => l.prixUnitaire <= 0)) {
+      _formController.scrollToSection(1);
+      signalerErreur(context, 'Chaque article doit avoir un prix d\'achat unitaire supérieur à 0 FCFA.');
       return;
     }
     setState(() => _enCours = true);
@@ -397,9 +430,6 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     );
     final gerer = ref.read(gererCommerceProvider);
     try {
-      if (_lignes.any((l) => l.prixUnitaire <= 0)) {
-        throw 'Le prix d\'achat doit être supérieur à 0 pour chaque article réceptionné.';
-      }
       for (final l in _lignes) {
         ref.read(unitesMemoriseesProvider.notifier).retenir('achat', l.produitId, etat.produit(l.produitId)!.uniteNommee(l.unite).id);
       }
@@ -463,11 +493,15 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     final etat = ref.watch(etatCommerceProvider).value ?? widget.etat;
     final droits = ref.watch(droitsCommerceProvider);
     final total = totalLignes(_lignes);
+    final acompteVal = (int.tryParse(_acompteCtrl.text.trim()) ?? 0);
+    final acompteValide = _modeReglement != _ModeReglement.acompte || (acompteVal > 0 && acompteVal <= total);
+    final fournisseurValide = _modeReglement == _ModeReglement.comptant || _fournisseurId != null;
+    final prixTousValides = _lignes.isNotEmpty && _lignes.every((l) => l.prixUnitaire > 0 && l.quantite.estPositif);
     final habituels = _fournisseurId == null
         ? const <Produit>[]
         : etat.produitsDuFournisseur(_fournisseurId!).where((p) => !_lignes.any((l) => l.produitId == p.id)).toList();
     final peutRecevoir = _creation && _boutique != null && droits.boutiquesReception.contains(_boutique);
-    final valide = _lignes.isNotEmpty && _boutique != null && !_enCours;
+    final valide = _lignes.isNotEmpty && _boutique != null && !_enCours && prixTousValides && fournisseurValide && acompteValide;
 
     return UnsavedChangesScope(
       hasUnsavedChanges: _aEteModifie && !_enCours,
@@ -506,7 +540,13 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
               TextButton(
                 key: const Key('achat-enregistrer-appbar'),
                 onPressed: valide ? () => _enregistrer(recevoir: false) : null,
-                child: Text(l10n.comSave, style: const TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  l10n.comSave,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: valide ? AppColors.green : AppColors.muted,
+                  ),
+                ),
               ),
             const SizedBox(width: 8),
           ],
@@ -518,15 +558,39 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                     // Section 1 : Fournisseur & Contexte
                     CollapsibleFormSection(
                       key: _formController.registerSectionKey(0),
-                      title: 'Origine & Destination du stock',
+                      title: 'Fournisseur & Destination du stock',
                       icon: Icons.local_shipping_rounded,
                       summary: _fournisseurSummary(l10n),
                       status: _fournisseurStatus,
+                      isRequired: _modeReglement != _ModeReglement.comptant,
                       isExpanded: _formController.isSectionOpen(0),
                       onToggle: () => setState(() => _formController.toggleSection(0)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          if (_modeReglement != _ModeReglement.comptant && _fournisseurId == null) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.warningSoft,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.info_outline_rounded, size: 18, color: AppColors.warning),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Fournisseur obligatoire pour enregistrer une dette commerciale (achat à crédit ou acompte).',
+                                      style: TextStyle(fontSize: 12, color: AppColors.ink, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (_bonCommandeId != null) ...[
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -579,18 +643,40 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                             color: AppColors.background,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(
+                                color: (_modeReglement != _ModeReglement.comptant && _fournisseurId == null)
+                                    ? AppColors.warning
+                                    : AppColors.border,
+                                width: (_modeReglement != _ModeReglement.comptant && _fournisseurId == null) ? 1.5 : 1,
+                              ),
                             ),
                             child: ListTile(
                               key: const Key('achat-fournisseur'),
-                              leading: const CircleAvatar(
-                                backgroundColor: AppColors.greenSoft,
-                                child: Icon(Icons.business_rounded, color: AppColors.green, size: 20),
+                              leading: CircleAvatar(
+                                backgroundColor: (_modeReglement != _ModeReglement.comptant && _fournisseurId == null)
+                                    ? AppColors.warningSoft
+                                    : AppColors.greenSoft,
+                                child: Icon(
+                                  Icons.business_rounded,
+                                  color: (_modeReglement != _ModeReglement.comptant && _fournisseurId == null)
+                                      ? AppColors.warning
+                                      : AppColors.green,
+                                  size: 20,
+                                ),
                               ),
-                              title: Text(l10n.comSupplier, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                              title: Text(
+                                _modeReglement != _ModeReglement.comptant ? '${l10n.comSupplier} *' : l10n.comSupplier,
+                                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                              ),
                               subtitle: Text(
                                 nomContact(ref, _fournisseurId) ?? l10n.comNoSupplierChosen,
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.ink),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: (_modeReglement != _ModeReglement.comptant && _fournisseurId == null)
+                                      ? AppColors.warning
+                                      : AppColors.ink,
+                                ),
                               ),
                               trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
                               onTap: () async {
@@ -664,7 +750,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                     // Section 2 : Articles & Produits commandés
                     CollapsibleFormSection(
                       key: _formController.registerSectionKey(1),
-                      title: 'Articles à réceptionner en stock',
+                      title: 'Articles de la réception',
                       icon: Icons.inventory_2_rounded,
                       summary: _lignesSummary(l10n),
                       status: _lignesStatus,
@@ -723,46 +809,75 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                             const SizedBox(height: AppSpacing.md),
                           ],
                           for (final (i, l) in _lignes.indexed)
-                            if (etat.produit(l.produitId) case final p?)
-                              Card(
-                                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                                child: ListTile(
-                                  key: Key('ligne-$i'),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  leading: ProduitImage(produit: p, taille: 48),
-                                  title: Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w700)),
-                                  subtitle: Text(
-                                    '${qteUnite(context, l.quantite, l.unite)} × ${montant(context, ref, l.prixUnitaire)}'
-                                    '${l.facteur == Qte.un ? '' : '\n${equivalentBase(context, p, l.quantiteBase) ?? ''}'}',
+                            if (etat.produit(l.produitId) case final p?) ...[
+                              Builder(builder: (context) {
+                                final bool prixInvalide = l.prixUnitaire <= 0;
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(
+                                      color: prixInvalide ? AppColors.negative : AppColors.border,
+                                      width: prixInvalide ? 1.5 : 1,
+                                    ),
                                   ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        montant(context, ref, l.montant),
-                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.muted),
-                                        onPressed: () => setState(() {
-                                          _lignes.removeAt(i);
+                                  child: ListTile(
+                                    key: Key('ligne-$i'),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    leading: ProduitImage(produit: p, taille: 48),
+                                    title: Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${qteUnite(context, l.quantite, l.unite)} × ${l.prixUnitaire <= 0 ? "0 FCFA" : montant(context, ref, l.prixUnitaire)}'
+                                          '${l.remise > 0 ? " • Remise: ${montant(context, ref, l.remise)}" : ""}'
+                                          '${l.facteur == Qte.un ? '' : '\n${equivalentBase(context, p, l.quantiteBase) ?? ''}'}',
+                                        ),
+                                        if (prixInvalide)
+                                          const Padding(
+                                            padding: EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              '⚠️ Prix d\'achat requis (> 0 FCFA)',
+                                              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.negative),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          l.prixUnitaire <= 0 ? 'À saisir' : montant(context, ref, l.montant),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 15,
+                                            color: l.prixUnitaire <= 0 ? AppColors.negative : const Color(0xFF01226C),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.muted),
+                                          onPressed: () => setState(() {
+                                            _lignes.removeAt(i);
+                                            _aEteModifie = true;
+                                          }),
+                                        ),
+                                      ],
+                                    ),
+                                    onTap: () async {
+                                      final r = await _editerLigne(p, l);
+                                      if (r != null) {
+                                        setState(() {
+                                          _lignes[i] = r;
                                           _aEteModifie = true;
-                                        }),
-                                      ),
-                                    ],
+                                        });
+                                      }
+                                    },
                                   ),
-                                  onTap: () async {
-                                    final r = await _editerLigne(p, l);
-                                    if (r != null) {
-                                      setState(() {
-                                        _lignes[i] = r;
-                                        _aEteModifie = true;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
+                                );
+                              }),
+                            ],
                           const SizedBox(height: 4),
                           Row(
                             children: [
@@ -771,7 +886,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                                   key: const Key('achat-ajouter-ligne'),
                                   onPressed: _ajouter,
                                   icon: const Icon(Icons.add_rounded),
-                                  label: const Text('Ajouter manuellement'),
+                                  label: const Text('Ajouter un article'),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -797,15 +912,39 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                     if (_creation)
                       CollapsibleFormSection(
                         key: _formController.registerSectionKey(2),
-                        title: 'Paiement & Modalités de règlement',
+                        title: 'Modalités de règlement',
                         icon: Icons.payments_rounded,
                         summary: _reglementSummary(l10n),
                         status: _reglementStatus,
+                        isRequired: true,
                         isExpanded: _formController.isSectionOpen(2),
                         onToggle: () => setState(() => _formController.toggleSection(2)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (_modeReglement != _ModeReglement.comptant && _fournisseurId == null) ...[
+                              Container(
+                                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.warningSoft,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.warning),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Sélectionnez un fournisseur dans la section 1 pour enregistrer une dette.',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ink),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -844,7 +983,9 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                 decoration: InputDecoration(
                                   labelText: 'Montant de l\'acompte immédiat (FCFA) *',
-                                  helperText: 'Reste à payer : ${montant(context, ref, (total - (int.tryParse(_acompteCtrl.text.trim()) ?? 0)).clamp(0, total))}',
+                                  helperText: total > 0
+                                      ? 'Reste dû (Dette fournisseur) : ${montant(context, ref, (total - (int.tryParse(_acompteCtrl.text.trim()) ?? 0)).clamp(0, total))}'
+                                      : 'Ajoutez d\'abord des articles pour calculer le reste dû.',
                                   prefixIcon: const Icon(Icons.price_change_outlined),
                                 ),
                                 onChanged: (_) => setState(() => _aEteModifie = true),
@@ -894,7 +1035,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                     // Section Note interne (Facultatif)
                     CollapsibleFormSection(
                       key: _formController.registerSectionKey(_creation ? 3 : 2),
-                      title: 'Note & Observations',
+                      title: 'Observations & Notes',
                       icon: Icons.note_alt_rounded,
                       summary: _note.text.trim().isEmpty ? 'Aucune observation (Facultatif)' : _note.text.trim(),
                       status: _noteStatus,
@@ -1059,14 +1200,13 @@ class _EditeurLigneState extends ConsumerState<_EditeurLigne> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final p = widget.produit;
     final prixA = int.tryParse(_prixAchat.text) ?? 0;
     final prixV = int.tryParse(_prixVente.text) ?? 0;
     final remise = int.tryParse(_remise.text.trim()) ?? 0;
     final q = _quantite;
     final dernier = widget.etat.dernierPrixAchat(p.id, _unite.nom);
-    final valide = q != null && q.estPositif && (p.venteFractionnee || q.fois(_unite.facteur).estEntier);
+    final valide = q != null && q.estPositif && (p.venteFractionnee || q.fois(_unite.facteur).estEntier) && prixA > 0;
     final totalLigne = (q != null && q.estPositif) ? (q.montant(prixA) - remise).clamp(0, 10000000000) : 0;
 
     return Padding(
@@ -1109,16 +1249,19 @@ class _EditeurLigneState extends ConsumerState<_EditeurLigne> {
             ),
             const SizedBox(height: AppSpacing.md),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: TextField(
                     controller: _prixAchat,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      labelText: 'Prix d\'ACHAT réel (${_unite.nom})',
+                      labelText: 'Prix d\'ACHAT unitaire (${_unite.nom})',
                       prefixIcon: const Icon(Icons.download_rounded, color: AppColors.negative),
                       helperText: dernier == null ? 'Jamais acheté' : 'Dernier : ${montant(context, ref, dernier)}',
+                      errorText: _prixAchat.text.trim().isNotEmpty && prixA <= 0 ? 'Prix > 0 obligatoire' : null,
                     ),
                   ),
                 ),
@@ -1128,6 +1271,7 @@ class _EditeurLigneState extends ConsumerState<_EditeurLigne> {
                     controller: _prixVente,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       labelText: 'Prix de VENTE désiré',
                       prefixIcon: const Icon(Icons.upload_rounded, color: AppColors.positive),
@@ -1176,6 +1320,57 @@ class _EditeurLigneState extends ConsumerState<_EditeurLigne> {
               ),
               onChanged: (_) => setState(() {}),
             ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: (prixA <= 0 || q == null || !q.estPositif) ? AppColors.warning.withValues(alpha: 0.5) : AppColors.border),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Sous-total ligne',
+                        style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.muted, fontSize: 12),
+                      ),
+                      if (q != null && q.estPositif && prixA > 0)
+                        Text(
+                          '${formatQte(context, q)} ${_unite.nom} × ${montant(context, ref, prixA)}${remise > 0 ? " - remise" : ""}',
+                          style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                        ),
+                    ],
+                  ),
+                  Text(
+                    montant(context, ref, totalLigne),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      color: prixA <= 0 ? AppColors.warning : const Color(0xFF01226C),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (prixA <= 0) ...[
+              const SizedBox(height: 8),
+              const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14, color: AppColors.warning),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Un prix d\'achat unitaire > 0 est requis pour valider cette ligne.',
+                      style: TextStyle(fontSize: 11, color: AppColors.warning, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
               icon: const Icon(Icons.check_circle_outline),

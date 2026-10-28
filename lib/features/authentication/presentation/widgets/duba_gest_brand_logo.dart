@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_theme.dart';
 
-/// Logo DubaGest adaptatif avec support multi-écrans et gestion robuste des assets.
+/// Logo DubaGest adaptatif avec support multi-écrans, gestion claire/sombre et assets robustes.
 class DubaGestBrandLogo extends StatelessWidget {
   const DubaGestBrandLogo({
     super.key,
@@ -21,21 +21,29 @@ class DubaGestBrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkTheme = theme.brightness == Brightness.dark;
+    final onDarkBackground = isLight || isDarkTheme;
+
     final logoWidget = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isLight ? Colors.white : AppColors.surface,
+        color: isDarkTheme
+            ? theme.colorScheme.surfaceContainerHigh
+            : (isLight ? Colors.white : AppColors.surface),
         borderRadius: BorderRadius.circular(size * 0.28),
         boxShadow: [
           BoxShadow(
-            color: AppColors.green.withValues(alpha: isLight ? 0.25 : 0.12),
+            color: AppColors.green.withValues(alpha: onDarkBackground ? 0.25 : 0.12),
             blurRadius: size * 0.35,
             offset: Offset(0, size * 0.12),
           ),
         ],
         border: Border.all(
-          color: isLight ? Colors.white.withValues(alpha: 0.3) : AppColors.border,
+          color: isDarkTheme
+              ? theme.colorScheme.outlineVariant
+              : (isLight ? Colors.white.withValues(alpha: 0.3) : AppColors.border),
           width: 1.2,
         ),
       ),
@@ -53,6 +61,14 @@ class DubaGestBrandLogo extends StatelessWidget {
 
     if (!showText) return logoWidget;
 
+    final titleColor = isDarkTheme
+        ? theme.colorScheme.onSurface
+        : (isLight ? Colors.white : AppColors.ink);
+
+    final subtitleColor = isDarkTheme
+        ? theme.colorScheme.onSurfaceVariant
+        : (isLight ? Colors.white.withValues(alpha: 0.85) : AppColors.muted);
+
     final textContent = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: vertical ? CrossAxisAlignment.center : CrossAxisAlignment.start,
@@ -64,7 +80,7 @@ class DubaGestBrandLogo extends StatelessWidget {
             fontSize: size * 0.44,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
-            color: isLight ? Colors.white : AppColors.ink,
+            color: titleColor,
           ),
         ),
         if (subtitle != null) ...[
@@ -75,7 +91,7 @@ class DubaGestBrandLogo extends StatelessWidget {
             style: TextStyle(
               fontSize: (size * 0.24).clamp(11.0, 14.0),
               fontWeight: FontWeight.w600,
-              color: isLight ? Colors.white.withValues(alpha: 0.85) : AppColors.muted,
+              color: subtitleColor,
               letterSpacing: 0.2,
             ),
           ),

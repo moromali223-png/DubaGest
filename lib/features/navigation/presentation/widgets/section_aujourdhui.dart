@@ -506,15 +506,19 @@ class SectionAujourdhui extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: AppSpacing.sm,
-          crossAxisSpacing: AppSpacing.sm,
-          childAspectRatio: 1.34,
-          children: kpis,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 380;
+            return GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: AppSpacing.sm,
+              crossAxisSpacing: AppSpacing.sm,
+              childAspectRatio: isSmall ? 1.25 : 1.34,
+              children: kpis,
+            );
+          },
         ),
       ],
     );
