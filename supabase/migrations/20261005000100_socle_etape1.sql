@@ -218,25 +218,7 @@ begin
       jsonb_build_object('plan', v_plan, 'activite', new.activite_code));
   end if;
 
-  select count(*) into v_nb
-  from public.perimetres
-  where entreprise_id = new.entreprise_id
-    and activite_code = new.activite_code
-    and deleted_at is null
-    and id <> new.id;
-  if v_max is not null and v_nb >= v_max then
-    perform app.refuser('LIMITE_PERIMETRES',
-      jsonb_build_object('plan', v_plan, 'activite', new.activite_code, 'max', v_max));
-  end if;
 
-  return new;
-end;
-$$;
-
-create or replace function public.creer_invitation(
-  p_entreprise_id uuid,
-  p_email text,
-  p_role_code text,
   p_perimetre_ids uuid[] default '{}',
   p_validite_jours integer default 7
 )
