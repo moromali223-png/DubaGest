@@ -229,14 +229,15 @@ class SupabaseContexteRemoteDataSource implements ContexteRemoteDataSource {
       }
     } catch (_) {}
 
-    // Si aucun abonnement en base ou expiré, garantir un abonnement d'essai/actif par défaut
+    // Si aucun abonnement en base, initialiser un statut EXPIRE
+    // (Ne jamais attribuer arbitrairement 365 jours d'ACTIF gratuit sans paiement serveur)
     abonnement ??= {
       'id': 'def-abo',
       'plan_code': 'NORMAL',
-      'statut': 'ACTIF',
+      'statut': 'EXPIRE',
       'type_facturation': 'COMMERCIAL',
-      'date_debut': DateTime.now().subtract(const Duration(days: 30)).toIso8601String(),
-      'date_fin': DateTime.now().add(const Duration(days: 365)).toIso8601String(),
+      'date_debut': DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
+      'date_fin': DateTime.now().subtract(const Duration(seconds: 1)).toIso8601String(),
     };
     planCode ??= abonnement['plan_code'] as String? ?? 'NORMAL';
 

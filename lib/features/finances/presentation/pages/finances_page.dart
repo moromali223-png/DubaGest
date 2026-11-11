@@ -485,6 +485,14 @@ class _VueSyntheseFinances extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
 
+                // Passerelle vers Bénéfice Commercial (si module accessible)
+                if (ref.watch(moduleAccessProvider(ModuleCodes.commerceBenefice)).isAllowed) ...[
+                  _BandeauPontBeneficeCommercial(
+                    onTap: () => context.push(Routes.commerceBenefice),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
                 // Passerelle vers Intelligence Commerciale (si module accessible)
                 if (ref.watch(moduleAccessProvider(ModuleCodes.commerceIntelligence)).isAllowed) ...[
                   _BandeauPontIntelligenceCommerciale(
@@ -655,6 +663,86 @@ class _OngletCaisse extends ConsumerWidget {
     if (etat == null) return const Scaffold(body: LoadingView());
     return Scaffold(
       body: ResponsiveBody(child: CaisseDashboardView(etat: etat)),
+    );
+  }
+}
+
+class _BandeauPontBeneficeCommercial extends StatelessWidget {
+  const _BandeauPontBeneficeCommercial({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFF1E7E4E).withOpacity(0.5),
+              width: 1.2,
+            ),
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF1E7E4E).withOpacity(0.25),
+                const Color(0xFF141A17),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E7E4E),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1E7E4E).withOpacity(0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bénéfice Commercial',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Rentabilité nette, marge brute et trésorerie par boutique.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF2ECC71)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ import '../../../../core/permissions/permission_codes.dart';
 import '../../../../shared/widgets/responsive_body.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
+import '../widgets/reactivez_compte_bottom_sheet.dart';
 
 class AbonnementPage extends ConsumerWidget {
   const AbonnementPage({super.key});
@@ -63,10 +64,29 @@ class AbonnementPage extends ConsumerWidget {
                               ),
                               if (peutGerer) ...[
                                 const SizedBox(height: AppSpacing.md),
-                                OutlinedButton.icon(
-                                  onPressed: () => context.push(Routes.declassementAbonnement),
-                                  icon: const Icon(Icons.swap_vert),
-                                  label: const Text('Changer de formule d\'abonnement'),
+                                Wrap(
+                                  spacing: AppSpacing.sm,
+                                  runSpacing: AppSpacing.sm,
+                                  children: [
+                                    FilledButton.icon(
+                                      onPressed: () => ReactivezCompteBottomSheet.show(
+                                        context,
+                                        startAtStep: !limites.abonnementActif ? 1 : 2,
+                                      ),
+                                      icon: const Icon(Icons.payment_rounded),
+                                      label: const Text('Régler / Renouveler l\'abonnement'),
+                                    ),
+                                    OutlinedButton.icon(
+                                      onPressed: () => context.push(Routes.choixFormuleAbonnement),
+                                      icon: const Icon(Icons.view_carousel_outlined),
+                                      label: const Text('Voir toutes les formules'),
+                                    ),
+                                    OutlinedButton.icon(
+                                      onPressed: () => context.push(Routes.declassementAbonnement),
+                                      icon: const Icon(Icons.swap_vert),
+                                      label: const Text('Ajustement des quotas / Déclassement'),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ],

@@ -1761,6 +1761,12 @@ class _SaisiePrix extends ConsumerWidget {
                   selected: u.$1 == choisie.$1,
                   showCheckmark: true,
                   onSelected: (_) {
+                    final valeurActuelle = prix.valeur;
+                    if (valeurActuelle != null && u.$1 != choisie.$1) {
+                      final base = choisie.$1 == UniteVente.idBase ? valeurActuelle : CalculPrix.base(valeurActuelle, choisie.$3);
+                      final nouvelleValeur = u.$1 == UniteVente.idBase ? base : CalculPrix.lot(base, u.$3);
+                      prix.montant.text = '$nouvelleValeur';
+                    }
                     prix.uniteId = u.$1;
                     onChanged();
                   },

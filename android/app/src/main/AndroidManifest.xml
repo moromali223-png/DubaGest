@@ -20,8 +20,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTop"
-            android:taskAffinity=""
+            android:launchMode="singleTask"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
@@ -34,6 +33,12 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Désactive l'interception native du routeur Flutter pour laisser app_links / Supabase Auth
+                 traiter proprement le jeton OAuth io.dubagest://auth-callback sans conflit de route. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -45,7 +50,6 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="io.dubagest" android:host="auth-callback"/>
                 <data android:scheme="io.dubagest" android:host="login-callback"/>
-                <data android:scheme="io.dubagest"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
@@ -76,6 +80,20 @@
         <intent>
             <action android:name="android.intent.action.PICK"/>
             <data android:mimeType="image/*"/>
+        </intent>
+        <!-- Visibilité des navigateurs et Chrome Custom Tabs pour Google OAuth sur Android 11+ (API 30+) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="http"/>
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService"/>
         </intent>
     </queries>
 </manifest>

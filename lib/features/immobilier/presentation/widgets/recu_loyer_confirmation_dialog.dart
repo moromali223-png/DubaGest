@@ -9,6 +9,7 @@ import '../../../documents/domain/entities/document.dart';
 import '../../../documents/presentation/pdf/document_pdf_generator.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../domain/entities/resultat_encaissement_loyer.dart';
+import '../../domain/services/montant_en_lettres.dart';
 
 /// Modal / Dialogue moderne affichant la confirmation d'encaissement et le reçu
 /// avec options d'impression immédiate, partage de PDF et envoi sur WhatsApp.
@@ -109,6 +110,11 @@ class RecuLoyerConfirmationDialog extends ConsumerWidget {
         ? '✅ *Statut :* Loyer soldé en totalité'
         : '⏳ *Statut :* Paiement partiel (Reste à payer : $reste)';
 
+    final montantEnLettres = MontantEnLettres.convertir(resultat.montantTotalVerse, devise: devise);
+    final mention = resultat.estSoldeTotal
+        ? 'Reçu pour paiement intégral du loyer du mois de $periode'
+        : 'Reçu pour paiement partiel (acompte) du loyer du mois de $periode';
+
     final message = '''
 🏢 *DubaGest — $titre*
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -117,6 +123,8 @@ class RecuLoyerConfirmationDialog extends ConsumerWidget {
 🏠 *Bien :* $bienNom
 📅 *Période :* $periode
 💰 *Montant reçu :* $montant
+💬 *En lettres :* $montantEnLettres
+📌 *Mention :* $mention
 💳 *Mode :* $modeLibelle$refInfo
 $statutLigne
 🗓️ *Date :* $dateStr
@@ -323,6 +331,46 @@ _Document officiel généré par DubaGest._
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Montant en lettres :',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey.shade600),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            MontantEnLettres.convertir(resultat.montantTotalVerse, devise: devise),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            estSolde
+                                ? 'Mention : Reçu pour paiement intégral du loyer du mois de ${resultat.echeancePrincipale.periodeLibelle}'
+                                : 'Mention : Reçu pour paiement partiel (acompte) du loyer du mois de ${resultat.echeancePrincipale.periodeLibelle}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: estSolde ? const Color(0xFF10B981) : const Color(0xFFD97706),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
 
                     // Détail des allocations multi-périodes si > 1

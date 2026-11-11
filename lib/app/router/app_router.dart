@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/permissions/permission_codes.dart';
 import '../../features/abonnement/presentation/pages/abonnement_page.dart';
+import '../../features/abonnement/presentation/pages/choix_formule_page.dart';
 import '../../features/abonnement/presentation/pages/declassement_page.dart';
+import '../../features/abonnement/presentation/pages/paiement_abonnement_page.dart';
 import '../../features/audit/presentation/pages/audit_page.dart';
 import '../../features/authentication/domain/entities/auth_state.dart';
 import '../../features/authentication/presentation/pages/change_password_page.dart';
@@ -81,6 +83,7 @@ import '../../features/commerce/presentation/pages/stock_page.dart';
 import '../../features/commerce/presentation/pages/vente_page.dart';
 import '../../features/commerce/presentation/pages/ventes_page.dart';
 import '../../features/commerce/presentation/pages/intelligence_commerciale_page.dart';
+import '../../features/commerce/presentation/pages/benefice_commerce_page.dart';
 import '../../features/utilisateurs/presentation/pages/utilisateurs_page.dart';
 import '../../features/services/presentation/pages/services_accueil_page.dart';
 import '../../features/services/presentation/pages/prestations_page.dart';
@@ -131,12 +134,18 @@ String? globalRedirect({
   required ContexteSession? contexte,
   String? invitationEnAttente,
   bool estSuperAdmin = false,
+  bool oauthEnCours = false,
 }) {
   String? aller(String cible) => location == cible ? null : cible;
   final isPublic = Routes.publicRoutes.contains(location);
+  final isOAuthCallbackRoute =
+      location == Routes.authCallback || location == Routes.loginCallback;
 
   if (auth == null || auth is AuthUnknown) return aller(Routes.splash);
-  if (auth is Unauthenticated) return isPublic ? null : Routes.login;
+  if (auth is Unauthenticated) {
+    if (oauthEnCours || isOAuthCallbackRoute) return aller(Routes.splash);
+    return isPublic ? null : Routes.login;
+  }
   if (auth is Authenticated && auth.passwordRecovery) return aller(Routes.resetPassword);
 
   // Protection stricte de l'administration centrale Super Admin
@@ -160,8 +169,15 @@ String? globalRedirect({
       return location == Routes.joinCompany ? null : aller(Routes.blocked);
     case ContexteEtat.pret:
       final horsApplication = (isPublic && location != Routes.joinCompany) ||
-          const {Routes.splash, Routes.blocked, Routes.onboarding, Routes.createCompany, Routes.resetPassword}
-              .contains(location);
+          const {
+            Routes.splash,
+            Routes.authCallback,
+            Routes.loginCallback,
+            Routes.blocked,
+            Routes.onboarding,
+            Routes.createCompany,
+            Routes.resetPassword,
+          }.contains(location);
       return horsApplication ? Routes.home : null;
   }
 }
@@ -189,6 +205,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => page(),
       );
 
+  bool hasOAuthParams(Uri uri) {
+    final hasError = uri.queryParameters.containsKey('error') ||
+        uri.fragment.contains('error=');
+    if (hasError) return false;
+    return uri.queryParameters.containsKey('code') ||
+        uri.fragment.contains('access_token=') ||
+        uri.fragment.contains('refresh_token=');
+  }
+
   final router = GoRouter(
     initialLocation: Routes.splash,
     refreshListenable: refresh,
@@ -198,9 +223,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       contexte: ref.read(contexteSessionProvider).value,
       invitationEnAttente: ref.read(invitationEnAttenteProvider),
       estSuperAdmin: ref.read(estSuperAdminProvider).value ?? false,
+      oauthEnCours: hasOAuthParams(state.uri) || hasOAuthParams(Uri.base),
     ),
     routes: [
       GoRoute(path: Routes.splash, builder: (_, _) => const SplashPage()),
+      GoRoute(path: Routes.authCallback, builder: (_, _) => const SplashPage()),
+      GoRoute(path: Routes.loginCallback, builder: (_, _) => const SplashPage()),
       GoRoute(path: Routes.login, builder: (_, _) => const LoginPage()),
       GoRoute(path: Routes.register, builder: (_, _) => const RegisterPage()),
       GoRoute(path: Routes.forgotPassword, builder: (_, _) => const ForgotPasswordPage()),
@@ -321,6 +349,25 @@ final routerProvider = Provider<GoRouter>((ref) {
                 redirect: (_, _) => guardModule(ModuleCodes.adminAbonnement),
                 builder: (_, _) => const AbonnementPage(),
                 routes: [
+                  GoRoute(
+                    path: 'formules',
+                    builder: (_, _) => const ChoixFormulePage(),
+                  ),
+                  GoRoute(
+                    path: 'reglement',
+                    builder: (_, state) => PaiementAbonnementPage(
+                      initialPlanCode: state.uri.queryParameters['plan'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'paiement',
+                    redirect: (_, state) {
+                      final plan = state.uri.queryParameters['plan'];
+                      return plan != null
+                          ? '${Routes.reglementAbonnement}?plan=$plan'
+                          : Routes.reglementAbonnement;
+                    },
+                  ),
                   GoRoute(
                     path: 'declassement',
                     builder: (_, _) => const DeclassementPage(),
@@ -491,6 +538,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: Routes.commerceIntelligence,
             redirect: (_, _) => guardModule(ModuleCodes.commerceIntelligence),
             builder: (_, _) => const IntelligenceCommercialePage(),
+          ),
+          GoRoute(
+            path: Routes.commerceBenefice,
+            redirect: (_, _) => guardModule(ModuleCodes.commerceVentes),
+            builder: (_, _) => const BeneficeCommercePage(),
           ),
           GoRoute(
             path: Routes.servicesAccueil,
@@ -775,3 +827,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   });
   return router;
 });
+
+
+

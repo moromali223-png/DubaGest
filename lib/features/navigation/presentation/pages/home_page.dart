@@ -13,6 +13,7 @@ import '../../../../shared/widgets/responsive_body.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
 import '../../../abonnement/domain/entities/abonnement.dart';
+import '../../../abonnement/presentation/widgets/reactivez_compte_bottom_sheet.dart';
 import '../../../entreprise/domain/entities/contexte_session.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../../entreprise/presentation/providers/espace_providers.dart';
@@ -39,6 +40,17 @@ import '../../../commerce/presentation/widgets/workspace_superviseur_accueil.dar
 import '../../../commerce/presentation/widgets/workspace_vendeur_accueil.dart';
 import '../../../immobilier/domain/entities/dashboard_immobilier.dart';
 import '../../../immobilier/presentation/providers/immobilier_providers.dart';
+
+/// Mémorise si la modal de réactivation a déjà été présentée à l'ouverture.
+class ModalAbonnementAfficheNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void marquerAffiche() => state = true;
+}
+
+final modalAbonnementAfficheProvider =
+    NotifierProvider<ModalAbonnementAfficheNotifier, bool>(ModalAbonnementAfficheNotifier.new);
 
 /// Accueil DUBAGEST : En-tête professionnel 3 lignes (☰ rond blanc, Bonjour Prénom,
 /// Entreprise · Site, Sélecteur), Recherche globale, Section Aujourd'hui (4 KPIs),
@@ -98,6 +110,24 @@ class HomePage extends ConsumerWidget {
     final siteActuel = espace.perimetreId == null
         ? l10n.usersAllPerimetres
         : (ctx.perimetres.where((p) => p.id == espace.perimetreId).firstOrNull?.nom ?? l10n.usersAllPerimetres);
+
+    // Présente automatiquement la modal "Réactivez votre compte" à l'ouverture si expiré ou essai terminé
+    final abo = ctx.abonnement;
+    final aExpire = abo != null && (abo.statut == AbonnementStatut.expire || abo.statut == AbonnementStatut.suspendu);
+    final aEssaiTermine = abo != null &&
+        abo.statut == AbonnementStatut.essai &&
+        abo.dateFin != null &&
+        abo.dateFin!.isBefore(DateTime.now());
+
+    if ((aExpire || aEssaiTermine) && !ref.watch(modalAbonnementAfficheProvider)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        if (!ref.read(modalAbonnementAfficheProvider)) {
+          ref.read(modalAbonnementAfficheProvider.notifier).marquerAffiche();
+          ReactivezCompteBottomSheet.show(context, startAtStep: 1);
+        }
+      });
+    }
 
     return Scaffold(
       drawer: const AppMenuDrawer(),
@@ -340,16 +370,17 @@ class HomePage extends ConsumerWidget {
         icon: Icons.lock_outline,
         tone: _AlerteTone.danger,
         titre: l10n.ruleSubscriptionInactive,
+        sousTitre: 'Vos données restent sécurisées. Cliquez pour renouveler votre formule.',
+        onTap: () => ReactivezCompteBottomSheet.show(context, startAtStep: 1),
       ));
     } else if (abonnement != null && abonnement.statut == AbonnementStatut.essai && abonnement.dateFin != null) {
       final jours = abonnement.dateFin!.difference(DateTime.now()).inHours ~/ 24;
-      final versAbonnement = ref.watch(moduleAccessProvider(ModuleCodes.adminAbonnement)).isAllowed;
       alertes.add(_Alerte(
         icon: Icons.workspace_premium_outlined,
         tone: jours <= 3 ? _AlerteTone.warning : _AlerteTone.info,
         titre: l10n.homeTrialDaysLeft(jours < 0 ? 0 : jours),
-        sousTitre: l10n.homeTrialHint,
-        onTap: versAbonnement ? () => context.go(ModuleRoutes.path(ModuleCodes.adminAbonnement)) : null,
+        sousTitre: 'Essai gratuit de 10 jours. Cliquez pour souscrire.',
+        onTap: () => ReactivezCompteBottomSheet.show(context, startAtStep: 2),
       ));
     }
 

@@ -116,7 +116,7 @@ class OnboardingPage extends ConsumerWidget {
                               subtitle: l10n.onboardingCreateSubtitle,
                               bulletPoints: const [
                                 'Commerce, Services ou Immobilier',
-                                '14 jours d’essai sans engagement',
+                                '10 jours d’essai sans engagement',
                                 'Gestion d’équipe et rôles inclus',
                               ],
                               buttonLabel: 'Démarrer la création',
@@ -154,7 +154,7 @@ class OnboardingPage extends ConsumerWidget {
                       subtitle: l10n.onboardingCreateSubtitle,
                       bulletPoints: const [
                         'Commerce, Services ou Immobilier',
-                        '14 jours d’essai sans engagement',
+                        '10 jours d’essai sans engagement',
                         'Gestion d’équipe et rôles inclus',
                       ],
                       buttonLabel: 'Démarrer la création',

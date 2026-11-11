@@ -209,7 +209,7 @@
   "companyPlan": "Plan",
   "companyActivities": "Activities",
   "companyActivitiesHint": "{max, plural, =1{Choose 1 activity} other{Up to {max} activities}}",
-  "companyTrialInfo": "14-day free trial. You will be the company administrator.",
+  "companyTrialInfo": "10-day free trial. You will be the company administrator.",
   "companyCreateButton": "Create the company",
   "joinCodeLabel": "Invitation code",
   "joinCodeHelp": "Paste the code or open the link you received.",
@@ -1327,6 +1327,63 @@
   "transformationDevis": "Quote Conversion",
   "bonPriseEnCharge": "Receipt / Intake Slip",
   "rappelClient": "Client Reminder",
-  "envoyerWhatsApp": "Send WhatsApp"
+  "envoyerWhatsApp": "Send WhatsApp",
+  "subscriptionChoosePlanTitle": "DubaGest Subscription Plans",
+  "subscriptionChoosePlanSubtitle": "Choose your ideal plan",
+  "subscriptionPaymentTitle": "Subscription Payment",
+  "subscriptionPaymentTabPay": "Subscribe / Renew",
+  "subscriptionPaymentTabHistory": "Payment History",
+  "subscriptionTrialActiveTitle": "10-day free trial period in progress",
+  "subscriptionTrialRemainingDays": "You have {days} day(s) of free trial remaining.",
+  "@subscriptionTrialRemainingDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionTrialEndedTitle": "10-day free trial ended",
+  "subscriptionTrialEndedDesc": "Your 10-day free trial has ended. Your business data is safely preserved. Choose your plan and settle payment to continue without interruption.",
+  "subscriptionExpiredTitle": "Subscription expired — Renewal required",
+  "subscriptionExpiredDesc": "Your company subscription has expired. All your data, users and history are safely preserved. Renew your subscription now.",
+  "subscriptionActiveBanner": "Active subscription: {plan} Plan",
+  "@subscriptionActiveBanner": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionActiveRemaining": "You have {days} day(s) remaining on your active period.",
+  "@subscriptionActiveRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionChangePlan": "Change plan",
+  "subscriptionSelectedPlan": "Selected plan",
+  "subscriptionCurrentPlan": "Current plan",
+  "subscriptionDuration": "Subscription duration",
+  "subscriptionPaymentMethod": "Payment method",
+  "subscriptionOrderSummary": "Order summary",
+  "subscriptionTotalToPay": "Total to pay",
+  "subscriptionValidatePlanButton": "Confirm and proceed to payment",
+  "subscriptionNoPaymentTriggered": "No charge will be made on this page.",
+  "subscriptionDataSafeNotice": "All your data, settings and history are preserved without any loss.",
+  "subscriptionPendingMobilePrompt": "Please validate the transaction on your mobile phone ({provider})...",
+  "@subscriptionPendingMobilePrompt": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionCancelTransaction": "Cancel transaction",
+  "subscriptionCheckStatus": "Check payment status",
+  "subscriptionBackToPlans": "Back to plans",
+  "subscriptionRenewalsHistoryTitle": "Renewal history",
+  "subscriptionEmptyHistory": "No payment history yet."
 }
 

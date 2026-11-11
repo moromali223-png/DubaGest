@@ -5,6 +5,8 @@ import '../../features/modules/domain/entities/app_module.dart';
 
 abstract final class Routes {
   static const splash = '/splash';
+  static const authCallback = '/auth-callback';
+  static const loginCallback = '/login-callback';
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
@@ -15,6 +17,9 @@ abstract final class Routes {
   static const blocked = '/blocked';
   static const home = '/';
   static const administration = '/admin';
+  static const choixFormuleAbonnement = '/admin/abonnement/formules';
+  static const reglementAbonnement = '/admin/abonnement/reglement';
+  static const paiementAbonnement = '/admin/abonnement/reglement'; // Rétro-compatibilité
   static const declassementAbonnement = '/admin/abonnement/declassement';
   static const finances = '/finances';
   static const settings = '/settings';
@@ -103,6 +108,7 @@ abstract final class Routes {
   static const fournisseurs = '/commerce/fournisseurs';
   static String fournisseur(String id) => '/commerce/fournisseurs/$id';
   static const commerceIntelligence = '/commerce/intelligence';
+  static const commerceBenefice = '/commerce/benefice';
 
   // Services
   static const servicesAccueil = '/services';
@@ -185,6 +191,7 @@ abstract final class ModuleRoutes {
     ModuleCodes.commerceVentes: Routes.ventes,
     ModuleCodes.commerceFournisseurs: Routes.fournisseurs,
     ModuleCodes.commerceIntelligence: Routes.commerceIntelligence,
+    ModuleCodes.commerceBenefice: Routes.commerceBenefice,
     ModuleCodes.communContacts: Routes.contacts,
     ModuleCodes.communDocuments: Routes.documents,
     ModuleCodes.communAgenda: Routes.agenda,

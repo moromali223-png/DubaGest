@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/localization/l10n.dart';
+import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/responsive_body.dart';
 import '../../../../shared/widgets/state_views.dart';
@@ -1057,6 +1059,45 @@ class _DeclassementPageState extends ConsumerState<DeclassementPage> {
     final analyse = state.analyse;
     if (analyse == null) return;
     final estSurclassement = analyse.estSurclassement;
+
+    if (estSurclassement && !analyse.estSponsorise) {
+      final allerPaiement = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) {
+          return AlertDialog(
+            title: Text('Paiement requis pour le surclassement vers ${analyse.planCible.nom}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Le passage à la formule ${analyse.planCible.nom} nécessite un règlement de ${analyse.planCible.prixMensuel} FCFA/mois via LigdiCash ou Orange Money.'),
+                const SizedBox(height: AppSpacing.sm),
+                const Text(
+                  'Vous allez être redirigé vers l\'interface de paiement mobile sécurisée pour finaliser la souscription.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text('Annuler'),
+              ),
+              FilledButton.icon(
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                icon: const Icon(Icons.payment_rounded),
+                label: const Text('Aller au paiement'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (allerPaiement == true && mounted) {
+        context.push('${Routes.paiementAbonnement}?plan=${analyse.planCible.code}');
+      }
+      return;
+    }
 
     final confirme = await showDialog<bool>(
       context: context,

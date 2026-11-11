@@ -48,6 +48,14 @@ class _TousLesModulesSheetState extends ConsumerState<TousLesModulesSheet> {
           final i = liste.indexWhere((m) => m.code == ModuleCodes.commerceFournisseurs);
           liste.insert(i < 0 ? liste.length : i + 1, contacts);
         }
+        if (!liste.any((m) => m.code == ModuleCodes.commerceBenefice)) {
+          liste.add(const AppModule(
+            code: ModuleCodes.commerceBenefice,
+            activite: ActiviteCode.commerce,
+            permissionAcces: 'sales.view',
+            ordre: 15,
+          ));
+        }
         if (!liste.any((m) => m.code == ModuleCodes.commerceIntelligence)) {
           liste.add(const AppModule(
             code: ModuleCodes.commerceIntelligence,

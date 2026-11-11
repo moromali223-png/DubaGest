@@ -320,6 +320,19 @@ Future<Uint8List> genererDocumentPdf(
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
+                  if (c['montant_lettres'] case final String lettres when lettres.isNotEmpty) ...[
+                    pw.Text('ARRÊTÉ LA PRÉSENTE SOMME À :',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, color: texteGris)),
+                    pw.SizedBox(height: 2),
+                    pw.Text(lettres,
+                        style: pw.TextStyle(fontSize: 8.5, fontStyle: pw.FontStyle.italic, fontWeight: pw.FontWeight.bold, color: ardoise)),
+                    pw.SizedBox(height: 6),
+                  ],
+                  if (c['mention_legale'] case final String mention when mention.isNotEmpty) ...[
+                    pw.Text(mention,
+                        style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic, color: texteGris)),
+                    pw.SizedBox(height: 6),
+                  ],
                   if (c['conditions'] case final String cond when cond.isNotEmpty) ...[
                     pw.Text('CONDITIONS & MODALITÉS :',
                         style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5, color: texteGris)),

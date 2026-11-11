@@ -209,7 +209,7 @@
   "companyPlan": "الباقة",
   "companyActivities": "الأنشطة",
   "companyActivitiesHint": "{max, plural, =1{اختر نشاطًا واحدًا} =2{حتى نشاطين} few{حتى {max} أنشطة} other{حتى {max} نشاطًا}}",
-  "companyTrialInfo": "تجربة مجانية لمدة 14 يومًا. ستكون مسؤول المؤسسة.",
+  "companyTrialInfo": "تجربة مجانية لمدة 10 أيام. ستكون مسؤول المؤسسة.",
   "companyCreateButton": "إنشاء المؤسسة",
   "joinCodeLabel": "رمز الدعوة",
   "joinCodeHelp": "الصق الرمز أو افتح الرابط الذي تلقيته.",
@@ -1327,6 +1327,63 @@
   "transformationDevis": "تحويل عروض الأسعار",
   "bonPriseEnCharge": "إيصال الاستلام",
   "rappelClient": "تذكير العميل",
-  "envoyerWhatsApp": "إرسال عبر واتساب"
+  "envoyerWhatsApp": "إرسال عبر واتساب",
+  "subscriptionChoosePlanTitle": "باقات اشتراك دباجيست",
+  "subscriptionChoosePlanSubtitle": "اختر باقتك المثالية",
+  "subscriptionPaymentTitle": "تسوية ودفع الاشتراك",
+  "subscriptionPaymentTabPay": "اشتراك / تجديد",
+  "subscriptionPaymentTabHistory": "سجل المدفوعات",
+  "subscriptionTrialActiveTitle": "فترة تجربة مجانية لمدة 10 أيام جارية",
+  "subscriptionTrialRemainingDays": "تبقى لك {days} يوم من التجربة المجانية.",
+  "@subscriptionTrialRemainingDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionTrialEndedTitle": "انتهت فترة التجربة المجانية (10 أيام)",
+  "subscriptionTrialEndedDesc": "انتهت فترة التجربة المجانية. بيانات شركتك محفوظة بأمان تام. اختر باقتك وسدد اشتراكك للمتابعة دون انقطاع.",
+  "subscriptionExpiredTitle": "انتهت صلاحية الاشتراك — يرجى إعادة الاشتراك",
+  "subscriptionExpiredDesc": "انتهى اشتراك شركتك. جميع بياناتك ومستخدميك وسجلاتك محفوظة بالكامل. يرجى تجديد اشتراكك الآن.",
+  "subscriptionActiveBanner": "اشتراك نشط: باقة {plan}",
+  "@subscriptionActiveBanner": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionActiveRemaining": "تبقى لك {days} يوم في فترة اشتراكك الحالية.",
+  "@subscriptionActiveRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionChangePlan": "تغيير الباقة",
+  "subscriptionSelectedPlan": "الباقة المختارة",
+  "subscriptionCurrentPlan": "الباقة الحالية",
+  "subscriptionDuration": "مدة الاشتراك",
+  "subscriptionPaymentMethod": "طريقة الدفع",
+  "subscriptionOrderSummary": "ملخص الطلب",
+  "subscriptionTotalToPay": "المبلغ الإجمالي للدفع",
+  "subscriptionValidatePlanButton": "تأكيد والانتقال إلى الدفع",
+  "subscriptionNoPaymentTriggered": "لن يتم إجراء أي خصم في هذه الصفحة.",
+  "subscriptionDataSafeNotice": "جميع بياناتك وإعداداتك وسجلاتك محفوظة دون أي فقدان.",
+  "subscriptionPendingMobilePrompt": "يرجى تأكيد المعاملة على هاتفك المحمول ({provider})...",
+  "@subscriptionPendingMobilePrompt": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionCancelTransaction": "إلغاء المعاملة",
+  "subscriptionCheckStatus": "التحقق من حالة الدفع",
+  "subscriptionBackToPlans": "الرجوع للباقات",
+  "subscriptionRenewalsHistoryTitle": "سجل التجديدات",
+  "subscriptionEmptyHistory": "لا يوجد سجل مدفوعات حتى الآن."
 }
 

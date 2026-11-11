@@ -209,18 +209,44 @@ class Produit {
     return perimetresIds.contains(boutiqueId);
   }
 
+  /// Prix de gros effectif de l'unité de base : s'il n'est pas saisi explicitement sur la base,
+  /// il est déduit du premier emballage disposant d'un prix de gros fixé.
+  int? get prixGrosEffectif {
+    if (prixGros != null) return prixGros;
+    for (final u in unites) {
+      if (u.prixGros != null && u.facteur.estPositif) {
+        return CalculPrix.base(u.prixGros!, u.facteur);
+      }
+    }
+    return null;
+  }
+
+  /// Prix d'achat effectif de l'unité de base : s'il n'est pas saisi explicitement sur la base,
+  /// il est déduit du premier emballage disposant d'un prix d'achat fixé.
+  int? get prixAchatEffectif {
+    if (prixAchat != null) return prixAchat;
+    for (final u in unites) {
+      if (u.prixAchat != null && u.facteur.estPositif) {
+        return CalculPrix.base(u.prixAchat!, u.facteur);
+      }
+    }
+    return null;
+  }
+
   UniteVente get uniteDeBase => UniteVente(
         id: UniteVente.idBase,
         nom: uniteBase,
         facteur: Qte.un,
         prixDetail: prixDetail,
-        prixGros: prixGros,
-        prixAchat: prixAchat,
+        prixGros: prixGrosEffectif,
+        prixAchat: prixAchatEffectif,
       );
 
   /// Toutes les unités, de la plus petite à la plus grande, avec leurs prix
   /// effectifs (fixés, ou calculés depuis l'unité de base).
   List<UniteVente> get toutesUnites {
+    final baseGros = prixGrosEffectif;
+    final baseAchat = prixAchatEffectif;
     final autres = [...unites]..sort((a, b) => a.facteur.brut.compareTo(b.facteur.brut));
     return [
       uniteDeBase,
@@ -230,8 +256,8 @@ class Produit {
           nom: u.nom,
           facteur: u.facteur,
           prixDetail: u.prixDetail ?? CalculPrix.lot(prixDetail, u.facteur),
-          prixGros: u.prixGros ?? (prixGros == null ? null : CalculPrix.lot(prixGros!, u.facteur)),
-          prixAchat: u.prixAchat ?? (prixAchat == null ? null : CalculPrix.lot(prixAchat!, u.facteur)),
+          prixGros: u.prixGros ?? (baseGros == null ? null : CalculPrix.lot(baseGros, u.facteur)),
+          prixAchat: u.prixAchat ?? (baseAchat == null ? null : CalculPrix.lot(baseAchat, u.facteur)),
           prixDetailFixe: u.prixDetail != null && u.prixDetail != CalculPrix.lot(prixDetail, u.facteur),
         ),
     ];

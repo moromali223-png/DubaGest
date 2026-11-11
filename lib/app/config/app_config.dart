@@ -46,20 +46,35 @@ class AppConfig {
             : (kReleaseMode ? _prodAppUrl : _localAppUrl));
 
     // Détermination de l'URL de retour OAuth :
-    // Sur Web, toujours l'origine courante du navigateur (ex: http://localhost:3000 ou https://dubagest.ml)
-    // et jamais le schéma mobile (io.dubagest://) qui ferait échouer la redirection navigateur.
+    // - Sur Web/PWA : toujours privilégier l'origine courante du navigateur
+    //   (ex: https://dubagest-app.pages.dev ou http://localhost:3000) afin que
+    //   le code_verifier PKCE stocké dans le localStorage de cette origine soit
+    //   retrouvé au retour de Google.
+    // - Sur Android/iOS (APK/IPA) : toujours utiliser le schéma profond mobile
+    //   (io.dubagest://auth-callback) et jamais une URL http(s) issue de prod.json.
     final String? effectiveRedirect;
     if (kIsWeb) {
-      if (redirect.isNotEmpty && !redirect.startsWith('io.dubagest://')) {
+      final hasValidBrowserOrigin = (Uri.base.scheme == 'http' || Uri.base.scheme == 'https') &&
+          Uri.base.origin.isNotEmpty &&
+          !Uri.base.origin.startsWith('null');
+      if (hasValidBrowserOrigin) {
+        effectiveRedirect = Uri.base.origin;
+      } else if (redirect.isNotEmpty && !redirect.startsWith('io.dubagest://')) {
         effectiveRedirect = redirect;
       } else {
-        effectiveRedirect = Uri.base.origin.isNotEmpty && !Uri.base.origin.startsWith('null')
-            ? Uri.base.origin
-            : _prodAppUrl;
+        effectiveRedirect = _prodAppUrl;
       }
+    } else if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      effectiveRedirect = (redirect.isNotEmpty &&
+              !redirect.startsWith('http://') &&
+              !redirect.startsWith('https://'))
+          ? redirect
+          : mobileRedirect;
     } else {
       effectiveRedirect = redirect.isNotEmpty ? redirect : _defaultRedirect(effectiveAppUrl);
     }
+
 
     return AppConfig(
       supabaseUrl: url.isNotEmpty ? url : _defaultSupabaseUrl,

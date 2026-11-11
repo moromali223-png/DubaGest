@@ -110,7 +110,7 @@ class _VentePageState extends ConsumerState<VentePage> {
 
     // Si en mode gros et que le produit n'a pas de prix de gros défini,
     // on ouvre directement l'éditeur pour permettre la saisie immédiate du prix.
-    final sansPrixGros = _mode == ModeVente.gros && p.prixGros == null && unite.prixGros == null;
+    final sansPrixGros = _mode == ModeVente.gros && p.prixGrosEffectif == null && unite.prixGros == null;
     final existante = _panier.where((l) => l.produitId == p.id && l.unite.id == unite.id).firstOrNull;
 
     if (sansPrixGros && existante == null) {
@@ -478,7 +478,7 @@ class _VentePageState extends ConsumerState<VentePage> {
         final dansPanier = _dansPanier(p.id);
         final rupture = disponible <= Qte.zero;
         final unite = p.unite(ref.read(unitesMemoriseesProvider.notifier).pour('vente', p.id) ?? UniteVente.idBase);
-        final sansPrixGros = _mode == ModeVente.gros && p.prixGros == null && unite.prixGros == null;
+        final sansPrixGros = _mode == ModeVente.gros && p.prixGrosEffectif == null && unite.prixGros == null;
 
         return Opacity(
           opacity: rupture && dansPanier.estNul ? 0.45 : 1,
@@ -1180,7 +1180,14 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
                 ),
               );
             }
-            final modifie = p.copyWith(unites: unitesApres);
+            final modifie = widget.mode == ModeVente.gros
+                ? p.copyWith(
+                    unites: unitesApres,
+                    prixGros: () => (p.prixGros == null || p.prixGros == 0)
+                        ? CalculPrix.base(prixChoisi, _u.facteur)
+                        : p.prixGros,
+                  )
+                : p.copyWith(unites: unitesApres);
             await ref.read(gererCommerceProvider).modifierProduit(ctx, etat, p, modifie);
           }
         }
@@ -1211,7 +1218,7 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
     final prixActuel = _prixSaisi ?? _prixCatalogue;
     final sousTotal = (_q != null && _q!.estPositif) ? _q!.montant(prixActuel) : 0;
     final estPrixPerso = _prixSaisi != null && _prixSaisi != _prixCatalogue;
-    final sansPrixGrosOrigine = widget.mode == ModeVente.gros && p.prixGros == null && _u.prixGros == null;
+    final sansPrixGrosOrigine = widget.mode == ModeVente.gros && p.prixGrosEffectif == null && _u.prixGros == null;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -1324,9 +1331,17 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
                         label: Text(u.estBase ? u.nom : '${u.nom} (${formatQte(context, u.facteur)} ${p.uniteBase})'),
                         selected: u.id == _u.id,
                         onSelected: (_) {
+                          final ancienPrix = _prixSaisi;
+                          final ancienneUnite = _u;
                           setState(() {
                             _u = u;
-                            _prixController.text = '${u.prix(widget.mode)}';
+                            if (ancienPrix != null && ancienPrix > 0 && ancienPrix != ancienneUnite.prix(widget.mode)) {
+                              final base = ancienneUnite.estBase ? ancienPrix : CalculPrix.base(ancienPrix, ancienneUnite.facteur);
+                              final nouveau = u.estBase ? base : CalculPrix.lot(base, u.facteur);
+                              _prixController.text = '$nouveau';
+                            } else {
+                              _prixController.text = '${u.prix(widget.mode)}';
+                            }
                           });
                         },
                       ),
@@ -1411,6 +1426,31 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
+                  if (!_u.estBase && _u.facteur.estPositif && prixActuel > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.subdirectory_arrow_right_rounded, size: 16, color: AppColors.green),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Soit ${montant(context, ref, CalculPrix.base(prixActuel, _u.facteur))} / ${p.uniteBase}',
+                          style: const TextStyle(color: AppColors.greenPressed, fontWeight: FontWeight.w700, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ] else if (_u.estBase && p.unites.isNotEmpty && prixActuel > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.subdirectory_arrow_right_rounded, size: 16, color: AppColors.green),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Soit ${montant(context, ref, CalculPrix.lot(prixActuel, p.unites.first.facteur))} / ${p.unites.first.nom}',
+                          style: const TextStyle(color: AppColors.greenPressed, fontWeight: FontWeight.w700, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (sansPrixGrosOrigine || estPrixPerso) ...[
                     const SizedBox(height: 8),
                     CheckboxListTile(

@@ -370,7 +370,7 @@
       }
     }
   },
-  "companyTrialInfo": "Essai gratuit de 14 jours. Vous serez l'administrateur de l'entreprise.",
+  "companyTrialInfo": "Essai gratuit de 10 jours. Vous serez l'administrateur de l'entreprise.",
   "companyCreateButton": "Créer l'entreprise",
   "joinCodeLabel": "Code d'invitation",
   "joinCodeHelp": "Collez le code ou ouvrez le lien reçu.",
@@ -2231,6 +2231,63 @@
   "transformationDevis": "Transformation Devis",
   "bonPriseEnCharge": "Bon de prise en charge",
   "rappelClient": "Rappeler le client",
-  "envoyerWhatsApp": "Envoyer WhatsApp"
+  "envoyerWhatsApp": "Envoyer WhatsApp",
+  "subscriptionChoosePlanTitle": "Formules d'abonnement DubaGest",
+  "subscriptionChoosePlanSubtitle": "Sélectionnez votre formule idéale",
+  "subscriptionPaymentTitle": "Règlement de l'abonnement",
+  "subscriptionPaymentTabPay": "Souscrire / Renouveler",
+  "subscriptionPaymentTabHistory": "Historique des paiements",
+  "subscriptionTrialActiveTitle": "Période d'essai gratuit de 10 jours en cours",
+  "subscriptionTrialRemainingDays": "Il vous reste {days} jour(s) d'essai gratuit.",
+  "@subscriptionTrialRemainingDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionTrialEndedTitle": "Période d'essai de 10 jours terminée",
+  "subscriptionTrialEndedDesc": "Vos 10 jours d'essai gratuit ont pris fin. Vos données d'entreprise sont précieusement conservées. Choisissez votre formule et réglez votre abonnement pour continuer sans interruption.",
+  "subscriptionExpiredTitle": "Abonnement expiré — Réabonnement requis",
+  "subscriptionExpiredDesc": "L'abonnement de votre entreprise est arrivé à expiration. Toutes vos données, utilisateurs et historiques sont soigneusement conservés. Renouvelez votre abonnement dès maintenant.",
+  "subscriptionActiveBanner": "Abonnement actif : Formule {plan}",
+  "@subscriptionActiveBanner": {
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionActiveRemaining": "Il vous reste {days} jour(s) sur votre période active.",
+  "@subscriptionActiveRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionChangePlan": "Changer de formule",
+  "subscriptionSelectedPlan": "Formule choisie",
+  "subscriptionCurrentPlan": "Formule actuelle",
+  "subscriptionDuration": "Durée de l'abonnement",
+  "subscriptionPaymentMethod": "Moyen de paiement",
+  "subscriptionOrderSummary": "Récapitulatif de la commande",
+  "subscriptionTotalToPay": "Total à régler",
+  "subscriptionValidatePlanButton": "Valider et passer au règlement",
+  "subscriptionNoPaymentTriggered": "Aucun prélèvement ne sera effectué sur cette page.",
+  "subscriptionDataSafeNotice": "Toutes vos données, configurations et historiques sont conservés sans aucune perte.",
+  "subscriptionPendingMobilePrompt": "Veuillez valider la transaction sur votre téléphone mobile ({provider})...",
+  "@subscriptionPendingMobilePrompt": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionCancelTransaction": "Annuler la transaction",
+  "subscriptionCheckStatus": "Vérifier le statut du paiement",
+  "subscriptionBackToPlans": "Retour aux formules",
+  "subscriptionRenewalsHistoryTitle": "Historique des renouvellements",
+  "subscriptionEmptyHistory": "Aucun historique de paiement pour le moment."
 }
 

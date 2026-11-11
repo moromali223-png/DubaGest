@@ -77,6 +77,7 @@ class ContexteSession {
             quotasRoles: plan!.quotasRoles,
             modules: {
               ...plan!.modules,
+              ModuleCodes.commerceBenefice,
               ModuleCodes.commerceIntelligence,
               ModuleCodes.servicesPlanning,
             },
@@ -108,6 +109,14 @@ class ContexteSession {
       return m;
     }).toList();
     if (activites.any((a) => a.activite == ActiviteCode.commerce && a.estActive)) {
+      if (!cat.any((m) => m.code == ModuleCodes.commerceBenefice)) {
+        cat.add(const AppModule(
+          code: ModuleCodes.commerceBenefice,
+          activite: ActiviteCode.commerce,
+          permissionAcces: PermissionCodes.salesView,
+          ordre: 15,
+        ));
+      }
       if (!cat.any((m) => m.code == ModuleCodes.commerceIntelligence)) {
         cat.add(const AppModule(
           code: ModuleCodes.commerceIntelligence,

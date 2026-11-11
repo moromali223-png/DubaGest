@@ -77,7 +77,7 @@ class WorkspaceGestionnaireStockAccueil extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Bonjour $prenom 👋',
+                        'Bonjour $prenom ',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w900,
                           color: AppColors.ink,

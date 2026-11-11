@@ -15,6 +15,7 @@ IconData moduleIcon(String code) => switch (code) {
       'commerce.achats' => Icons.receipt_long_outlined,
       'commerce.fournisseurs' => Icons.local_shipping_outlined,
       'commerce.intelligence' => Icons.insights_rounded,
+      'commerce.benefice' => Icons.trending_up_rounded,
       'commun.contacts' => Icons.people_outline_rounded,
       'commun.documents' => Icons.description_outlined,
       'commun.agenda' => Icons.calendar_today_outlined,

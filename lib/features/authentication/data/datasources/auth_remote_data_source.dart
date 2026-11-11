@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:url_launcher/url_launcher.dart' as ul;
 
+import '../../../../app/config/app_config.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../domain/entities/auth_state.dart';
 import '../../domain/repositories/auth_repository.dart';
 
@@ -23,7 +27,9 @@ class SupabaseAuthDataSource {
   Stream<AuthState> watch() => _auth.onAuthStateChange
       // Erreur de rafraîchissement (souvent hors-ligne) : la session locale est
       // conservée, l'état ne change pas.
-      .handleError((Object _) {})
+      .handleError((Object error, StackTrace stackTrace) {
+        AppLogger.warning('Erreur sur le flux Auth Supabase: $error', tag: 'auth', error: error);
+      })
       .map((event) => switch (event.event) {
             sb.AuthChangeEvent.passwordRecovery when event.session != null =>
               Authenticated(_user(event.session!.user), passwordRecovery: true),
@@ -60,11 +66,38 @@ class SupabaseAuthDataSource {
 
   Future<void> signInWithGoogle() async {
     _signOutRequested = false;
-    final launched = await _auth.signInWithOAuth(
-      sb.OAuthProvider.google,
-      redirectTo: redirectUrl,
-      authScreenLaunchMode: sb.LaunchMode.platformDefault,
-    );
+    final effectiveRedirect = redirectUrl ??
+        (kIsWeb ? Uri.base.origin : AppConfig.mobileRedirect);
+
+    bool launched = false;
+    try {
+      launched = await _auth.signInWithOAuth(
+        sb.OAuthProvider.google,
+        redirectTo: effectiveRedirect,
+        authScreenLaunchMode: kIsWeb
+            ? sb.LaunchMode.platformDefault
+            : sb.LaunchMode.externalApplication,
+        queryParams: const {'prompt': 'select_account'},
+      );
+    } catch (e) {
+      AppLogger.warning('Échec lancement OAuth principal, tentative fallback: $e', tag: 'auth');
+    }
+
+    // Repli pour certains appareils Android dont le navigateur par défaut
+    // préfère Custom Tabs (inAppBrowserView) ou le mode par défaut de l'OS.
+    if (!launched && !kIsWeb) {
+      final res = await _auth.getOAuthSignInUrl(
+        provider: sb.OAuthProvider.google,
+        redirectTo: effectiveRedirect,
+        queryParams: const {'prompt': 'select_account'},
+      );
+      final uri = Uri.parse(res.url);
+      launched = await ul.launchUrl(uri, mode: ul.LaunchMode.inAppBrowserView);
+      if (!launched) {
+        launched = await ul.launchUrl(uri, mode: ul.LaunchMode.platformDefault);
+      }
+    }
+
     if (!launched) throw const Failure(FailureKind.oauthUnavailable);
   }
 

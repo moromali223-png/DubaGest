@@ -36,6 +36,7 @@ class FloatingNavBar extends StatelessWidget {
       children.insert(children.length ~/ 2 + children.length % 2, Expanded(child: _Center(item: centerAction!)));
     }
 
+
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return SafeArea(
@@ -169,3 +170,4 @@ class _Center extends StatelessWidget {
     );
   }
 }
+

@@ -78,6 +78,70 @@ void main() {
       expect(carton.prixAchat, 80000, reason: 'achat calculé : 800 × 100');
       expect(CalculPrix.benefice(carton.prixDetail, carton.prixAchat), 15000);
     });
+
+    test('vente en gros : prix unitaire et douzaine déduits correctement', () {
+      final douzaineFacteur = Qte.depuis(12);
+
+      // Cas 1 : Le commerçant a fixé le prix de gros sur la douzaine (9 600 FCFA)
+      // sans fixer explicitement le prix de gros sur l'article (base).
+      // L'article doit automatiquement valoir 800 FCFA en gros (9 600 / 12) et non le prix détail !
+      final produitGrosSurDouzaine = Produit(
+        id: 'p-douzaine',
+        entrepriseId: entrepriseId,
+        nom: 'Cahier',
+        uniteBase: 'Article',
+        prixDetail: 1000, // Détail = 1 000 F / article
+        prixGros: null, // Pas fixé sur la base
+        unites: [
+          UniteProduit(
+            id: 'u-12',
+            nom: '12zaine',
+            facteur: douzaineFacteur,
+            prixDetail: 12000,
+            prixGros: 9600, // Gros = 9 600 F la douzaine (soit 800 F / article)
+          ),
+        ],
+      );
+
+      // Vérification unité de base (Article)
+      final article = produitGrosSurDouzaine.uniteDeBase;
+      expect(article.prix(ModeVente.detail), 1000);
+      expect(article.prix(ModeVente.gros), 800, reason: 'L\'article en gros doit déduire 800 FCFA de la douzaine');
+
+      // Vérification douzaine
+      final douzaine = produitGrosSurDouzaine.unite('u-12');
+      expect(douzaine.prix(ModeVente.detail), 12000);
+      expect(douzaine.prix(ModeVente.gros), 9600);
+
+      // Calcul des montants de vente
+      // 1 douzaine en gros = 1 × 9 600 = 9 600 FCFA
+      expect(Qte.un.montant(douzaine.prix(ModeVente.gros)), 9600);
+      // 12 articles en gros = 12 × 800 = 9 600 FCFA
+      expect(douzaineFacteur.montant(article.prix(ModeVente.gros)), 9600);
+
+      // Cas 2 : Le commerçant a fixé le prix de gros sur l'article (base = 800 FCFA).
+      // La douzaine doit automatiquement valoir 9 600 FCFA en gros (800 × 12).
+      final produitGrosSurBase = Produit(
+        id: 'p-base',
+        entrepriseId: entrepriseId,
+        nom: 'Stylo',
+        uniteBase: 'Pièce',
+        prixDetail: 1000,
+        prixGros: 800,
+        unites: [
+          UniteProduit(
+            id: 'u-12',
+            nom: 'Douzaine',
+            facteur: douzaineFacteur,
+          ),
+        ],
+      );
+
+      final pieceBase = produitGrosSurBase.uniteDeBase;
+      expect(pieceBase.prix(ModeVente.gros), 800);
+      final douzaineCalculee = produitGrosSurBase.unite('u-12');
+      expect(douzaineCalculee.prix(ModeVente.gros), 9600, reason: '800 × 12');
+    });
   });
 
   group('Commerce sur l\'appareil (hors-ligne)', () {

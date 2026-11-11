@@ -10,18 +10,46 @@ void main() {
   const connecte = Authenticated(AuthUser(id: userId));
   final sansEntreprise = contexte(avecEntreprise: false);
 
-  String? redirect(String location,
-          {AuthState? auth = connecte, ContexteSession? ctx, bool chargement = false, String? jeton}) =>
+  String? redirect(
+    String location, {
+    AuthState? auth = connecte,
+    ContexteSession? ctx,
+    bool chargement = false,
+    String? jeton,
+    bool oauthEnCours = false,
+  }) =>
       globalRedirect(
         location: location,
         auth: auth,
         contexte: chargement ? null : (ctx ?? contexte()),
         invitationEnAttente: jeton,
+        oauthEnCours: oauthEnCours,
       );
 
   test('session en cours de restauration → écran d\'attente', () {
     expect(redirect(Routes.home, auth: null, chargement: true), Routes.splash);
     expect(redirect(Routes.splash, auth: const AuthUnknown(), chargement: true), isNull);
+  });
+
+  test('callback OAuth en cours → maintient sur l\'écran d\'attente au lieu de renvoyer vers /login', () {
+    const anonyme = Unauthenticated();
+    expect(
+      redirect(Routes.authCallback, auth: anonyme, chargement: true, oauthEnCours: true),
+      Routes.splash,
+    );
+    expect(
+      redirect(Routes.splash, auth: anonyme, chargement: true, oauthEnCours: true),
+      isNull,
+    );
+    // Une fois la session OAuth établie, le callback redirige vers l'accueil
+    expect(
+      redirect(Routes.authCallback, auth: connecte, oauthEnCours: true),
+      Routes.home,
+    );
+    expect(
+      redirect(Routes.loginCallback, auth: connecte, oauthEnCours: false),
+      Routes.home,
+    );
   });
 
   test('pas de session → connexion ; pages publiques accessibles', () {
@@ -78,4 +106,3 @@ void main() {
     expect(ModuleRoutes.path('inconnu.placeholder'), '/modules/inconnu.placeholder');
   });
 }
-

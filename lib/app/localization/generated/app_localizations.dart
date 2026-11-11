@@ -1357,7 +1357,7 @@ abstract class AppLocalizations {
   /// No description provided for @companyTrialInfo.
   ///
   /// In fr, this message translates to:
-  /// **'Essai gratuit de 14 jours. Vous serez l\'administrateur de l\'entreprise.'**
+  /// **'Essai gratuit de 10 jours. Vous serez l\'administrateur de l\'entreprise.'**
   String get companyTrialInfo;
 
   /// No description provided for @companyCreateButton.
@@ -8067,6 +8067,180 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Envoyer WhatsApp'**
   String get envoyerWhatsApp;
+
+  /// No description provided for @subscriptionChoosePlanTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Formules d\'abonnement DubaGest'**
+  String get subscriptionChoosePlanTitle;
+
+  /// No description provided for @subscriptionChoosePlanSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionnez votre formule idéale'**
+  String get subscriptionChoosePlanSubtitle;
+
+  /// No description provided for @subscriptionPaymentTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Règlement de l\'abonnement'**
+  String get subscriptionPaymentTitle;
+
+  /// No description provided for @subscriptionPaymentTabPay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Souscrire / Renouveler'**
+  String get subscriptionPaymentTabPay;
+
+  /// No description provided for @subscriptionPaymentTabHistory.
+  ///
+  /// In fr, this message translates to:
+  /// **'Historique des paiements'**
+  String get subscriptionPaymentTabHistory;
+
+  /// No description provided for @subscriptionTrialActiveTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Période d\'essai gratuit de 10 jours en cours'**
+  String get subscriptionTrialActiveTitle;
+
+  /// No description provided for @subscriptionTrialRemainingDays.
+  ///
+  /// In fr, this message translates to:
+  /// **'Il vous reste {days} jour(s) d\'essai gratuit.'**
+  String subscriptionTrialRemainingDays(int days);
+
+  /// No description provided for @subscriptionTrialEndedTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Période d\'essai de 10 jours terminée'**
+  String get subscriptionTrialEndedTitle;
+
+  /// No description provided for @subscriptionTrialEndedDesc.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vos 10 jours d\'essai gratuit ont pris fin. Vos données d\'entreprise sont précieusement conservées. Choisissez votre formule et réglez votre abonnement pour continuer sans interruption.'**
+  String get subscriptionTrialEndedDesc;
+
+  /// No description provided for @subscriptionExpiredTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abonnement expiré — Réabonnement requis'**
+  String get subscriptionExpiredTitle;
+
+  /// No description provided for @subscriptionExpiredDesc.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'abonnement de votre entreprise est arrivé à expiration. Toutes vos données, utilisateurs et historiques sont soigneusement conservés. Renouvelez votre abonnement dès maintenant.'**
+  String get subscriptionExpiredDesc;
+
+  /// No description provided for @subscriptionActiveBanner.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abonnement actif : Formule {plan}'**
+  String subscriptionActiveBanner(String plan);
+
+  /// No description provided for @subscriptionActiveRemaining.
+  ///
+  /// In fr, this message translates to:
+  /// **'Il vous reste {days} jour(s) sur votre période active.'**
+  String subscriptionActiveRemaining(int days);
+
+  /// No description provided for @subscriptionChangePlan.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer de formule'**
+  String get subscriptionChangePlan;
+
+  /// No description provided for @subscriptionSelectedPlan.
+  ///
+  /// In fr, this message translates to:
+  /// **'Formule choisie'**
+  String get subscriptionSelectedPlan;
+
+  /// No description provided for @subscriptionCurrentPlan.
+  ///
+  /// In fr, this message translates to:
+  /// **'Formule actuelle'**
+  String get subscriptionCurrentPlan;
+
+  /// No description provided for @subscriptionDuration.
+  ///
+  /// In fr, this message translates to:
+  /// **'Durée de l\'abonnement'**
+  String get subscriptionDuration;
+
+  /// No description provided for @subscriptionPaymentMethod.
+  ///
+  /// In fr, this message translates to:
+  /// **'Moyen de paiement'**
+  String get subscriptionPaymentMethod;
+
+  /// No description provided for @subscriptionOrderSummary.
+  ///
+  /// In fr, this message translates to:
+  /// **'Récapitulatif de la commande'**
+  String get subscriptionOrderSummary;
+
+  /// No description provided for @subscriptionTotalToPay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Total à régler'**
+  String get subscriptionTotalToPay;
+
+  /// No description provided for @subscriptionValidatePlanButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider et passer au règlement'**
+  String get subscriptionValidatePlanButton;
+
+  /// No description provided for @subscriptionNoPaymentTriggered.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun prélèvement ne sera effectué sur cette page.'**
+  String get subscriptionNoPaymentTriggered;
+
+  /// No description provided for @subscriptionDataSafeNotice.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toutes vos données, configurations et historiques sont conservés sans aucune perte.'**
+  String get subscriptionDataSafeNotice;
+
+  /// No description provided for @subscriptionPendingMobilePrompt.
+  ///
+  /// In fr, this message translates to:
+  /// **'Veuillez valider la transaction sur votre téléphone mobile ({provider})...'**
+  String subscriptionPendingMobilePrompt(String provider);
+
+  /// No description provided for @subscriptionCancelTransaction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler la transaction'**
+  String get subscriptionCancelTransaction;
+
+  /// No description provided for @subscriptionCheckStatus.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vérifier le statut du paiement'**
+  String get subscriptionCheckStatus;
+
+  /// No description provided for @subscriptionBackToPlans.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retour aux formules'**
+  String get subscriptionBackToPlans;
+
+  /// No description provided for @subscriptionRenewalsHistoryTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Historique des renouvellements'**
+  String get subscriptionRenewalsHistoryTitle;
+
+  /// No description provided for @subscriptionEmptyHistory.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun historique de paiement pour le moment.'**
+  String get subscriptionEmptyHistory;
 }
 
 class _AppLocalizationsDelegate

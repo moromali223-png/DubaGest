@@ -737,7 +737,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get companyTrialInfo =>
-      'تجربة مجانية لمدة 14 يومًا. ستكون مسؤول المؤسسة.';
+      'تجربة مجانية لمدة 10 أيام. ستكون مسؤول المؤسسة.';
 
   @override
   String get companyCreateButton => 'إنشاء المؤسسة';
@@ -4476,4 +4476,106 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get envoyerWhatsApp => 'إرسال عبر واتساب';
+
+  @override
+  String get subscriptionChoosePlanTitle => 'باقات اشتراك دباجيست';
+
+  @override
+  String get subscriptionChoosePlanSubtitle => 'اختر باقتك المثالية';
+
+  @override
+  String get subscriptionPaymentTitle => 'تسوية ودفع الاشتراك';
+
+  @override
+  String get subscriptionPaymentTabPay => 'اشتراك / تجديد';
+
+  @override
+  String get subscriptionPaymentTabHistory => 'سجل المدفوعات';
+
+  @override
+  String get subscriptionTrialActiveTitle =>
+      'فترة تجربة مجانية لمدة 10 أيام جارية';
+
+  @override
+  String subscriptionTrialRemainingDays(int days) {
+    return 'تبقى لك $days يوم من التجربة المجانية.';
+  }
+
+  @override
+  String get subscriptionTrialEndedTitle =>
+      'انتهت فترة التجربة المجانية (10 أيام)';
+
+  @override
+  String get subscriptionTrialEndedDesc =>
+      'انتهت فترة التجربة المجانية. بيانات شركتك محفوظة بأمان تام. اختر باقتك وسدد اشتراكك للمتابعة دون انقطاع.';
+
+  @override
+  String get subscriptionExpiredTitle =>
+      'انتهت صلاحية الاشتراك — يرجى إعادة الاشتراك';
+
+  @override
+  String get subscriptionExpiredDesc =>
+      'انتهى اشتراك شركتك. جميع بياناتك ومستخدميك وسجلاتك محفوظة بالكامل. يرجى تجديد اشتراكك الآن.';
+
+  @override
+  String subscriptionActiveBanner(String plan) {
+    return 'اشتراك نشط: باقة $plan';
+  }
+
+  @override
+  String subscriptionActiveRemaining(int days) {
+    return 'تبقى لك $days يوم في فترة اشتراكك الحالية.';
+  }
+
+  @override
+  String get subscriptionChangePlan => 'تغيير الباقة';
+
+  @override
+  String get subscriptionSelectedPlan => 'الباقة المختارة';
+
+  @override
+  String get subscriptionCurrentPlan => 'الباقة الحالية';
+
+  @override
+  String get subscriptionDuration => 'مدة الاشتراك';
+
+  @override
+  String get subscriptionPaymentMethod => 'طريقة الدفع';
+
+  @override
+  String get subscriptionOrderSummary => 'ملخص الطلب';
+
+  @override
+  String get subscriptionTotalToPay => 'المبلغ الإجمالي للدفع';
+
+  @override
+  String get subscriptionValidatePlanButton => 'تأكيد والانتقال إلى الدفع';
+
+  @override
+  String get subscriptionNoPaymentTriggered =>
+      'لن يتم إجراء أي خصم في هذه الصفحة.';
+
+  @override
+  String get subscriptionDataSafeNotice =>
+      'جميع بياناتك وإعداداتك وسجلاتك محفوظة دون أي فقدان.';
+
+  @override
+  String subscriptionPendingMobilePrompt(String provider) {
+    return 'يرجى تأكيد المعاملة على هاتفك المحمول ($provider)...';
+  }
+
+  @override
+  String get subscriptionCancelTransaction => 'إلغاء المعاملة';
+
+  @override
+  String get subscriptionCheckStatus => 'التحقق من حالة الدفع';
+
+  @override
+  String get subscriptionBackToPlans => 'الرجوع للباقات';
+
+  @override
+  String get subscriptionRenewalsHistoryTitle => 'سجل التجديدات';
+
+  @override
+  String get subscriptionEmptyHistory => 'لا يوجد سجل مدفوعات حتى الآن.';
 }

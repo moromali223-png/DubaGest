@@ -736,7 +736,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get companyTrialInfo =>
-      'Essai gratuit de 14 jours. Vous serez l\'administrateur de l\'entreprise.';
+      'Essai gratuit de 10 jours. Vous serez l\'administrateur de l\'entreprise.';
 
   @override
   String get companyCreateButton => 'Créer l\'entreprise';
@@ -4488,4 +4488,109 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get envoyerWhatsApp => 'Envoyer WhatsApp';
+
+  @override
+  String get subscriptionChoosePlanTitle => 'Formules d\'abonnement DubaGest';
+
+  @override
+  String get subscriptionChoosePlanSubtitle =>
+      'Sélectionnez votre formule idéale';
+
+  @override
+  String get subscriptionPaymentTitle => 'Règlement de l\'abonnement';
+
+  @override
+  String get subscriptionPaymentTabPay => 'Souscrire / Renouveler';
+
+  @override
+  String get subscriptionPaymentTabHistory => 'Historique des paiements';
+
+  @override
+  String get subscriptionTrialActiveTitle =>
+      'Période d\'essai gratuit de 10 jours en cours';
+
+  @override
+  String subscriptionTrialRemainingDays(int days) {
+    return 'Il vous reste $days jour(s) d\'essai gratuit.';
+  }
+
+  @override
+  String get subscriptionTrialEndedTitle =>
+      'Période d\'essai de 10 jours terminée';
+
+  @override
+  String get subscriptionTrialEndedDesc =>
+      'Vos 10 jours d\'essai gratuit ont pris fin. Vos données d\'entreprise sont précieusement conservées. Choisissez votre formule et réglez votre abonnement pour continuer sans interruption.';
+
+  @override
+  String get subscriptionExpiredTitle =>
+      'Abonnement expiré — Réabonnement requis';
+
+  @override
+  String get subscriptionExpiredDesc =>
+      'L\'abonnement de votre entreprise est arrivé à expiration. Toutes vos données, utilisateurs et historiques sont soigneusement conservés. Renouvelez votre abonnement dès maintenant.';
+
+  @override
+  String subscriptionActiveBanner(String plan) {
+    return 'Abonnement actif : Formule $plan';
+  }
+
+  @override
+  String subscriptionActiveRemaining(int days) {
+    return 'Il vous reste $days jour(s) sur votre période active.';
+  }
+
+  @override
+  String get subscriptionChangePlan => 'Changer de formule';
+
+  @override
+  String get subscriptionSelectedPlan => 'Formule choisie';
+
+  @override
+  String get subscriptionCurrentPlan => 'Formule actuelle';
+
+  @override
+  String get subscriptionDuration => 'Durée de l\'abonnement';
+
+  @override
+  String get subscriptionPaymentMethod => 'Moyen de paiement';
+
+  @override
+  String get subscriptionOrderSummary => 'Récapitulatif de la commande';
+
+  @override
+  String get subscriptionTotalToPay => 'Total à régler';
+
+  @override
+  String get subscriptionValidatePlanButton => 'Valider et passer au règlement';
+
+  @override
+  String get subscriptionNoPaymentTriggered =>
+      'Aucun prélèvement ne sera effectué sur cette page.';
+
+  @override
+  String get subscriptionDataSafeNotice =>
+      'Toutes vos données, configurations et historiques sont conservés sans aucune perte.';
+
+  @override
+  String subscriptionPendingMobilePrompt(String provider) {
+    return 'Veuillez valider la transaction sur votre téléphone mobile ($provider)...';
+  }
+
+  @override
+  String get subscriptionCancelTransaction => 'Annuler la transaction';
+
+  @override
+  String get subscriptionCheckStatus => 'Vérifier le statut du paiement';
+
+  @override
+  String get subscriptionBackToPlans => 'Retour aux formules';
+
+  @override
+  String get subscriptionRenewalsHistoryTitle =>
+      'Historique des renouvellements';
+
+  @override
+  String get subscriptionEmptyHistory =>
+      'Aucun historique de paiement pour le moment.';
 }

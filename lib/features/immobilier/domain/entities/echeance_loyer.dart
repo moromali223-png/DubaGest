@@ -22,6 +22,22 @@ enum StatutEcheanceLoyer {
   }
 }
 
+/// Situation dynamique et détaillée de règlement selon les règles métier DubaGest.
+enum StatutReglementLoyer {
+  paye('PAYE', 'Payé', Color(0xFF10B981), Icons.check_circle_rounded),
+  partiel('PARTIEL', 'Partiel', Color(0xFFDF9540), Icons.hourglass_bottom_rounded),
+  enAttente('EN_ATTENTE', 'En attente', Color(0xFF3B82F6), Icons.schedule_rounded),
+  enRetard('EN_RETARD', 'En retard', Color(0xFFE11D48), Icons.alarm_on_rounded),
+  impaye('IMPAYE', 'Impayé', Color(0xFFDC2626), Icons.warning_amber_rounded),
+  annule('ANNULE', 'Annulé', Color(0xFF94A3B8), Icons.cancel_outlined);
+
+  const StatutReglementLoyer(this.code, this.libelle, this.couleur, this.icone);
+  final String code;
+  final String libelle;
+  final Color couleur;
+  final IconData icone;
+}
+
 /// Échéance mensuelle de loyer issue d'un contrat de bail actif.
 /// Reliée à un engagement financier commun pour l'imputation comptable.
 class EcheanceLoyer {
@@ -91,6 +107,52 @@ class EcheanceLoyer {
     final jourMaintenant = DateTime(maintenant.year, maintenant.month, maintenant.day);
     final jourExigibilite = DateTime(dateExigibilite.year, dateExigibilite.month, dateExigibilite.day);
     return jourMaintenant.isAfter(jourExigibilite);
+  }
+
+  /// Calcule le nombre de jours de retard par rapport à la date d'échéance.
+  int joursDeRetard([DateTime? maintenant]) {
+    final now = maintenant ?? DateTime.now();
+    if (estSolde || statut == StatutEcheanceLoyer.annule) return 0;
+    final jourMaintenant = DateTime(now.year, now.month, now.day);
+    final jourExigibilite = DateTime(dateExigibilite.year, dateExigibilite.month, dateExigibilite.day);
+    if (!jourMaintenant.isAfter(jourExigibilite)) return 0;
+    return jourMaintenant.difference(jourExigibilite).inDays;
+  }
+
+  /// Libellé clair du retard (ex: '8 j de retard').
+  String retardLibelle([DateTime? maintenant]) {
+    final jours = joursDeRetard(maintenant);
+    if (jours <= 0) return '';
+    return '$jours j de retard';
+  }
+
+  /// Situation dynamique et détaillée selon les règles métier DubaGest:
+  /// - paye: loyer totalement soldé
+  /// - partiel: partiellement payé avant échéance
+  /// - enRetard: date d'échéance passée avec versement partiel
+  /// - impaye: date d'échéance passée sans aucun versement (0 FCFA)
+  /// - enAttente: échéance future non échue et sans retard
+  StatutReglementLoyer statutDynamique([DateTime? maintenant]) {
+    if (statut == StatutEcheanceLoyer.annule) {
+      return StatutReglementLoyer.annule;
+    }
+    if (estSolde) {
+      return StatutReglementLoyer.paye;
+    }
+    final enRetard = estEnRetardCalcule(maintenant ?? DateTime.now());
+    if (enRetard) {
+      if (montantRegle > 0) {
+        return StatutReglementLoyer.enRetard;
+      } else {
+        return StatutReglementLoyer.impaye;
+      }
+    } else {
+      if (montantRegle > 0) {
+        return StatutReglementLoyer.partiel;
+      } else {
+        return StatutReglementLoyer.enAttente;
+      }
+    }
   }
 
   /// Taux de règlement en pourcentage (0.0 à 100.0).
@@ -217,6 +279,9 @@ class RecouvrementStatistiques {
     required this.nbEcheances,
     required this.nbSoldes,
     required this.nbEnRetard,
+    this.nbPartiels = 0,
+    this.nbImpayes = 0,
+    this.nbEnAttente = 0,
   });
 
   final int totalAppele;
@@ -225,6 +290,13 @@ class RecouvrementStatistiques {
   final int nbEcheances;
   final int nbSoldes;
   final int nbEnRetard;
+  final int nbPartiels;
+  final int nbImpayes;
+  final int nbEnAttente;
+
+  int get totalAttendu => totalAppele;
+  int get totalRestant => totalImpayes;
+  int get nbPayes => nbSoldes;
 
   double get tauxRecouvrement =>
       totalAppele > 0 ? ((totalEncaisse / totalAppele) * 100).clamp(0.0, 100.0) : 0.0;

@@ -135,7 +135,12 @@ class EcheanceDetailsPage extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          StatutEcheanceBadge(statut: echeance.statut, estEnRetard: estEnRetard),
+                          StatutEcheanceBadge(
+                            statut: echeance.statut,
+                            estEnRetard: estEnRetard,
+                            joursDeRetard: echeance.joursDeRetard(),
+                            statutReglement: echeance.statutDynamique(),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),

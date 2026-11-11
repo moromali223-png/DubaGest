@@ -18,6 +18,8 @@ import 'core/di/core_providers.dart';
 import 'core/utils/app_logger.dart';
 
 Future<void> main() async {
+  // Capture l'URL initiale avant toute réécriture par le routeur (retour OAuth ?code=… ou #access_token=…).
+  final initialUri = Uri.base;
   // Web : URL réelles (/join-company?token=…) au lieu de « #/… » ; sans effet ailleurs.
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,8 +32,16 @@ Future<void> main() async {
   try {
     final config = AppConfig.fromEnvironment();
     final prefs = await SharedPreferences.getInstance();
-    // Restaure la session persistée (fonctionne hors-ligne).
-    await Supabase.initialize(url: config.supabaseUrl, publishableKey: config.supabaseKey);
+    // Restaure la session persistée (fonctionne hors-ligne) et échange le code PKCE OAuth si présent.
+    await Supabase.initialize(
+      url: config.supabaseUrl,
+      publishableKey: config.supabaseKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        detectSessionInUri: true,
+      ),
+    );
+    await _ensureOAuthCallbackSession(initialUri);
     final database = AppDatabase(openAppDatabaseConnection());
 
     runApp(ProviderScope(
@@ -77,5 +87,26 @@ Future<void> main() async {
         ),
       ),
     ));
+  }
+}
+
+/// Garantit que si l'application démarre sur un retour OAuth Google (`?code=…`
+/// ou `#access_token=…`) et que `Supabase.initialize` n'a pas encore établi la
+/// session, l'échange de jeton est finalisé avant l'affichage du routeur.
+Future<void> _ensureOAuthCallbackSession(Uri initialUri) async {
+  final auth = Supabase.instance.client.auth;
+  if (auth.currentSession != null) return;
+
+  final hasCode = initialUri.queryParameters.containsKey('code');
+  final hasTokenFragment = initialUri.fragment.contains('access_token=') ||
+      initialUri.fragment.contains('refresh_token=');
+  if (!hasCode && !hasTokenFragment) return;
+
+  try {
+    await auth.getSessionFromUrl(initialUri);
+  } catch (e) {
+    if (auth.currentSession == null) {
+      AppLogger.warning('Échec finalisation session OAuth depuis URL initiale: $e', tag: 'auth', error: e);
+    }
   }
 }

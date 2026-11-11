@@ -19,6 +19,8 @@ import '../../domain/entities/locataire_immobilier.dart';
 import '../../domain/entities/location_immobilier.dart';
 import '../../domain/repositories/immobilier_repository.dart';
 import '../../domain/entities/resultat_encaissement_loyer.dart';
+import '../../domain/entities/historique_paiement_loyer.dart';
+import '../../domain/services/montant_en_lettres.dart';
 import '../../../finances/domain/entities/finances.dart';
 import '../../../finances/presentation/providers/finances_providers.dart';
 import '../../../documents/domain/entities/document.dart';
@@ -617,24 +619,40 @@ class PeriodeFiltreLoyers {
     required this.annee,
     required this.mois,
     this.statut,
+    this.statutReglement,
+    this.bienId,
+    this.locataireId,
+    this.toutePeriode = false,
     this.recherche = '',
   });
 
   final int annee;
   final int mois;
   final StatutEcheanceLoyer? statut;
+  final StatutReglementLoyer? statutReglement;
+  final String? bienId;
+  final String? locataireId;
+  final bool toutePeriode;
   final String recherche;
 
   PeriodeFiltreLoyers copyWith({
     int? annee,
     int? mois,
     StatutEcheanceLoyer? Function()? statut,
+    StatutReglementLoyer? Function()? statutReglement,
+    String? Function()? bienId,
+    String? Function()? locataireId,
+    bool? toutePeriode,
     String? recherche,
   }) {
     return PeriodeFiltreLoyers(
       annee: annee ?? this.annee,
       mois: mois ?? this.mois,
       statut: statut != null ? statut() : this.statut,
+      statutReglement: statutReglement != null ? statutReglement() : this.statutReglement,
+      bienId: bienId != null ? bienId() : this.bienId,
+      locataireId: locataireId != null ? locataireId() : this.locataireId,
+      toutePeriode: toutePeriode ?? this.toutePeriode,
       recherche: recherche ?? this.recherche,
     );
   }
@@ -669,6 +687,21 @@ class PeriodeFiltreLoyersNotifier extends Notifier<PeriodeFiltreLoyers> {
   void filtrerStatut(StatutEcheanceLoyer? statut) =>
       state = state.copyWith(statut: () => statut);
 
+  void filtrerStatutReglement(StatutReglementLoyer? statutReglement) =>
+      state = state.copyWith(statutReglement: () => statutReglement);
+
+  void filtrerBien(String? bienId) =>
+      state = state.copyWith(bienId: () => bienId);
+
+  void filtrerLocataire(String? locataireId) =>
+      state = state.copyWith(locataireId: () => locataireId);
+
+  void setToutePeriode(bool value) =>
+      state = state.copyWith(toutePeriode: value);
+
+  void toggleToutePeriode() =>
+      state = state.copyWith(toutePeriode: !state.toutePeriode);
+
   void rechercher(String query) =>
       state = state.copyWith(recherche: query);
 
@@ -689,17 +722,29 @@ final echeancesFiltreesProvider = Provider.autoDispose<List<EcheanceLoyer>>((ref
   final recherche = filtre.recherche.trim().toLowerCase();
   final biens = ref.watch(biensListProvider).value ?? const [];
   final contacts = ref.watch(contactsProvider).value ?? const [];
+  final now = DateTime.now();
 
   return toutes.where((e) {
-    if (e.periodeAnnee != filtre.annee) return false;
-    if (e.periodeMois != filtre.mois) return false;
+    if (!filtre.toutePeriode) {
+      if (e.periodeAnnee != filtre.annee) return false;
+      if (e.periodeMois != filtre.mois) return false;
+    }
+    if (filtre.bienId != null && e.bienId != filtre.bienId) return false;
+    if (filtre.locataireId != null && e.locataireId != filtre.locataireId) return false;
     if (filtre.statut != null && e.statut != filtre.statut) return false;
+    if (filtre.statutReglement != null && e.statutDynamique(now) != filtre.statutReglement) {
+      return false;
+    }
+
     if (recherche.isNotEmpty) {
       final refMatch = e.reference.toLowerCase().contains(recherche);
       final bien = biens.where((b) => b.id == e.bienId).firstOrNull;
-      final bienMatch = bien != null && bien.nom.toLowerCase().contains(recherche);
+      final bienMatch = bien != null &&
+          (bien.nom.toLowerCase().contains(recherche) || bien.reference.toLowerCase().contains(recherche));
       final locataire = contacts.where((c) => c.id == e.locataireId).firstOrNull;
-      final locataireMatch = locataire != null && locataire.nomAffiche.toLowerCase().contains(recherche);
+      final locataireMatch = locataire != null &&
+          (locataire.nomAffiche.toLowerCase().contains(recherche) ||
+              (locataire.telephone ?? '').contains(recherche));
       if (!refMatch && !bienMatch && !locataireMatch) {
         return false;
       }
@@ -716,14 +761,32 @@ final recouvrementStatistiquesProvider = Provider.autoDispose<RecouvrementStatis
   int totalEncaisse = 0;
   int nbSoldes = 0;
   int nbEnRetard = 0;
+  int nbPartiels = 0;
+  int nbImpayes = 0;
+  int nbEnAttente = 0;
 
   for (final e in echeancesDuMois) {
     totalAppele += e.totalDu;
     totalEncaisse += e.montantRegle;
-    if (e.estSolde) {
-      nbSoldes++;
-    } else if (e.estEnRetardCalcule(now)) {
-      nbEnRetard++;
+    final dyn = e.statutDynamique(now);
+    switch (dyn) {
+      case StatutReglementLoyer.paye:
+        nbSoldes++;
+        break;
+      case StatutReglementLoyer.partiel:
+        nbPartiels++;
+        break;
+      case StatutReglementLoyer.enRetard:
+        nbEnRetard++;
+        break;
+      case StatutReglementLoyer.impaye:
+        nbImpayes++;
+        break;
+      case StatutReglementLoyer.enAttente:
+        nbEnAttente++;
+        break;
+      case StatutReglementLoyer.annule:
+        break;
     }
   }
 
@@ -736,7 +799,100 @@ final recouvrementStatistiquesProvider = Provider.autoDispose<RecouvrementStatis
     nbEcheances: echeancesDuMois.length,
     nbSoldes: nbSoldes,
     nbEnRetard: nbEnRetard,
+    nbPartiels: nbPartiels,
+    nbImpayes: nbImpayes,
+    nbEnAttente: nbEnAttente,
   );
+});
+
+/// Historique chronologique complet des paiements de loyers avec détails et documents.
+final historiquePaiementsLoyersProvider =
+    Provider.autoDispose<List<HistoriquePaiementLoyerItem>>((ref) {
+  final ctx = ref.watch(contexteActifProvider);
+  if (ctx == null || ctx.entreprise == null) return const [];
+
+  final entrepriseId = ctx.entreprise!.id;
+  final filtre = ref.watch(filtreLoyersProvider);
+  final documents = ref.watch(documentsProvider).value ?? const [];
+  final echeances = ref.watch(echeancesLoyersProvider).value ?? const [];
+
+  final List<HistoriquePaiementLoyerItem> items = [];
+
+  // Documents de loyers émis (Quittances et Reçus d'acompte)
+  final loyerDocs = documents.where((d) =>
+      d.entrepriseId == entrepriseId &&
+      d.origineType == 'LOYER' &&
+      (d.type == TypeDocument.quittance || d.type == TypeDocument.recu)).toList();
+
+  for (final doc in loyerDocs) {
+    final c = doc.contenu;
+    final bienNom = (c['bien_nom'] as String?) ?? 'Bien immobilier';
+    final locataireNom = (c['locataire_nom'] as String?) ?? 'Locataire';
+    final locataireTel = c['locataire_telephone'] as String?;
+    final periodeLoyer = (c['periode_loyer'] as String?) ?? '';
+    final mois = (c['periode_mois'] as num?)?.toInt() ?? doc.date.month;
+    final annee = (c['periode_annee'] as num?)?.toInt() ?? doc.date.year;
+    final montant = (c['montant_verse'] as num?)?.toInt() ?? doc.montant;
+    final reste = (c['reste_a_payer'] as num?)?.toInt() ?? 0;
+    final modeCode = (c['mode_paiement'] as String?) ?? 'ESPECES';
+    final mode = ModePaiement.parse(modeCode);
+    final refPaiement = c['reference_paiement'] as String?;
+    final ech = echeances.where((e) => e.id == doc.origineId).firstOrNull;
+    final bienId = ech?.bienId ?? '';
+    final locataireId = doc.contactId ?? ech?.locataireId ?? '';
+    final estSolde = (c['statut'] == 'PAYE') || doc.type == TypeDocument.quittance || reste == 0;
+
+    items.add(
+      HistoriquePaiementLoyerItem(
+        id: doc.id,
+        paiementId: doc.id,
+        datePaiement: doc.date,
+        locataireId: locataireId,
+        locataireNom: locataireNom,
+        locataireTelephone: locataireTel,
+        bienId: bienId,
+        bienNom: bienNom,
+        periodeLibelle: periodeLoyer.isNotEmpty ? periodeLoyer : '${mois.toString().padLeft(2, '0')}/$annee',
+        periodeMois: mois,
+        periodeAnnee: annee,
+        montant: montant,
+        modePaiement: mode,
+        referencePaiement: refPaiement,
+        resteAPayer: reste,
+        estSolde: estSolde,
+        documentId: doc.id,
+        numeroDocument: doc.numero,
+        estQuittance: doc.type == TypeDocument.quittance,
+        note: c['notes'] as String?,
+      ),
+    );
+  }
+
+  // Tri antichronologique
+  items.sort((a, b) => b.datePaiement.compareTo(a.datePaiement));
+
+  final recherche = filtre.recherche.trim().toLowerCase();
+
+  return items.where((item) {
+    if (!filtre.toutePeriode) {
+      if (item.periodeAnnee != filtre.annee) return false;
+      if (item.periodeMois != filtre.mois) return false;
+    }
+    if (filtre.bienId != null && item.bienId.isNotEmpty && item.bienId != filtre.bienId) {
+      return false;
+    }
+    if (filtre.locataireId != null && item.locataireId.isNotEmpty && item.locataireId != filtre.locataireId) {
+      return false;
+    }
+    if (recherche.isNotEmpty) {
+      final locMatch = item.locataireNom.toLowerCase().contains(recherche);
+      final bienMatch = item.bienNom.toLowerCase().contains(recherche);
+      final numMatch = (item.numeroDocument ?? '').toLowerCase().contains(recherche);
+      final refMatch = (item.referencePaiement ?? '').toLowerCase().contains(recherche);
+      if (!locMatch && !bienMatch && !numMatch && !refMatch) return false;
+    }
+    return true;
+  }).toList();
 });
 
 class ImmobilierLoyersController extends AsyncNotifier<void> {
@@ -975,6 +1131,11 @@ class ImmobilierLoyersController extends AsyncNotifier<void> {
             ? 'Quittance de loyer - ${echeancePrincipale.periodeLibelle}'
             : 'Reçu d\'acompte de loyer - ${echeancePrincipale.periodeLibelle}';
 
+        final montantEnLettresTexte = MontantEnLettres.convertir(montantVerse, devise: devise);
+        final mentionLegale = estSoldeTotal
+            ? 'Reçu pour paiement intégral du loyer du mois de ${echeancePrincipale.periodeLibelle}'
+            : 'Reçu pour paiement partiel (acompte) du loyer du mois de ${echeancePrincipale.periodeLibelle}';
+
         final contenu = <String, dynamic>{
           'titre': titreDoc,
           'reference_metier': echeancePrincipale.reference,
@@ -989,6 +1150,8 @@ class ImmobilierLoyersController extends AsyncNotifier<void> {
           'charges': echeancePrincipale.charges,
           'total_du': echeancePrincipale.totalDu,
           'montant_verse': montantVerse,
+          'montant_lettres': montantEnLettresTexte,
+          'mention_legale': mentionLegale,
           'reste_a_payer': allocations.fold(0, (tot, a) => tot + a.resteApres),
           'mode_paiement': modePaiement.code,
           'reference_paiement': referencePaiement ?? '',

@@ -142,6 +142,7 @@ extension AppLabels on AppLocalizations {
         'commerce.achats' => moduleCommerceAchats,
         'commerce.fournisseurs' => moduleCommerceFournisseurs,
         'commerce.intelligence' => 'Intelligence commerciale',
+        'commerce.benefice' => 'Bénéfice commercial',
         'finances.creances' => moduleFinancesCreances,
         'finances.paiements' => moduleFinancesPaiements,
         'finances.caisse' => moduleFinancesCaisse,
@@ -165,6 +166,7 @@ extension AppLabels on AppLocalizations {
   String moduleCourt(String code) => switch (code) {
         'finances.creances' => moduleFinancesCreancesCourt,
         'commerce.intelligence' => 'Intelligence',
+        'commerce.benefice' => 'Bénéfice',
         _ => module(code),
       };
 
@@ -319,4 +321,179 @@ extension AppLabels on AppLocalizations {
   String mois(DateTime value) => DateFormat.yMMMM(localeName).format(value);
 
   String dateTime(DateTime value) => DateFormat.yMMMd(localeName).add_Hm().format(value.toLocal());
+
+  // --- Subscriptions & Payments Localization ---
+  String get subscriptionChoosePlanTitle => switch (localeName) {
+        'ar' => 'باقات اشتراك دباجيست',
+        'en' => 'DubaGest Subscription Plans',
+        _ => 'Formules d\'abonnement DubaGest',
+      };
+
+  String get subscriptionChoosePlanSubtitle => switch (localeName) {
+        'ar' => 'اختر باقتك المثالية للعمل',
+        'en' => 'Select your ideal plan',
+        _ => 'Sélectionnez votre formule idéale',
+      };
+
+  String get subscriptionPaymentTitle => switch (localeName) {
+        'ar' => 'تسوية ودفع الاشتراك',
+        'en' => 'Subscription Payment',
+        _ => 'Règlement de l\'abonnement',
+      };
+
+  String get subscriptionPaymentTabPay => switch (localeName) {
+        'ar' => 'اشتراك / تجديد',
+        'en' => 'Subscribe / Renew',
+        _ => 'Souscrire / Renouveler',
+      };
+
+  String get subscriptionPaymentTabHistory => switch (localeName) {
+        'ar' => 'سجل المدفوعات',
+        'en' => 'Payment History',
+        _ => 'Historique des paiements',
+      };
+
+  String get subscriptionTrialActiveTitle => switch (localeName) {
+        'ar' => 'فترة تجربة مجانية لمدة 10 أيام جارية',
+        'en' => '10-day free trial period in progress',
+        _ => 'Période d\'essai gratuit de 10 jours en cours',
+      };
+
+  String subscriptionTrialRemainingDays(int days) => switch (localeName) {
+        'ar' => 'تبقى لك $days يوم من التجربة المجانية.',
+        'en' => 'You have $days day(s) of free trial remaining.',
+        _ => 'Il vous reste $days jour(s) d\'essai gratuit.',
+      };
+
+  String get subscriptionTrialEndedTitle => switch (localeName) {
+        'ar' => 'انتهت فترة التجربة المجانية (10 أيام)',
+        'en' => '10-day free trial ended',
+        _ => 'Période d\'essai de 10 jours terminée',
+      };
+
+  String get subscriptionTrialEndedDesc => switch (localeName) {
+        'ar' => 'انتهت فترة التجربة المجانية. بيانات شركتك محفوظة بأمان تام. اختر باقتك وسدد اشتراكك للمتابعة دون انقطاع.',
+        'en' => 'Your 10-day free trial has ended. Your business data is safely preserved. Choose your plan and settle payment to continue without interruption.',
+        _ => 'Vos 10 jours d\'essai gratuit ont pris fin. Vos données d\'entreprise sont précieusement conservées. Choisissez votre formule et réglez votre abonnement pour continuer sans interruption.',
+      };
+
+  String get subscriptionExpiredTitle => switch (localeName) {
+        'ar' => 'انتهت صلاحية الاشتراك — يرجى إعادة الاشتراك',
+        'en' => 'Subscription expired — Renewal required',
+        _ => 'Abonnement expiré — Réabonnement requis',
+      };
+
+  String get subscriptionExpiredDesc => switch (localeName) {
+        'ar' => 'انتهى اشتراك شركتك. جميع بياناتك ومستخدميك وسجلاتك محفوظة بالكامل. يرجى تجديد اشتراكك الآن.',
+        'en' => 'Your company subscription has expired. All your data, users and history are safely preserved. Renew your subscription now.',
+        _ => 'L\'abonnement de votre entreprise est arrivé à expiration. Toutes vos données, utilisateurs et historiques sont soigneusement conservés. Renouvelez votre abonnement dès maintenant.',
+      };
+
+  String subscriptionActiveBanner(String planCode) => switch (localeName) {
+        'ar' => 'اشتراك نشط: باقة ${plan(planCode)}',
+        'en' => 'Active subscription: ${plan(planCode)} Plan',
+        _ => 'Abonnement actif : Formule ${plan(planCode)}',
+      };
+
+  String subscriptionActiveRemaining(int days) => switch (localeName) {
+        'ar' => 'تبقى لك $days يوم في فترة اشتراكك الحالية.',
+        'en' => 'You have $days day(s) remaining on your active period.',
+        _ => 'Il vous reste $days jour(s) sur votre période active.',
+      };
+
+  String get subscriptionChangePlan => switch (localeName) {
+        'ar' => 'تغيير الباقة',
+        'en' => 'Change plan',
+        _ => 'Changer de formule',
+      };
+
+  String get subscriptionSelectedPlan => switch (localeName) {
+        'ar' => 'الباقة المختارة',
+        'en' => 'Selected plan',
+        _ => 'Formule choisie',
+      };
+
+  String get subscriptionCurrentPlan => switch (localeName) {
+        'ar' => 'الباقة الحالية',
+        'en' => 'Current plan',
+        _ => 'Formule actuelle',
+      };
+
+  String get subscriptionDuration => switch (localeName) {
+        'ar' => 'مدة الاشتراك',
+        'en' => 'Subscription duration',
+        _ => 'Durée de l\'abonnement',
+      };
+
+  String get subscriptionPaymentMethod => switch (localeName) {
+        'ar' => 'طريقة الدفع',
+        'en' => 'Payment method',
+        _ => 'Moyen de paiement',
+      };
+
+  String get subscriptionOrderSummary => switch (localeName) {
+        'ar' => 'ملخص الطلب',
+        'en' => 'Order summary',
+        _ => 'Récapitulatif de la commande',
+      };
+
+  String get subscriptionTotalToPay => switch (localeName) {
+        'ar' => 'المبلغ الإجمالي للدفع',
+        'en' => 'Total to pay',
+        _ => 'Total à régler',
+      };
+
+  String get subscriptionValidatePlanButton => switch (localeName) {
+        'ar' => 'تأكيد والانتقال إلى الدفع',
+        'en' => 'Confirm and proceed to payment',
+        _ => 'Valider et passer au règlement',
+      };
+
+  String get subscriptionNoPaymentTriggered => switch (localeName) {
+        'ar' => 'لن يتم إجراء أي خصم في هذه الصفحة.',
+        'en' => 'No charge will be made on this page.',
+        _ => 'Aucun prélèvement ne sera effectué sur cette page.',
+      };
+
+  String get subscriptionDataSafeNotice => switch (localeName) {
+        'ar' => 'جميع بياناتك وإعداداتك وسجلاتك محفوظة دون أي فقدان.',
+        'en' => 'All your data, settings and history are preserved without any loss.',
+        _ => 'Toutes vos données, configurations et historiques sont conservés sans aucune perte.',
+      };
+
+  String subscriptionPendingMobilePrompt(String provider) => switch (localeName) {
+        'ar' => 'يرجى تأكيد المعاملة على هاتفك المحمول ($provider)...',
+        'en' => 'Please validate the transaction on your mobile phone ($provider)...',
+        _ => 'Veuillez valider la transaction sur votre téléphone mobile ($provider)...',
+      };
+
+  String get subscriptionCancelTransaction => switch (localeName) {
+        'ar' => 'إلغاء المعاملة',
+        'en' => 'Cancel transaction',
+        _ => 'Annuler la transaction',
+      };
+
+  String get subscriptionCheckStatus => switch (localeName) {
+        'ar' => 'التحقق من حالة الدفع',
+        'en' => 'Check payment status',
+        _ => 'Vérifier le statut du paiement',
+      };
+
+  String get subscriptionBackToPlans => switch (localeName) {
+        'ar' => 'الرجوع للباقات',
+        'en' => 'Back to plans',
+        _ => 'Retour aux formules',
+      };
+
+  String get subscriptionRenewalsHistoryTitle => switch (localeName) {
+        'ar' => 'سجل التجديدات',
+        'en' => 'Renewal history',
+        _ => 'Historique des renouvellements',
+      };
+
+  String get subscriptionEmptyHistory => switch (localeName) {
+        'ar' => 'لا يوجد سجل مدفوعات حتى الآن.',
+        'en' => 'No payment history yet.',
+        _ => 'Aucun historique de paiement pour le moment.',
+      };
 }

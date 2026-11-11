@@ -95,6 +95,7 @@ void main() {
     testWidgets('admin MOYEN avec une seule activité : « Activer » proposé', (tester) async {
       await ouvrir(tester, ctx: contexte());
       expect(find.text('Activer'), findsNWidgets(2), reason: 'Services et Immobilier');
+      
     });
 
     testWidgets('vendeur : seulement ses activités, aucune offre', (tester) async {

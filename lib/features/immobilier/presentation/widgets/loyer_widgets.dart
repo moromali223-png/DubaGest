@@ -15,16 +15,54 @@ class StatutEcheanceBadge extends StatelessWidget {
     super.key,
     required this.statut,
     this.estEnRetard = false,
+    this.joursDeRetard = 0,
+    this.statutReglement,
   });
 
   final StatutEcheanceLoyer statut;
   final bool estEnRetard;
+  final int joursDeRetard;
+  final StatutReglementLoyer? statutReglement;
 
   @override
   Widget build(BuildContext context) {
+    if (statutReglement != null) {
+      final reg = statutReglement!;
+      final retardSuffix = (joursDeRetard > 0 && reg != StatutReglementLoyer.paye)
+          ? ' ($joursDeRetard j)'
+          : '';
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: reg.couleur.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: reg.couleur.withValues(alpha: 0.35), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(reg.icone, size: 12.5, color: reg.couleur),
+            const SizedBox(width: 4),
+            Text(
+              '${reg.libelle}$retardSuffix',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: reg.couleur,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final effectiveStatut = (estEnRetard && statut != StatutEcheanceLoyer.solde)
         ? StatutEcheanceLoyer.enRetard
         : statut;
+
+    final retardSuffix = (joursDeRetard > 0 && effectiveStatut == StatutEcheanceLoyer.enRetard)
+        ? ' ($joursDeRetard j)'
+        : '';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
@@ -39,7 +77,7 @@ class StatutEcheanceBadge extends StatelessWidget {
           Icon(effectiveStatut.icone, size: 12.5, color: effectiveStatut.couleur),
           const SizedBox(width: 4),
           Text(
-            effectiveStatut.libelle,
+            '${effectiveStatut.libelle}$retardSuffix',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -166,10 +204,29 @@ class RecouvrementStatsHeader extends ConsumerWidget {
           // Ligne 2: Indicateurs KPI
           Row(
             children: [
-              _buildKpiItem('Total appelé', context.l10n.montant(stats.totalAppele, devise), Colors.white),
+              _buildKpiItem('Total attendu', context.l10n.montant(stats.totalAttendu, devise), Colors.white),
               _buildKpiItem('Encaissé', context.l10n.montant(stats.totalEncaisse, devise), const Color(0xFF10B981)),
-              _buildKpiItem('Reste dû', context.l10n.montant(stats.totalImpayes, devise), const Color(0xFFDF9540)),
+              _buildKpiItem('Reste dû', context.l10n.montant(stats.totalRestant, devise), const Color(0xFFDF9540)),
             ],
+          ),
+          const SizedBox(height: 10),
+
+          // Ligne 2.5: Répartition par statut (Payés, Partiels, En retard, Impayés)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatCount('Payés', stats.nbPayes, const Color(0xFF10B981)),
+                _buildStatCount('Partiels', stats.nbPartiels, const Color(0xFFDF9540)),
+                _buildStatCount('En retard', stats.nbEnRetard, const Color(0xFFE11D48)),
+                _buildStatCount('Impayés', stats.nbImpayes, const Color(0xFFDC2626)),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -214,6 +271,28 @@ class RecouvrementStatsHeader extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatCount(String label, int count, Color couleur) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: couleur, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          '$label: ',
+          style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500),
+        ),
+        Text(
+          '$count',
+          style: TextStyle(color: couleur, fontSize: 11.5, fontWeight: FontWeight.w800),
+        ),
+      ],
     );
   }
 
@@ -305,7 +384,12 @@ class EcheanceLoyerCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                StatutEcheanceBadge(statut: echeance.statut, estEnRetard: estEnRetard),
+                StatutEcheanceBadge(
+                  statut: echeance.statut,
+                  estEnRetard: estEnRetard,
+                  joursDeRetard: echeance.joursDeRetard(),
+                  statutReglement: echeance.statutDynamique(),
+                ),
               ],
             ),
             const SizedBox(height: 10),

@@ -732,7 +732,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companyTrialInfo =>
-      '14-day free trial. You will be the company administrator.';
+      '10-day free trial. You will be the company administrator.';
 
   @override
   String get companyCreateButton => 'Create the company';
@@ -4477,4 +4477,105 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get envoyerWhatsApp => 'Send WhatsApp';
+
+  @override
+  String get subscriptionChoosePlanTitle => 'DubaGest Subscription Plans';
+
+  @override
+  String get subscriptionChoosePlanSubtitle => 'Choose your ideal plan';
+
+  @override
+  String get subscriptionPaymentTitle => 'Subscription Payment';
+
+  @override
+  String get subscriptionPaymentTabPay => 'Subscribe / Renew';
+
+  @override
+  String get subscriptionPaymentTabHistory => 'Payment History';
+
+  @override
+  String get subscriptionTrialActiveTitle =>
+      '10-day free trial period in progress';
+
+  @override
+  String subscriptionTrialRemainingDays(int days) {
+    return 'You have $days day(s) of free trial remaining.';
+  }
+
+  @override
+  String get subscriptionTrialEndedTitle => '10-day free trial ended';
+
+  @override
+  String get subscriptionTrialEndedDesc =>
+      'Your 10-day free trial has ended. Your business data is safely preserved. Choose your plan and settle payment to continue without interruption.';
+
+  @override
+  String get subscriptionExpiredTitle =>
+      'Subscription expired — Renewal required';
+
+  @override
+  String get subscriptionExpiredDesc =>
+      'Your company subscription has expired. All your data, users and history are safely preserved. Renew your subscription now.';
+
+  @override
+  String subscriptionActiveBanner(String plan) {
+    return 'Active subscription: $plan Plan';
+  }
+
+  @override
+  String subscriptionActiveRemaining(int days) {
+    return 'You have $days day(s) remaining on your active period.';
+  }
+
+  @override
+  String get subscriptionChangePlan => 'Change plan';
+
+  @override
+  String get subscriptionSelectedPlan => 'Selected plan';
+
+  @override
+  String get subscriptionCurrentPlan => 'Current plan';
+
+  @override
+  String get subscriptionDuration => 'Subscription duration';
+
+  @override
+  String get subscriptionPaymentMethod => 'Payment method';
+
+  @override
+  String get subscriptionOrderSummary => 'Order summary';
+
+  @override
+  String get subscriptionTotalToPay => 'Total to pay';
+
+  @override
+  String get subscriptionValidatePlanButton => 'Confirm and proceed to payment';
+
+  @override
+  String get subscriptionNoPaymentTriggered =>
+      'No charge will be made on this page.';
+
+  @override
+  String get subscriptionDataSafeNotice =>
+      'All your data, settings and history are preserved without any loss.';
+
+  @override
+  String subscriptionPendingMobilePrompt(String provider) {
+    return 'Please validate the transaction on your mobile phone ($provider)...';
+  }
+
+  @override
+  String get subscriptionCancelTransaction => 'Cancel transaction';
+
+  @override
+  String get subscriptionCheckStatus => 'Check payment status';
+
+  @override
+  String get subscriptionBackToPlans => 'Back to plans';
+
+  @override
+  String get subscriptionRenewalsHistoryTitle => 'Renewal history';
+
+  @override
+  String get subscriptionEmptyHistory => 'No payment history yet.';
 }
