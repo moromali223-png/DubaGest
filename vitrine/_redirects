@@ -1,0 +1,7 @@
+# Redirections d'accès direct vers la PWA DubaGest
+/app          https://dubagest-app.pages.dev          302
+/pwa          https://dubagest-app.pages.dev          302
+/login        https://dubagest-app.pages.dev/login    302
+/register     https://dubagest-app.pages.dev/register 302
+/connexion    https://dubagest-app.pages.dev/login    302
+/inscription  https://dubagest-app.pages.dev/register 302
