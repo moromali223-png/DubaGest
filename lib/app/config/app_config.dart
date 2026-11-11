@@ -29,7 +29,7 @@ class AppConfig {
   static const _defaultPublishableKey = 'sb_publishable_7K7N1LDRynPSG0Lm8v27cg_Uj7Ttq_a';
   static const _defaultSupabaseUrl = 'https://zqvfksqfjsdfrykokpsd.supabase.co';
   static const _localAppUrl = 'http://127.0.0.1:3000';
-  static const _prodAppUrl = 'https://dubagest-app.pages.dev';
+  static const _prodAppUrl = 'https://app.dubagest.com';
 
   factory AppConfig.fromEnvironment() {
     const url = String.fromEnvironment('SUPABASE_URL');

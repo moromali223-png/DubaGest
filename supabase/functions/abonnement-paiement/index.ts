@@ -66,7 +66,7 @@ serve(async (req) => {
     const ligdiCashToken = Deno.env.get("LIGDICASH_API_TOKEN")?.trim().replace(/^[<"']+|[>"']+$/g, "");
     const rawEnv = (Deno.env.get("LIGDICASH_ENV") ?? "TEST").replace(/[<>\s"']/g, "").toUpperCase();
     const ligdiCashEnv = rawEnv === "PRODUCTION" ? "PRODUCTION" : "TEST";
-    const appBaseUrl = Deno.env.get("APP_BASE_URL") ?? "https://dubagest-app.pages.dev";
+    const appBaseUrl = Deno.env.get("APP_BASE_URL") ?? "https://app.dubagest.com";
 
     const orangeMoneyMerchantKey = Deno.env.get("ORANGE_MONEY_MERCHANT_KEY");
     const orangeMoneyClientSecret = Deno.env.get("ORANGE_MONEY_CLIENT_SECRET");

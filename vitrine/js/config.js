@@ -10,10 +10,10 @@ window.DUBAGEST_CONFIG = {
   
   // URL de l'application métier Flutter (PWA)
   // En local : 'http://localhost:3000'
-  // En production : 'https://dubagest-app.pages.dev'
+  // En production : 'https://app.dubagest.com'
   appUrl: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
-    : 'https://dubagest-app.pages.dev',
+    : 'https://app.dubagest.com',
     
   // URL directe de connexion
   get loginUrl() {
