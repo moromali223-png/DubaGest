@@ -226,7 +226,7 @@ const List<PlanCatalogueItem> cataloguePlansParDefaut = [
     nom: 'Moyen',
     description: 'Multi-boutiques et multi-activités pour entreprises en croissance.',
     ordre: 2,
-    prixMensuel: 2500,
+    prixMensuel: 2000,
     devise: 'XOF',
     maxActivites: 2,
     activites: [
@@ -255,12 +255,13 @@ const List<PlanCatalogueItem> cataloguePlansParDefaut = [
       {'code': 'COMMUN_CONTACTS', 'libelle': 'Clients & Fournisseurs'},
       {'code': 'FINANCES_CHARGES', 'libelle': 'Dépenses & Charges'},
       {'code': 'FINANCES_CREANCES', 'libelle': 'Suivi des créances'},
+      {'code': 'COMMERCE_INTELLIGENCE', 'libelle': 'Intelligence commerciale'},
     ],
     tarifsDurees: [
-      TarifDureeItem(dureeMois: 1, montantTotal: 2500, remisePourcentage: 0),
-      TarifDureeItem(dureeMois: 3, montantTotal: 7500, remisePourcentage: 0),
-      TarifDureeItem(dureeMois: 6, montantTotal: 15000, remisePourcentage: 0),
-      TarifDureeItem(dureeMois: 12, montantTotal: 25000, remisePourcentage: 17, badgePromo: '2 mois offerts'),
+      TarifDureeItem(dureeMois: 1, montantTotal: 2000, remisePourcentage: 0),
+      TarifDureeItem(dureeMois: 3, montantTotal: 6000, remisePourcentage: 0),
+      TarifDureeItem(dureeMois: 6, montantTotal: 12000, remisePourcentage: 0),
+      TarifDureeItem(dureeMois: 12, montantTotal: 20000, remisePourcentage: 17, badgePromo: '2 mois offerts'),
     ],
   ),
   PlanCatalogueItem(
@@ -306,6 +307,7 @@ const List<PlanCatalogueItem> cataloguePlansParDefaut = [
       {'code': 'FINANCES_CREANCES', 'libelle': 'Créances & Dettes'},
       {'code': 'IMMOBILIER_LOYERS', 'libelle': 'Loyers & Quittances'},
       {'code': 'COMMUN_DOCUMENTS', 'libelle': 'Éditeur & Justificatifs PDF'},
+      {'code': 'COMMERCE_INTELLIGENCE', 'libelle': 'Intelligence commerciale'},
     ],
     tarifsDurees: [
       TarifDureeItem(dureeMois: 1, montantTotal: 5000, remisePourcentage: 0),

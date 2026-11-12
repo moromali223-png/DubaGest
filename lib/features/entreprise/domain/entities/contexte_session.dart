@@ -67,6 +67,19 @@ class ContexteSession {
   Role? get role => membre == null ? null : roles[membre!.roleCode];
 
   LimitesEngine limites([DateTime? now]) {
+    final modulesInclus = {
+      if (plan != null) ...plan!.modules,
+      ModuleCodes.commerceBenefice,
+      ModuleCodes.servicesPlanning,
+    };
+    // Règle d'accès stricte : Le module intelligent est interdit pour la formule 1 000 FCFA (NORMAL)
+    // et autorisé pour les formules MOYEN (2 000 FCFA) et PRO (5 000 FCFA).
+    if (plan != null && plan!.code.toUpperCase() != 'NORMAL') {
+      modulesInclus.add(ModuleCodes.commerceIntelligence);
+    } else {
+      modulesInclus.remove(ModuleCodes.commerceIntelligence);
+    }
+
     final effectivePlan = plan == null
         ? null
         : Plan(
@@ -75,12 +88,7 @@ class ContexteSession {
             maxActivites: plan!.maxActivites,
             activites: plan!.activites,
             quotasRoles: plan!.quotasRoles,
-            modules: {
-              ...plan!.modules,
-              ModuleCodes.commerceBenefice,
-              ModuleCodes.commerceIntelligence,
-              ModuleCodes.servicesPlanning,
-            },
+            modules: modulesInclus,
           );
     return LimitesEngine(
       plan: effectivePlan,

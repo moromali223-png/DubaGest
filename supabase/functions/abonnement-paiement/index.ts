@@ -423,7 +423,7 @@ serve(async (req) => {
         "initialiser_paiement_abonnement",
         {
           p_entreprise_id: entrepriseId,
-          p_plan_code: body.plan_code ?? "NORMAL",
+          p_plan_code: body.plan_code,
           p_duree_mois: 1,
           p_prestataire: "LIGDICASH",
           p_idempotency_key: body.idempotency_key ?? `TEST_10F_${Date.now()}`,
@@ -594,7 +594,7 @@ serve(async (req) => {
         "initialiser_paiement_abonnement",
         {
           p_entreprise_id: entrepriseId,
-          p_plan_code: body.plan_code ?? "NORMAL",
+          p_plan_code: body.plan_code,
           p_duree_mois: body.duree_mois ?? 1,
           p_prestataire: body.prestataire ?? "LIGDICASH",
           p_idempotency_key: body.idempotency_key ?? `DIRECT_${Date.now()}`,
@@ -613,7 +613,7 @@ serve(async (req) => {
 
       const tx = initData?.transaction;
       const refInterne = tx?.reference_interne as string;
-      const montant = Number(tx?.montant ?? (montantTest ?? 1000));
+      const montant = Number(tx?.montant ?? (montantTest ?? 0));
       const callbackUrl = `${supabaseUrl}/functions/v1/abonnement-paiement/webhook/ligdicash`;
 
       if (ligdiCashConfigured) {

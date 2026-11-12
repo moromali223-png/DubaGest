@@ -124,7 +124,11 @@ class HomePage extends ConsumerWidget {
         if (!context.mounted) return;
         if (!ref.read(modalAbonnementAfficheProvider)) {
           ref.read(modalAbonnementAfficheProvider.notifier).marquerAffiche();
-          ReactivezCompteBottomSheet.show(context, startAtStep: 1);
+          ReactivezCompteBottomSheet.show(
+            context,
+            startAtStep: 1,
+            initialPlanCode: ctx.abonnement?.planCode,
+          );
         }
       });
     }
@@ -371,7 +375,11 @@ class HomePage extends ConsumerWidget {
         tone: _AlerteTone.danger,
         titre: l10n.ruleSubscriptionInactive,
         sousTitre: 'Vos données restent sécurisées. Cliquez pour renouveler votre formule.',
-        onTap: () => ReactivezCompteBottomSheet.show(context, startAtStep: 1),
+        onTap: () => ReactivezCompteBottomSheet.show(
+          context,
+          startAtStep: 1,
+          initialPlanCode: abonnement?.planCode,
+        ),
       ));
     } else if (abonnement != null && abonnement.statut == AbonnementStatut.essai && abonnement.dateFin != null) {
       final jours = abonnement.dateFin!.difference(DateTime.now()).inHours ~/ 24;
@@ -380,7 +388,11 @@ class HomePage extends ConsumerWidget {
         tone: jours <= 3 ? _AlerteTone.warning : _AlerteTone.info,
         titre: l10n.homeTrialDaysLeft(jours < 0 ? 0 : jours),
         sousTitre: 'Essai gratuit de 10 jours. Cliquez pour souscrire.',
-        onTap: () => ReactivezCompteBottomSheet.show(context, startAtStep: 2),
+        onTap: () => ReactivezCompteBottomSheet.show(
+          context,
+          startAtStep: 2,
+          initialPlanCode: abonnement?.planCode,
+        ),
       ));
     }
 

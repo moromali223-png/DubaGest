@@ -86,8 +86,12 @@ class PaiementAbonnementState {
 class PaiementAbonnementNotifier extends Notifier<PaiementAbonnementState> {
   @override
   PaiementAbonnementState build() {
-    Future.microtask(() => init());
-    return const PaiementAbonnementState();
+    final ctx = ref.watch(contexteActifProvider);
+    final planActuel = ctx?.abonnement?.planCode;
+    final initialPlan = (planActuel != null && planActuel.isNotEmpty) ? planActuel : 'NORMAL';
+
+    Future.microtask(() => init(initialPlanCode: initialPlan));
+    return PaiementAbonnementState(planCodeSelectionne: initialPlan);
   }
 
   PaiementAbonnementRemoteDataSource get _dataSource => ref.read(paiementRemoteDataSourceProvider);
@@ -97,9 +101,13 @@ class PaiementAbonnementNotifier extends Notifier<PaiementAbonnementState> {
   }
 
   Future<void> init({String? initialPlanCode}) async {
-    if (initialPlanCode != null && initialPlanCode.isNotEmpty) {
-      state = state.copyWith(planCodeSelectionne: initialPlanCode);
-    }
+    final ctx = ref.read(contexteActifProvider);
+    final planActuel = ctx?.abonnement?.planCode;
+    final planCible = (initialPlanCode != null && initialPlanCode.isNotEmpty)
+        ? initialPlanCode
+        : ((planActuel != null && planActuel.isNotEmpty) ? planActuel : state.planCodeSelectionne);
+
+    state = state.copyWith(planCodeSelectionne: planCible);
     await verifierDisponibilites();
     await chargerDetailsReglement(state.planCodeSelectionne);
     await chargerHistorique();

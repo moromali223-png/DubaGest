@@ -20,16 +20,34 @@ class AccessDeniedPage extends ConsumerWidget {
     final decision = moduleCode == null ? null : ref.watch(moduleAccessProvider(moduleCode!));
     final reason = decision is AccessDenied ? l10n.decision(decision) : l10n.rulePermissionDenied;
 
+    final isNotInPlan = decision is AccessDenied && decision.ruleCode == RuleCodes.moduleNotInPlan;
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.accessDeniedTitle)),
       body: MessageView(
         icon: Icons.lock_outline,
         title: l10n.accessDeniedTitle,
         message: reason,
-        action: FilledButton.tonal(
-          onPressed: () => context.go(Routes.home),
-          child: Text(l10n.accessDeniedBackHome),
-        ),
+        action: isNotInPlan
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FilledButton.icon(
+                    icon: const Icon(Icons.arrow_upward_rounded),
+                    label: const Text('Passer à la formule Moyen ou Pro'),
+                    onPressed: () => context.push(Routes.choixFormule),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () => context.go(Routes.home),
+                    child: Text(l10n.accessDeniedBackHome),
+                  ),
+                ],
+              )
+            : FilledButton.tonal(
+                onPressed: () => context.go(Routes.home),
+                child: Text(l10n.accessDeniedBackHome),
+              ),
       ),
     );
   }

@@ -98,7 +98,9 @@ class _ReactivezCompteBottomSheetState extends ConsumerState<ReactivezCompteBott
     _selectedDurationMonths = 1; // 1 mois par défaut (en 1ère position)
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final code = widget.initialPlanCode;
+      final code = widget.initialPlanCode ??
+          ref.read(contexteSessionProvider).value?.abonnement?.planCode ??
+          ref.read(contexteActifProvider)?.abonnement?.planCode;
       if (code != null && code.isNotEmpty) {
         ref.read(paiementAbonnementNotifierProvider.notifier).changerPlan(code);
       }
