@@ -61,27 +61,62 @@ class ChartEvolutionBenefice extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Évolution de la Rentabilité',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A2522),
-                ),
-              ),
-              Row(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 420;
+              if (isCompact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Évolution de la Rentabilité',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1A2522),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        _IndicateurLegende(couleur: const Color(0xFF1E7E4E), label: 'Bénéfice'),
+                        _IndicateurLegende(couleur: const Color(0xFF0D9488), label: 'Marge'),
+                        _IndicateurLegende(couleur: const Color(0xFF94A3B8), label: 'CA Net'),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _IndicateurLegende(couleur: const Color(0xFF1E7E4E), label: 'Bénéfice'),
+                  const Expanded(
+                    child: Text(
+                      'Évolution de la Rentabilité',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1A2522),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  _IndicateurLegende(couleur: const Color(0xFF0D9488), label: 'Marge'),
-                  const SizedBox(width: 8),
-                  _IndicateurLegende(couleur: const Color(0xFF94A3B8), label: 'CA Net'),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _IndicateurLegende(couleur: const Color(0xFF1E7E4E), label: 'Bénéfice'),
+                      const SizedBox(width: 8),
+                      _IndicateurLegende(couleur: const Color(0xFF0D9488), label: 'Marge'),
+                      const SizedBox(width: 8),
+                      _IndicateurLegende(couleur: const Color(0xFF94A3B8), label: 'CA Net'),
+                    ],
+                  ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
           const SizedBox(height: 16),
           SizedBox(

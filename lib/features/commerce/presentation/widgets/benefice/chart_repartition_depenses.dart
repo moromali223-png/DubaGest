@@ -61,14 +61,19 @@ class ChartRepartitionDepenses extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Répartition des Dépenses',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A2522),
+              const Expanded(
+                child: Text(
+                  'Répartition des Dépenses',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1A2522),
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 'Total : ${_formatMontant(totalDepenses)}',
                 style: const TextStyle(

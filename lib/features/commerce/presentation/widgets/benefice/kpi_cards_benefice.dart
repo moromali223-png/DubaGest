@@ -131,14 +131,19 @@ class KpiCardsBenefice extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Taux de rentabilité nette : ${kpi.tauxBeneficeNet.toStringAsFixed(1)}%',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        'Taux de rentabilité nette : ${kpi.tauxBeneficeNet.toStringAsFixed(1)}%',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
