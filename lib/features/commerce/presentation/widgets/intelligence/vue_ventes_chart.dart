@@ -71,36 +71,73 @@ class VueVentesChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 450;
+              if (isCompact) {
+                return const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Évolution des ventes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF01226C),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Comparaison avec la période précédente',
+                      style: TextStyle(fontSize: 12, color: AppColors.muted),
+                    ),
+                    SizedBox(height: 10),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
+                      children: [
+                        _LegendePill(couleur: Color(0xFF01226C), label: 'Période en cours'),
+                        _LegendePill(couleur: Color(0xFFDF9540), label: 'Précédente', dashed: true),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Évolution des ventes',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF01226C),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Évolution des ventes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF01226C),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Comparaison avec la période précédente',
+                          style: TextStyle(fontSize: 12, color: AppColors.muted),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Comparaison avec la période précédente',
-                    style: TextStyle(fontSize: 12, color: AppColors.muted),
+                  SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _LegendePill(couleur: Color(0xFF01226C), label: 'Période en cours'),
+                      SizedBox(width: 8),
+                      _LegendePill(couleur: Color(0xFFDF9540), label: 'Précédente', dashed: true),
+                    ],
                   ),
                 ],
-              ),
-              // Légende interactive
-              Row(
-                children: [
-                  _LegendePill(couleur: const Color(0xFF01226C), label: 'Période en cours'),
-                  const SizedBox(width: 8),
-                  _LegendePill(couleur: const Color(0xFFDF9540), label: 'Précédente', dashed: true),
-                ],
-              ),
-            ],
+              );
+            },
           ),
           const SizedBox(height: 20),
           SizedBox(

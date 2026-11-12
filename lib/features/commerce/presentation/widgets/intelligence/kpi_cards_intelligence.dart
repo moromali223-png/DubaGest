@@ -103,14 +103,19 @@ class _KpiCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                titre,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.muted,
+              Expanded(
+                child: Text(
+                  titre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.muted,
+                  ),
                 ),
               ),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
@@ -186,14 +191,19 @@ class _KpiMargeCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Marge brute',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.muted,
+              const Expanded(
+                child: Text(
+                  'Marge brute',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.muted,
+                  ),
                 ),
               ),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
@@ -223,9 +233,13 @@ class _KpiMargeCard extends StatelessWidget {
                 else
                   const Text('Estimée', style: TextStyle(fontSize: 11, color: Color(0xFF1E7E4E), fontWeight: FontWeight.w700)),
                 const Spacer(),
-                Text(
-                  '${resume.pourcentageProduitsAvecMarge.toInt()}% couverts',
-                  style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                Flexible(
+                  child: Text(
+                    '${resume.pourcentageProduitsAvecMarge.toInt()}% couverts',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                  ),
                 ),
               ],
             ),
@@ -304,14 +318,19 @@ class _KpiTopProduitCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Top Produit',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.muted,
+              const Expanded(
+                child: Text(
+                  'Top Produit',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.muted,
+                  ),
                 ),
               ),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
