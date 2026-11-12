@@ -12,3 +12,7 @@
 /js/*
   Cache-Control: public, max-age=86400, must-revalidate
 
+/version.json
+  Cache-Control: no-cache, no-store, must-revalidate
+  Access-Control-Allow-Origin: *
+

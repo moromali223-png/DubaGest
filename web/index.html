@@ -59,6 +59,53 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <script>
+    // Détection professionnelle du Service Worker pour les PWA (iPhone iOS & Android Web)
+    window.dubagestPwaUpdateAvailable = false;
+    window.dubagestWaitingWorker = null;
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(function(registration) {
+        if (registration.waiting) {
+          window.dubagestPwaUpdateAvailable = true;
+          window.dubagestWaitingWorker = registration.waiting;
+          window.dispatchEvent(new CustomEvent('dubagest_pwa_update_ready'));
+        }
+
+        registration.addEventListener('updatefound', function() {
+          var newWorker = registration.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', function() {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              window.dubagestPwaUpdateAvailable = true;
+              window.dubagestWaitingWorker = newWorker;
+              window.dispatchEvent(new CustomEvent('dubagest_pwa_update_ready'));
+            }
+          });
+        });
+      });
+
+      var refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    }
+
+    window.dubagestApplyPwaUpdate = function() {
+      if (window.dubagestWaitingWorker) {
+        try {
+          window.dubagestWaitingWorker.postMessage({ type: 'SKIP_WAITING' });
+        } catch (_) {}
+      }
+      setTimeout(function() {
+        window.location.reload();
+      }, 250);
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

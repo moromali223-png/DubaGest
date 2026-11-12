@@ -23,6 +23,7 @@ abstract final class Routes {
   static const declassementAbonnement = '/admin/abonnement/declassement';
   static const finances = '/finances';
   static const settings = '/settings';
+  static const about = '/about';
   static const changePassword = '/settings/password';
   static const parametresPaiements = '/settings/paiements';
   static const accessDenied = '/access-denied';

@@ -40,6 +40,20 @@ import '../../../commerce/presentation/widgets/workspace_superviseur_accueil.dar
 import '../../../commerce/presentation/widgets/workspace_vendeur_accueil.dart';
 import '../../../immobilier/domain/entities/dashboard_immobilier.dart';
 import '../../../immobilier/presentation/providers/immobilier_providers.dart';
+import '../../../../core/updater/presentation/providers/updater_providers.dart';
+import '../../../../core/updater/presentation/widgets/dialog_mise_a_jour.dart';
+import '../../../../core/updater/presentation/widgets/pwa_update_banner.dart';
+
+/// Mémorise si la modal de mise à jour a déjà été présentée à l'ouverture.
+class ModalMiseAJourAfficheeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void marquerAffiche() => state = true;
+}
+
+final modalMiseAJourAfficheeProvider =
+    NotifierProvider<ModalMiseAJourAfficheeNotifier, bool>(ModalMiseAJourAfficheeNotifier.new);
 
 /// Mémorise si la modal de réactivation a déjà été présentée à l'ouverture.
 class ModalAbonnementAfficheNotifier extends Notifier<bool> {
@@ -133,17 +147,44 @@ class HomePage extends ConsumerWidget {
       });
     }
 
+    // 3. Détection automatique des mises à jour (Android APK & PWA)
+    final updateState = ref.watch(updaterNotifierProvider);
+    final updaterNotifier = ref.read(updaterNotifierProvider.notifier);
+
+    if (updateState.status == UpdaterStatus.idle) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        updaterNotifier.verifierMiseAJour();
+      });
+    }
+
+    if (updateState.status == UpdaterStatus.updateAvailable && !ref.watch(modalMiseAJourAfficheeProvider)) {
+      final info = updateState.versionInfo;
+      if (info != null && !info.isPwa) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          if (!ref.read(modalMiseAJourAfficheeProvider)) {
+            ref.read(modalMiseAJourAfficheeProvider.notifier).marquerAffiche();
+            DialogMiseAJour.show(context);
+          }
+        });
+      }
+    }
+
     return Scaffold(
       drawer: const AppMenuDrawer(),
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () => ref.read(contexteSessionProvider.notifier).rafraichir(),
-          child: ResponsiveBody(
-            maxWidth: 960,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-              children: [
+        child: Column(
+          children: [
+            const PwaUpdateBanner(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(contexteSessionProvider.notifier).rafraichir(),
+                child: ResponsiveBody(
+                  maxWidth: 960,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+                    children: [
                 // 1. Header de l'Accueil (Organisation claire et professionnelle)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -319,7 +360,10 @@ class HomePage extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ],
+  ),
+),
+);
   }
 
   /// Ordre de priorité des activités à l'accueil : Commerce, puis Services, puis Immobilier.

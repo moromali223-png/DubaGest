@@ -148,6 +148,12 @@ class AppMenuDrawer extends ConsumerWidget {
               onTap: () => aller(Routes.settings),
             ),
             _Ligne(icon: Icons.translate, label: l10n.languageLabel, onTap: () => aller(Routes.settings)),
+            _Ligne(
+              key: const Key('menu-a-propos'),
+              icon: Icons.system_update_rounded,
+              label: 'Mises à jour & À propos',
+              onTap: () => aller(Routes.about),
+            ),
 
             const SizedBox(height: AppSpacing.md),
             OutlinedButton.icon(

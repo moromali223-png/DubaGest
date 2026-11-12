@@ -42,6 +42,7 @@ import '../../features/entreprise/presentation/pages/splash_page.dart';
 import '../../features/entreprise/presentation/providers/contexte_providers.dart';
 import '../../features/modules/domain/entities/app_module.dart';
 import '../../features/navigation/presentation/pages/access_denied_page.dart';
+import '../../features/navigation/presentation/pages/a_propos_page.dart';
 import '../../features/navigation/domain/entities/navigation_model.dart';
 import '../../features/navigation/presentation/pages/administration_page.dart';
 import '../../features/finances/domain/entities/finances.dart';
@@ -791,6 +792,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, _) => const FinanceRapportPage(),
               ),
             ],
+          ),
+          GoRoute(
+            path: Routes.about,
+            builder: (_, _) => const AProposPage(),
           ),
           GoRoute(
             path: Routes.settings,

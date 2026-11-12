@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "updated_at": "2026-11-12T14:30:00Z",
+  "android": {
+    "latest_version": "1.0.0",
+    "version_code": 1,
+    "minimum_supported_version": "1.0.0",
+    "minimum_supported_code": 1,
+    "apk_url": "https://dubagest.com/downloads/DubaGest-Android.apk",
+    "sha256": "7f81383fc5a9c26abc5ad84aa56e35bdd0a9ae42e5322c630197a21b11e44f3e",
+    "file_size": 40397374,
+    "force_update": false,
+    "release_date": "2026-11-12",
+    "release_notes": [
+      "Verrouillage strict des formules d'abonnement et facturation officielle",
+      "Correction des débordements d'affichage sur smartphone",
+      "Système de mise à jour automatique sans désinstallation"
+    ]
+  },
+  "pwa": {
+    "latest_version": "1.0.0",
+    "minimum_supported_version": "1.0.0",
+    "force_update": false,
+    "release_date": "2026-11-12",
+    "release_notes": [
+      "Amélioration des performances et de la fluidité",
+      "Actualisation automatique sans perte de données"
+    ]
+  }
+}
+
