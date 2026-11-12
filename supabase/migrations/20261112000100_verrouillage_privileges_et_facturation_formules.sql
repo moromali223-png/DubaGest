@@ -247,3 +247,4 @@ $$;
 
 revoke all on function public.initialiser_paiement_abonnement from public, anon;
 grant execute on function public.initialiser_paiement_abonnement to authenticated, service_role;
+

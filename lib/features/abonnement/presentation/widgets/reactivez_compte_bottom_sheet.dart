@@ -212,10 +212,6 @@ class _ReactivezCompteBottomSheetState extends ConsumerState<ReactivezCompteBott
                           _ => _buildStep1Intro(planActif!),
                         },
                       ),
-
-                      // Module de test Sandbox (accessible pour tester le règlement sans attendre 10 jours)
-                      const SizedBox(height: 20),
-                      _buildBanniereSandbox(paiementNotifier, abonnement?.statut?.name),
                     ],
                   ),
                 ),
@@ -1136,126 +1132,6 @@ class _ReactivezCompteBottomSheetState extends ConsumerState<ReactivezCompteBott
   void _seDeconnecter() async {
     if (mounted) Navigator.of(context, rootNavigator: true).pop();
     await ref.read(signOutProvider).call();
-  }
-
-  Widget _buildBanniereSandbox(PaiementAbonnementNotifier notifier, Object? statutAbo) {
-    final statutTexte = statutAbo is Enum ? statutAbo.name : (statutAbo?.toString() ?? 'Inconnu');
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.science_outlined, color: Colors.amber, size: 18),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Sandbox LigdiCash (Test)',
-                  style: TextStyle(
-                    color: Colors.amber,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Statut: $statutTexte',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Permet de contourner les 10 jours d\'essai pour tester le règlement LigdiCash immédiatement (réservé aux tests).',
-            style: TextStyle(color: _textMuted, fontSize: 11),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  key: const Key('btn-test-fin-essai'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.amber,
-                    side: BorderSide(color: Colors.amber.withValues(alpha: 0.6)),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: () async {
-                    final ok = await notifier.contournerEssaiPourTest('ACCELERER_FIN_ESSAI');
-                    if (ok && mounted) {
-                      setState(() => _currentStep = 2);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Test Sandbox : Fin des 10 jours simulée. Vous pouvez tester le règlement.'),
-                          backgroundColor: Colors.amber,
-                        ),
-                      );
-                    }
-                  },
-                  child: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('Simuler fin 10j', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  key: const Key('btn-test-reset-essai'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _primaryGreenLight,
-                    side: BorderSide(color: _primaryGreenLight.withValues(alpha: 0.5)),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: () async {
-                    final ok = await notifier.contournerEssaiPourTest('REINITIALISER_ESSAI');
-                    if (ok && mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Test Sandbox : Période d\'essai de 10 jours réinitialisée.'),
-                          backgroundColor: _primaryGreen,
-                        ),
-                      );
-                    }
-                  },
-                  child: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('Réinitialiser essai', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildLoadingContainer() {
