@@ -18,7 +18,7 @@ class UpdateRemoteDataSource {
   /// Récupère la version installée sur l'appareil (via canal natif sous Android)
   Future<({String versionName, int versionCode})> getInstalledVersion() async {
     if (kIsWeb) {
-      return (versionName: '1.0.0', versionCode: 1);
+      return (versionName: '1.0.1', versionCode: 2);
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {

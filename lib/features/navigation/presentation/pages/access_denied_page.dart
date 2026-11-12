@@ -35,7 +35,7 @@ class AccessDeniedPage extends ConsumerWidget {
                   FilledButton.icon(
                     icon: const Icon(Icons.arrow_upward_rounded),
                     label: const Text('Passer à la formule Moyen ou Pro'),
-                    onPressed: () => context.push(Routes.choixFormule),
+                    onPressed: () => context.push(Routes.choixFormuleAbonnement),
                   ),
                   const SizedBox(height: 10),
                   TextButton(

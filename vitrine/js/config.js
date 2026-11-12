@@ -25,9 +25,9 @@ window.DUBAGEST_CONFIG = {
     // URL directe du fichier APK officiel servi depuis la vitrine
     apkUrl: '/downloads/DubaGest-Android.apk', 
     nomFichier: 'DubaGest-Android.apk',
-    version: '1.0.0',
-    taille: '39 Mo',
-    datePublication: 'Octobre 2026',
+    version: '1.0.1',
+    taille: '51.3 Mo',
+    datePublication: 'Novembre 2026',
     estDisponible: true,
     // Google Play Store (mettre l'URL dès publication)
     playStoreUrl: null // ex: 'https://play.google.com/store/apps/details?id=io.dubagest'

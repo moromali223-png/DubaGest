@@ -67,11 +67,6 @@ class ApkDownloadService {
     }
 
     final sink = apkFile.openWrite();
-    final sha256Sink = sha256.startChunkedConversion(
-      ChunkedConversionSink<Digest>.withCallback((digests) {
-        // Callback finalisé à la fermeture
-      }),
-    );
 
     int receivedBytes = 0;
     final completer = Completer<void>();
@@ -80,7 +75,6 @@ class ApkDownloadService {
       (chunk) {
         receivedBytes += chunk.length;
         sink.add(chunk);
-        sha256Sink.add(chunk);
 
         final progress = totalBytes > 0 ? (receivedBytes / totalBytes).clamp(0.0, 1.0) : 0.0;
         onProgress(progress, receivedBytes, totalBytes);
@@ -100,7 +94,6 @@ class ApkDownloadService {
       await subscription.cancel();
       await sink.flush();
       await sink.close();
-      sha256Sink.close();
     }
 
     // 1. Vérification de la taille

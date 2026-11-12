@@ -40,7 +40,7 @@ Write-Host "  -> Version positionnée à : $Version+$Build" -ForegroundColor Dar
 
 # 2. Compilation de l'APK signé
 Write-Host "`n[2/5] Compilation de l'APK de production officiel..." -ForegroundColor Cyan
-flutter build apk --release
+flutter build apk --release --target-platform android-arm64
 $apkSource = "build\app\outputs\flutter-apk\app-release.apk"
 if (-not (Test-Path $apkSource)) {
     throw "Erreur: le fichier $apkSource est introuvable après compilation."
@@ -102,3 +102,4 @@ Write-Host "  git add ." -ForegroundColor White
 Write-Host "  git commit -m `"release: publication de la version $Version+$Build`"" -ForegroundColor White
 Write-Host "  git push origin feature/vitrine-portail-pwa" -ForegroundColor White
 Write-Host "==========================================================" -ForegroundColor Green
+
