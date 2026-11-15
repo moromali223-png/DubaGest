@@ -289,27 +289,34 @@ class _SuperAdminEntreprisesPageState extends ConsumerState<SuperAdminEntreprise
                                   ],
                                 ),
                                 const Divider(height: 20),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    TextButton.icon(
-                                      onPressed: () => DonnerAccesSponsoriseDialog.show(
-                                        context,
-                                        entrepriseId: e.id,
-                                        entrepriseNom: e.nom,
-                                        planActuel: e.planCode,
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: Wrap(
+                                    alignment: WrapAlignment.end,
+                                    spacing: 8,
+                                    runSpacing: 6,
+                                    children: [
+                                      TextButton.icon(
+                                        onPressed: () => DonnerAccesSponsoriseDialog.show(
+                                          context,
+                                          entrepriseId: e.id,
+                                          entrepriseNom: e.nom,
+                                          planActuel: e.planCode,
+                                        ),
+                                        icon: const Icon(Icons.verified_user_rounded, size: 16),
+                                        label: const Text(
+                                          'Activer / Changer abonnement',
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        style: TextButton.styleFrom(foregroundColor: const Color(0xFF7C3AED)),
                                       ),
-                                      icon: const Icon(Icons.stars_rounded, size: 16),
-                                      label: const Text('Accès sponsorisé', style: TextStyle(fontWeight: FontWeight.bold)),
-                                      style: TextButton.styleFrom(foregroundColor: const Color(0xFF7C3AED)),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    OutlinedButton.icon(
-                                      onPressed: () => context.go(Routes.superAdminEntreprise(e.id)),
-                                      icon: const Icon(Icons.visibility_outlined, size: 16),
-                                      label: const Text('Inspecter'),
-                                    ),
-                                  ],
+                                      OutlinedButton.icon(
+                                        onPressed: () => context.go(Routes.superAdminEntreprise(e.id)),
+                                        icon: const Icon(Icons.visibility_outlined, size: 16),
+                                        label: const Text('Inspecter'),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),

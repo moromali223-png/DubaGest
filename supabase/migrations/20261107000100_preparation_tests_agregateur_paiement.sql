@@ -40,6 +40,7 @@ create index if not exists idx_journal_webhooks_ref
 alter table public.journal_webhooks_paiement enable row level security;
 
 -- Lecture autorisée uniquement aux super administrateurs pour analyse technique
+drop policy if exists journal_webhooks_lecture on public.journal_webhooks_paiement;
 create policy journal_webhooks_lecture on public.journal_webhooks_paiement
   for select to authenticated
   using (app.est_super_admin());

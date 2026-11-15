@@ -85,6 +85,9 @@ class DriftSyncQueueStore implements SyncQueueStore {
 
   @override
   Future<List<SyncOperation>> due(String userId, DateTime now, {bool force = false}) async {
+    if (force) {
+      await _recoverDeferredSchemaOps(userId);
+    }
     final rows = await (_db.select(_db.syncQueue)
           ..where((q) =>
               q.userId.equals(userId) &
@@ -147,10 +150,36 @@ class DriftSyncQueueStore implements SyncQueueStore {
           .write(SyncQueueCompanion(baseVersion: Value(newVersion)));
 
   @override
-  Future<void> recoverInterrupted(String userId) =>
-      (_db.update(_db.syncQueue)
-            ..where((q) => q.userId.equals(userId) & q.status.equals(SyncOpStatus.syncing.name)))
-          .write(SyncQueueCompanion(status: Value(SyncOpStatus.pending.name)));
+  Future<void> recoverInterrupted(String userId) async {
+    await (_db.update(_db.syncQueue)
+          ..where((q) => q.userId.equals(userId) & q.status.equals(SyncOpStatus.syncing.name)))
+        .write(SyncQueueCompanion(status: Value(SyncOpStatus.pending.name)));
+    await _recoverDeferredSchemaOps(userId);
+  }
+
+  /// Réactive les opérations qui étaient temporairement bloquées par l'absence d'une table
+  /// ou d'une colonne distante (ex: avant application d'une migration serveur).
+  Future<void> _recoverDeferredSchemaOps(String userId) async {
+    final query = _db.select(_db.syncQueue)
+      ..where((q) =>
+          q.userId.equals(userId) &
+          (q.status.equals(SyncOpStatus.failed.name) | q.status.equals(SyncOpStatus.rejected.name)) &
+          (q.lastError.like('%PGRST205%') |
+              q.lastError.like('%schema cache%') |
+              q.lastError.like('%SYNC_TABLE_INCONNUE%') |
+              q.lastError.like('%Table distante en attente%')));
+    final deferred = await query.get();
+    for (final op in deferred) {
+      await (_db.update(_db.syncQueue)..where((q) => q.id.equals(op.id))).write(
+        const SyncQueueCompanion(
+          status: Value('pending'),
+          attempts: Value(0),
+          nextAttemptAt: Value(null),
+          lastError: Value(null),
+        ),
+      );
+    }
+  }
 
   @override
   Stream<int> watchPendingCount(String userId) => _pendingCountQuery(userId).watchSingle();

@@ -85,6 +85,10 @@ import '../../features/commerce/presentation/pages/vente_page.dart';
 import '../../features/commerce/presentation/pages/ventes_page.dart';
 import '../../features/commerce/presentation/pages/intelligence_commerciale_page.dart';
 import '../../features/commerce/presentation/pages/benefice_commerce_page.dart';
+import '../../features/microfinance/presentation/pages/borrower_detail_page.dart';
+import '../../features/microfinance/presentation/pages/loan_detail_page.dart';
+import '../../features/microfinance/presentation/pages/loan_form_wizard_page.dart';
+import '../../features/microfinance/presentation/pages/microfinance_shell_page.dart';
 import '../../features/utilisateurs/presentation/pages/utilisateurs_page.dart';
 import '../../features/services/presentation/pages/services_accueil_page.dart';
 import '../../features/services/presentation/pages/prestations_page.dart';
@@ -544,6 +548,29 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: Routes.commerceBenefice,
             redirect: (_, _) => guardModule(ModuleCodes.commerceVentes),
             builder: (_, _) => const BeneficeCommercePage(),
+          ),
+          GoRoute(
+            path: Routes.commerceMicrofinance,
+            redirect: (_, _) => guardModule(ModuleCodes.commerceMicrofinance),
+            builder: (_, _) => const MicrofinanceShellPage(),
+            routes: [
+              GoRoute(
+                path: 'prets/new',
+                builder: (_, state) => LoanFormWizardPage(
+                  initialBorrowerId: state.uri.queryParameters['borrowerId'],
+                ),
+              ),
+              GoRoute(
+                path: 'prets/:id',
+                builder: (_, state) => LoanDetailPage(loanId: state.pathParameters['id']!),
+              ),
+              GoRoute(
+                path: 'emprunteurs/:id',
+                builder: (_, state) => BorrowerDetailPage(
+                  borrowerId: state.pathParameters['id']!,
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: Routes.servicesAccueil,

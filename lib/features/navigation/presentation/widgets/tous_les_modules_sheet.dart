@@ -64,6 +64,14 @@ class _TousLesModulesSheetState extends ConsumerState<TousLesModulesSheet> {
             ordre: 16,
           ));
         }
+        if (!liste.any((m) => m.code == ModuleCodes.commerceMicrofinance)) {
+          liste.add(const AppModule(
+            code: ModuleCodes.commerceMicrofinance,
+            activite: ActiviteCode.commerce,
+            permissionAcces: 'sales.view',
+            ordre: 17,
+          ));
+        }
         return liste;
       }
 

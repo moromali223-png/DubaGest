@@ -1,31 +1,31 @@
-{
-  "version": 1,
-  "updated_at": "2026-11-12T16:25:00Z",
-  "android": {
-    "latest_version": "1.0.1",
-    "version_code": 2,
-    "minimum_supported_version": "1.0.0",
-    "minimum_supported_code": 1,
-    "apk_url": "https://dubagest.com/downloads/DubaGest-Android.apk",
-    "sha256": "0d74aedef7b2a26fa053fab13f0f794b79925e3f8efc7c13be1c64e7e727613f",
-    "file_size": 53786527,
-    "force_update": false,
-    "release_date": "2026-11-12",
-    "release_notes": [
-      "Verrouillage strict des formules d'abonnement et facturation officielle",
-      "Correction des débordements d'affichage sur smartphone",
-      "Système de mise à jour automatique sans désinstallation"
-    ]
-  },
-  "pwa": {
-    "latest_version": "1.0.1",
-    "minimum_supported_version": "1.0.0",
-    "force_update": false,
-    "release_date": "2026-11-12",
-    "release_notes": [
-      "Amélioration des performances et de la fluidité",
-      "Actualisation automatique sans perte de données"
-    ]
-  }
+﻿{
+    "version":  1,
+    "updated_at":  "2026-11-15T00:12:17Z",
+    "android":  {
+                    "latest_version":  "1.0.2",
+                    "version_code":  3,
+                    "minimum_supported_version":  "1.0.0",
+                    "minimum_supported_code":  1,
+                    "apk_url":  "https://dubagest.com/downloads/DubaGest-Android.apk",
+                    "sha256":  "fd694f2faddbc1a18c7d65ddba9bf3cb0247cdd0bf028c78d7fbad4da3785a9f",
+                    "file_size":  54180475,
+                    "force_update":  false,
+                    "release_date":  "2026-11-15",
+                    "release_notes":  [
+                                          "Microfinance Pro",
+                                          "Activation Super Admin",
+                                          "Correctif synchronisation"
+                                      ]
+                },
+    "pwa":  {
+                "latest_version":  "1.0.2",
+                "minimum_supported_version":  "1.0.0",
+                "force_update":  false,
+                "release_date":  "2026-11-15",
+                "release_notes":  [
+                                      "Microfinance Pro",
+                                      "Activation Super Admin",
+                                      "Correctif synchronisation"
+                                  ]
+            }
 }
-

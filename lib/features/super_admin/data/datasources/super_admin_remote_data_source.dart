@@ -84,15 +84,34 @@ class SuperAdminRemoteDataSource {
     required String entrepriseId,
     required String planCode,
     required String motif,
+    int? dureeMois,
+    String typeFacturation = 'SPONSORISE',
   }) async {
-    await _client.rpc(
-      'admin_accorder_acces_sponsorise',
-      params: {
-        'p_entreprise_id': entrepriseId,
-        'p_plan_code': planCode,
-        'p_motif': motif,
-      },
-    );
+    try {
+      await _client.rpc(
+        'admin_activer_abonnement',
+        params: {
+          'p_entreprise_id': entrepriseId,
+          'p_plan_code': planCode,
+          'p_duree_mois': dureeMois,
+          'p_type_facturation': typeFacturation,
+          'p_motif': motif,
+        },
+      );
+    } on PostgrestException catch (e) {
+      final isMissingRpc = e.code == 'PGRST202' ||
+          e.code == '42883' ||
+          e.message.contains('admin_activer_abonnement');
+      if (!isMissingRpc) rethrow;
+      await _client.rpc(
+        'admin_accorder_acces_sponsorise',
+        params: {
+          'p_entreprise_id': entrepriseId,
+          'p_plan_code': planCode,
+          'p_motif': motif,
+        },
+      );
+    }
   }
 
   Future<void> revoquerAccesSponsorise({

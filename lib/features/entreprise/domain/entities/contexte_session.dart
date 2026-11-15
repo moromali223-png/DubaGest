@@ -80,6 +80,15 @@ class ContexteSession {
       modulesInclus.remove(ModuleCodes.commerceIntelligence);
     }
 
+    // Règle obligatoire d'accès Microfinance :
+    // Exclusivement réservé à la formule PRO (5 000 FCFA) avec abonnement actif.
+    // Interdit pour FAIBLE / NORMAL (1 000 FCFA) et MOYEN (2 000 FCFA).
+    if (plan != null && plan!.code.toUpperCase() == 'PRO') {
+      modulesInclus.add(ModuleCodes.commerceMicrofinance);
+    } else {
+      modulesInclus.remove(ModuleCodes.commerceMicrofinance);
+    }
+
     final effectivePlan = plan == null
         ? null
         : Plan(
@@ -131,6 +140,14 @@ class ContexteSession {
           activite: ActiviteCode.commerce,
           permissionAcces: PermissionCodes.salesView,
           ordre: 16,
+        ));
+      }
+      if (!cat.any((m) => m.code == ModuleCodes.commerceMicrofinance)) {
+        cat.add(const AppModule(
+          code: ModuleCodes.commerceMicrofinance,
+          activite: ActiviteCode.commerce,
+          permissionAcces: PermissionCodes.salesView,
+          ordre: 17,
         ));
       }
     }

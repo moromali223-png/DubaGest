@@ -40,8 +40,31 @@ class DonnerAccesSponsoriseDialog extends ConsumerStatefulWidget {
 class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsoriseDialog> {
   final _formKey = GlobalKey<FormState>();
   final _motifCtrl = TextEditingController();
-  String _planSelectionne = 'MOYEN';
+  String _planSelectionne = 'PRO';
+  int? _dureeMois = 1;
+  String _typeFacturation = 'COMMERCIAL';
   bool _enCours = false;
+
+  static const _plans = [
+    {'code': 'NORMAL', 'nom': 'Normal (1 000 F)', 'prix': 1000, 'color': Color(0xFF2563EB)},
+    {'code': 'MOYEN', 'nom': 'Moyen (2 000 F)', 'prix': 2000, 'color': Color(0xFF7C3AED)},
+    {'code': 'PRO', 'nom': 'Pro (5 000 F • Microfinance)', 'prix': 5000, 'color': Color(0xFFEA580C)},
+  ];
+
+  static const _durees = <(int?, String)>[
+    (1, '1 mois'),
+    (3, '3 mois'),
+    (6, '6 mois'),
+    (12, '12 mois (1 an)'),
+    (null, 'Illimité (0 F)'),
+  ];
+
+  static const _motifsRapides = [
+    'Activation Pro par l\'administrateur',
+    'Paiement Mobile Money validé',
+    'Paiement espèces reçu',
+    'Partenaire sponsorisé',
+  ];
 
   @override
   void initState() {
@@ -57,6 +80,13 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
     super.dispose();
   }
 
+  int get _prixMensuel {
+    for (final p in _plans) {
+      if (p['code'] == _planSelectionne) return p['prix'] as int;
+    }
+    return 0;
+  }
+
   Future<void> _soumettre() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _enCours = true);
@@ -65,6 +95,8 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
       await repo.accorderAccesSponsorise(
         entrepriseId: widget.entrepriseId,
         planCode: _planSelectionne,
+        dureeMois: _dureeMois,
+        typeFacturation: _typeFacturation,
         motif: _motifCtrl.text.trim(),
       );
       if (mounted) {
@@ -72,11 +104,12 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
         ref.invalidate(superAdminEntreprisesProvider);
         ref.invalidate(superAdminDetailEntrepriseProvider(widget.entrepriseId));
         Navigator.of(context).pop(true);
+        final dureeTxt = _dureeMois == null ? 'durée illimitée' : '$_dureeMois mois';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.green,
             content: Text(
-              'Accès sponsorisé ($_planSelectionne) accordé avec succès à ${widget.entrepriseNom} !',
+              'Abonnement $_planSelectionne ($dureeTxt) activé avec succès pour ${widget.entrepriseNom} !',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -98,6 +131,9 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
 
   @override
   Widget build(BuildContext context) {
+    final montantTotal = _typeFacturation == 'SPONSORISE' ? 0 : _prixMensuel * (_dureeMois ?? 1);
+    final libelleDuree = _dureeMois == null ? 'Illimitée (jusqu\'à révocation)' : '$_dureeMois mois';
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
@@ -108,12 +144,12 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
               color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.stars_rounded, color: Color(0xFF7C3AED), size: 24),
+            child: const Icon(Icons.verified_user_rounded, color: Color(0xFF7C3AED), size: 24),
           ),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
-              'Accorder un accès sponsorisé',
+              'Activer / Modifier l\'abonnement',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
           ),
@@ -127,6 +163,7 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
@@ -136,24 +173,20 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Entreprise bénéficiaire :', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                    const Text('Entreprise concernée :', style: TextStyle(fontSize: 11, color: AppColors.muted)),
                     const SizedBox(height: 2),
                     Text(widget.entrepriseNom, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Formule de référence accordée :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const Text('1. Formule à activer :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final p in [
-                    {'code': 'NORMAL', 'nom': 'Normal (1 000 F)', 'color': const Color(0xFF2563EB)},
-                    {'code': 'MOYEN', 'nom': 'Moyen (2 000 F)', 'color': const Color(0xFF7C3AED)},
-                    {'code': 'PRO', 'nom': 'Pro (5 000 F)', 'color': const Color(0xFFEA580C)},
-                  ])
+                  for (final p in _plans)
                     ChoiceChip(
                       label: Text(p['nom'] as String),
                       selected: _planSelectionne == p['code'],
@@ -169,6 +202,72 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
                 ],
               ),
               const SizedBox(height: 16),
+              const Text('2. Durée d\'activation :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final d in _durees)
+                    ChoiceChip(
+                      label: Text(d.$2),
+                      selected: _dureeMois == d.$1,
+                      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                      labelStyle: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: _dureeMois == d.$1 ? AppColors.primary : AppColors.ink,
+                      ),
+                      onSelected: (sel) {
+                        if (!sel) return;
+                        setState(() {
+                          _dureeMois = d.$1;
+                          if (d.$1 == null) {
+                            _typeFacturation = 'SPONSORISE';
+                          }
+                        });
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text('3. Mode de facturation :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Payé / Validé manuellement'),
+                    selected: _typeFacturation == 'COMMERCIAL',
+                    selectedColor: const Color(0xFF059669).withValues(alpha: 0.15),
+                    labelStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _typeFacturation == 'COMMERCIAL' ? const Color(0xFF059669) : AppColors.ink,
+                    ),
+                    onSelected: (sel) {
+                      if (!sel) return;
+                      setState(() {
+                        _typeFacturation = 'COMMERCIAL';
+                        _dureeMois ??= 1;
+                      });
+                    },
+                  ),
+                  ChoiceChip(
+                    label: const Text('Sponsorisé gratuit (0 FCFA)'),
+                    selected: _typeFacturation == 'SPONSORISE',
+                    selectedColor: const Color(0xFF7C3AED).withValues(alpha: 0.15),
+                    labelStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _typeFacturation == 'SPONSORISE' ? const Color(0xFF7C3AED) : AppColors.ink,
+                    ),
+                    onSelected: (sel) {
+                      if (!sel) return;
+                      setState(() => _typeFacturation = 'SPONSORISE');
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -177,25 +276,52 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
                   border: Border.all(color: const Color(0xFFA7F3D0)),
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(Icons.check_circle_outline, color: AppColors.green, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Montant facturé à l\'entreprise : 0 FCFA\nDurée : Indéterminée (valable jusqu\'à révocation).',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF065F46), height: 1.3),
+                        'Formule : $_planSelectionne • Durée : $libelleDuree\n'
+                        'Montant de référence : $montantTotal FCFA\n'
+                        '${_planSelectionne == 'PRO' ? 'Module Microfinance : ACTIVÉ' : 'Module Microfinance : Non inclus (Pro requis)'}',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF065F46), height: 1.35, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
+              const Text('4. Motif d\'audit :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final m in _motifsRapides)
+                    ActionChip(
+                      label: Text(m, style: const TextStyle(fontSize: 11)),
+                      onPressed: () {
+                        setState(() {
+                          _motifCtrl.text = m;
+                          if (m == 'Partenaire sponsorisé') {
+                            _typeFacturation = 'SPONSORISE';
+                          } else if (m.startsWith('Paiement')) {
+                            _typeFacturation = 'COMMERCIAL';
+                            _dureeMois ??= 1;
+                          }
+                        });
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _motifCtrl,
-                maxLines: 3,
+                maxLines: 2,
                 decoration: InputDecoration(
-                  labelText: 'Motif officiel de la gratuité / sponsor *',
-                  hintText: 'Ex: Partenariat pilote, Accord d\'incubateur, Client VIP...',
+                  labelText: 'Motif officiel *',
+                  hintText: 'Ex: Activation Pro par l\'administrateur, Paiement Mobile Money validé...',
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -206,7 +332,7 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
                 ),
                 validator: (v) {
                   if (v == null || v.trim().length < 4) {
-                    return 'Veuillez justifier précisément le motif (min 4 caractères).';
+                    return 'Veuillez préciser le motif (min 4 caractères).';
                   }
                   return null;
                 },
@@ -233,7 +359,7 @@ class _DonnerAccesSponsoriseDialogState extends ConsumerState<DonnerAccesSponsor
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                 )
               : const Icon(Icons.check_rounded, size: 18),
-          label: const Text('Valider le sponsor', style: TextStyle(fontWeight: FontWeight.bold)),
+          label: const Text('Activer l\'abonnement', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );

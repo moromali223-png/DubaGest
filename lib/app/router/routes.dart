@@ -110,6 +110,10 @@ abstract final class Routes {
   static String fournisseur(String id) => '/commerce/fournisseurs/$id';
   static const commerceIntelligence = '/commerce/intelligence';
   static const commerceBenefice = '/commerce/benefice';
+  static const commerceMicrofinance = '/commerce/microfinance';
+  static String microfinanceLoanDetails(String id) => '/commerce/microfinance/prets/$id';
+  static const microfinanceLoanNew = '/commerce/microfinance/prets/new';
+  static String microfinanceBorrowerDetails(String id) => '/commerce/microfinance/emprunteurs/$id';
 
   // Services
   static const servicesAccueil = '/services';
@@ -193,6 +197,7 @@ abstract final class ModuleRoutes {
     ModuleCodes.commerceFournisseurs: Routes.fournisseurs,
     ModuleCodes.commerceIntelligence: Routes.commerceIntelligence,
     ModuleCodes.commerceBenefice: Routes.commerceBenefice,
+    ModuleCodes.commerceMicrofinance: Routes.commerceMicrofinance,
     ModuleCodes.communContacts: Routes.contacts,
     ModuleCodes.communDocuments: Routes.documents,
     ModuleCodes.communAgenda: Routes.agenda,

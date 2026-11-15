@@ -141,8 +141,15 @@ extension AppLabels on AppLocalizations {
         'commerce.ventes' => moduleCommerceVentes,
         'commerce.achats' => moduleCommerceAchats,
         'commerce.fournisseurs' => moduleCommerceFournisseurs,
-        'commerce.intelligence' => 'Intelligence commerciale',
-        'commerce.benefice' => 'Bénéfice commercial',
+        'commerce.intelligence' => localeName == 'ar'
+            ? 'ذكاء الأعمال'
+            : (localeName == 'en' ? 'Business Intelligence' : 'Intelligence commerciale'),
+        'commerce.benefice' => localeName == 'ar'
+            ? 'الأرباح التجارية'
+            : (localeName == 'en' ? 'Commercial Profit' : 'Bénéfice commercial'),
+        'commerce.microfinance' => localeName == 'ar'
+            ? 'التمويل الأصغر'
+            : 'Microfinance',
         'finances.creances' => moduleFinancesCreances,
         'finances.paiements' => moduleFinancesPaiements,
         'finances.caisse' => moduleFinancesCaisse,
@@ -165,8 +172,9 @@ extension AppLabels on AppLocalizations {
   /// Libellé court pour les tuiles (accueil, « Plus ») où la place manque.
   String moduleCourt(String code) => switch (code) {
         'finances.creances' => moduleFinancesCreancesCourt,
-        'commerce.intelligence' => 'Intelligence',
-        'commerce.benefice' => 'Bénéfice',
+        'commerce.intelligence' => localeName == 'ar' ? 'الذكاء' : 'Intelligence',
+        'commerce.benefice' => localeName == 'ar' ? 'الأرباح' : (localeName == 'en' ? 'Profit' : 'Bénéfice'),
+        'commerce.microfinance' => localeName == 'ar' ? 'التمويل الأصغر' : 'Microfinance',
         _ => module(code),
       };
 
@@ -282,6 +290,9 @@ extension AppLabels on AppLocalizations {
       RuleCodes.movementInvalid => ruleFinanceInconsistent,
       RuleCodes.discrepancyJustificationRequired => 'Une note explicative est obligatoire pour tout écart d\'inventaire constaté.',
       RuleCodes.productUsed => 'Ce produit ne peut pas être supprimé car il possède un historique d\'opérations (ventes, achats ou stock).',
+      RuleCodes.mfProRequired => mfProOnlyMessage,
+      RuleCodes.mfLoanImmutable => mfLoanImmutableMessage,
+      RuleCodes.mfTransactionDeleteForbidden => mfTransactionDeleteForbiddenMessage,
       _ => errorUnknown,
     };
   }
@@ -495,5 +506,72 @@ extension AppLabels on AppLocalizations {
         'ar' => 'لا يوجد سجل مدفوعات حتى الآن.',
         'en' => 'No payment history yet.',
         _ => 'Aucun historique de paiement pour le moment.',
+      };
+
+  // --- Microfinance Localization (FR / EN / AR + RTL) ---
+  String get mfTitle => switch (localeName) {
+        'ar' => 'التمويل الأصغر',
+        'en' => 'Microfinance',
+        _ => 'Microfinance',
+      };
+
+  String get mfNewLoan => switch (localeName) {
+        'ar' => 'قرض جديد',
+        'en' => 'New loan',
+        _ => 'Nouveau prêt',
+      };
+
+  String get mfProOnlyMessage => switch (localeName) {
+        'ar' => 'وحدة التمويل الأصغر مخصصة حصرياً لباقة برو (5000 فرنك أفريقي/شهر).',
+        'en' => 'The Microfinance module is exclusively available on the active Pro plan (5,000 FCFA/month).',
+        _ => 'Le module Microfinance est réservé exclusivement à la formule Pro active (5 000 FCFA/mois).',
+      };
+
+  String get mfLoanImmutableMessage => switch (localeName) {
+        'ar' => 'لا يمكن تعديل شروط القرض بعد صرفه. استخدم التوثيق أو الإلغاء المبرر.',
+        'en' => 'A disbursed loan cannot be modified silently. Use justified cancellation or reversal.',
+        _ => 'Un prêt déjà décaissé ne peut pas être modifié silencieusement.',
+      };
+
+  String get mfTransactionDeleteForbiddenMessage => switch (localeName) {
+        'ar' => 'سجل المعاملات المالية غير قابل للحذف. استخدم قيد التصحيح العكسي.',
+        'en' => 'Ledger transactions cannot be deleted. Use a justified reversal entry.',
+        _ => 'Le journal financier ne peut pas être supprimé : utilisez une annulation/contre-passation.',
+      };
+
+  String get mfTabDashboard => switch (localeName) {
+        'ar' => 'لوحة القيادة',
+        'en' => 'Dashboard',
+        _ => 'Tableau de bord',
+      };
+
+  String get mfTabLoans => switch (localeName) {
+        'ar' => 'القروض',
+        'en' => 'Loans',
+        _ => 'Prêts',
+      };
+
+  String get mfTabBorrowers => switch (localeName) {
+        'ar' => 'المقترضون',
+        'en' => 'Borrowers',
+        _ => 'Emprunteurs',
+      };
+
+  String get mfTabInstallments => switch (localeName) {
+        'ar' => 'الأقساط والمتأخرات',
+        'en' => 'Schedules & Arrears',
+        _ => 'Échéances & Impayés',
+      };
+
+  String get mfTabTreasury => switch (localeName) {
+        'ar' => 'رأس المال والخزينة',
+        'en' => 'Capital & Treasury',
+        _ => 'Capital & Trésorerie',
+      };
+
+  String get mfTabLedger => switch (localeName) {
+        'ar' => 'المعاملات والتقارير',
+        'en' => 'Ledger & Reports',
+        _ => 'Journal & Rapports',
       };
 }

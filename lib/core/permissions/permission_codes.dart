@@ -85,4 +85,8 @@ abstract final class PermissionCodes {
   static const rentsCreate = 'rents.create';
   static const rentsUpdate = 'rents.update';
   static const rentsDelete = 'rents.delete';
+  static const microfinanceView = 'microfinance.view';
+  static const microfinanceCreate = 'microfinance.create';
+  static const microfinanceUpdate = 'microfinance.update';
+  static const microfinanceDelete = 'microfinance.delete';
 }

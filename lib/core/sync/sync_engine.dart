@@ -5,6 +5,7 @@ import '../errors/error_mapper.dart';
 import '../errors/failure.dart';
 import '../network/connectivity_service.dart';
 import '../utils/app_logger.dart';
+import 'remote/supabase_sync_gateway.dart';
 import 'sync_contracts.dart';
 import 'sync_models.dart';
 
@@ -214,6 +215,20 @@ class SyncEngine {
         }
       } catch (e, st) {
         final failure = ErrorMapper.map(e, st);
+        if (SupabaseSyncGateway.isMissingRemoteTableError(e) ||
+            SupabaseSyncGateway.isMissingRemoteTableError(failure)) {
+          await _queue.markFailed(
+            op.id,
+            'Table distante en attente (${op.entityTable})',
+            _clock().add(backoffFor(op.attempts)),
+          );
+          await _queue.log(
+            'warning',
+            'Table distante absente ou en attente : ${op.entityTable}/${op.recordId}',
+            opId: op.id,
+          );
+          continue;
+        }
         if (_definitiveFailures.contains(failure.kind)) {
           await handler.onRejected(op, failure);
           await _queue.markRejected(op.id, failure.toString());
@@ -231,29 +246,37 @@ class SyncEngine {
 
   Future<void> _pull(SyncScope scope) async {
     for (final handler in _handlers.values) {
-      final stored = await _cursors.read(handler.table, scope.entrepriseId);
-      String? afterTs;
-      String? afterId;
-      if (stored != null) {
-        final (ts, _) = _decodeCursor(stored);
-        afterTs = DateTime.parse(ts).toUtc().subtract(pullOverlap).toIso8601String();
-      }
+      try {
+        final stored = await _cursors.read(handler.table, scope.entrepriseId);
+        String? afterTs;
+        String? afterId;
+        if (stored != null) {
+          final (ts, _) = _decodeCursor(stored);
+          afterTs = DateTime.parse(ts).toUtc().subtract(pullOverlap).toIso8601String();
+        }
 
-      while (true) {
-        if (!identical(scope, _scope)) return;
-        final rows = await _remote.pull(
-          table: handler.table,
-          entrepriseId: scope.entrepriseId,
-          afterUpdatedAt: afterTs,
-          afterId: afterId,
-          limit: pullPageSize,
-        );
-        if (rows.isEmpty) break;
-        await handler.applyRemoteRows(rows);
-        afterTs = rows.last['updated_at'] as String;
-        afterId = (rows.last['id'] ?? rows.last['contact_id'])?.toString() ?? '';
-        await _cursors.write(handler.table, scope.entrepriseId, _encodeCursor(afterTs, afterId));
-        if (rows.length < pullPageSize) break;
+        while (true) {
+          if (!identical(scope, _scope)) return;
+          final rows = await _remote.pull(
+            table: handler.table,
+            entrepriseId: scope.entrepriseId,
+            afterUpdatedAt: afterTs,
+            afterId: afterId,
+            limit: pullPageSize,
+          );
+          if (rows.isEmpty) break;
+          await handler.applyRemoteRows(rows);
+          afterTs = rows.last['updated_at'] as String;
+          afterId = (rows.last['id'] ?? rows.last['contact_id'])?.toString() ?? '';
+          await _cursors.write(handler.table, scope.entrepriseId, _encodeCursor(afterTs, afterId));
+          if (rows.length < pullPageSize) break;
+        }
+      } catch (e) {
+        if (SupabaseSyncGateway.isMissingRemoteTableError(e)) {
+          // Table distante absente ou en attente : ignorer pour ne pas bloquer les autres tables.
+          continue;
+        }
+        rethrow;
       }
     }
   }

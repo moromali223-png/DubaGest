@@ -14,6 +14,7 @@ abstract final class ModuleCodes {
   static const commerceFournisseurs = 'commerce.fournisseurs';
   static const commerceIntelligence = 'commerce.intelligence';
   static const commerceBenefice = 'commerce.benefice';
+  static const commerceMicrofinance = 'commerce.microfinance';
   static const communContacts = 'commun.contacts';
   static const communDocuments = 'commun.documents';
   static const communAgenda = 'commun.agenda';

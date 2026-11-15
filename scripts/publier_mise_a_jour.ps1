@@ -50,11 +50,12 @@ if (-not (Test-Path $apkSource)) {
 Write-Host "`n[3/5] Calcul de l'empreinte cryptographique SHA-256..." -ForegroundColor Cyan
 $fileHash = (Get-FileHash -Path $apkSource -Algorithm SHA256).Hash.ToLower()
 $fileSize = (Get-Item $apkSource).Length
-Write-Host "  -> Taille : $fileSize octets ($([math]::Round($fileSize/1MB, 2)) Mo)" -ForegroundColor DarkGreen
+$fileSizeMo = [math]::Round($fileSize/1MB, 2)
+Write-Host "  -> Taille : $fileSize octets ($fileSizeMo Mo)" -ForegroundColor DarkGreen
 Write-Host "  -> SHA-256 : $fileHash" -ForegroundColor DarkGreen
 
 # 4. Copie de l'APK dans vitrine/downloads/
-Write-Host "`n[4/5] Déploiement local de l'APK..." -ForegroundColor Cyan
+Write-Host "`n[4/5] Deploiement local de l'APK..." -ForegroundColor Cyan
 $destinationApk = "vitrine\downloads\DubaGest-Android.apk"
 if (-not (Test-Path "vitrine\downloads")) {
     New-Item -ItemType Directory -Path "vitrine\downloads" | Out-Null

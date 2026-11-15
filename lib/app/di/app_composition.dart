@@ -12,6 +12,7 @@ import '../../features/contacts/presentation/providers/contacts_providers.dart';
 import '../../features/entreprise/presentation/providers/contexte_providers.dart';
 import '../../features/finances/presentation/providers/finances_providers.dart';
 import '../../features/immobilier/presentation/providers/immobilier_providers.dart';
+import '../../features/microfinance/presentation/providers/microfinance_providers.dart';
 import '../../features/perimetres/presentation/providers/perimetres_providers.dart';
 
 /// Racine de composition : branche les features sur les services du cœur.
@@ -26,6 +27,7 @@ final appOverrides = [
         ...ref.watch(fichiersSyncHandlersProvider),
         ...ref.watch(commerceSyncHandlersProvider),
         ...ref.watch(immobilierSyncHandlersProvider),
+        ...ref.watch(microfinanceSyncHandlersProvider),
       ]),
 ];
 

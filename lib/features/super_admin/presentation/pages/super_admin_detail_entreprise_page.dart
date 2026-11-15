@@ -692,7 +692,7 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
               label: const Text('Suspendre l\'entreprise'),
             ),
 
-          // Donner ou modifier l'accès sponsorisé
+          // Activer ou changer l'abonnement (Normal, Moyen, Pro + durée)
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6366F1),
@@ -712,8 +712,8 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
                 ref.invalidate(superAdminDashboardProvider);
               }
             },
-            icon: const Icon(Icons.star_rounded, size: 18),
-            label: Text(estSponsorise ? 'Modifier l\'accès sponsorisé' : 'Accorder accès sponsorisé (0 FCFA)'),
+            icon: const Icon(Icons.verified_user_rounded, size: 18),
+            label: const Text('Activer / Changer abonnement'),
           ),
 
           // Révoquer l'accès sponsorisé si actif

@@ -13,6 +13,23 @@ class SyncStatusButton extends ConsumerWidget {
   /// Carré arrondi bordé (en-tête de l'accueil).
   final bool boxed;
 
+  static String _formaterMessageErreur(String raw) {
+    final lower = raw.toLowerCase();
+    if (lower.contains('pgrst205') || lower.contains('schema cache') || lower.contains('could not find the table')) {
+      return 'Mise à jour du serveur en cours : synchronisation des nouvelles tables en attente.';
+    }
+    if (lower.contains('network') || lower.contains('socketexception') || lower.contains('failed host lookup')) {
+      return 'Connexion réseau instable : réessai automatique dès le retour d\'Internet.';
+    }
+    if (lower.contains('sessionexpired') || lower.contains('401') || lower.contains('403')) {
+      return 'Session utilisateur expirée : veuillez vous reconnecter.';
+    }
+    if (lower.contains('table distante en attente')) {
+      return 'Certaines tables distantes sont en cours de mise à jour sur le serveur.';
+    }
+    return raw;
+  }
+
   void _action(BuildContext context, WidgetRef ref, SyncState state) {
     ref.read(syncEngineProvider).requestSync(force: true);
 
@@ -89,7 +106,7 @@ class SyncStatusButton extends ConsumerWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                currentState.lastError!,
+                                _formaterMessageErreur(currentState.lastError!),
                                 style: const TextStyle(fontSize: 12.5, color: Colors.red, height: 1.3),
                               ),
                             ),

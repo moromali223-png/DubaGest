@@ -21,20 +21,23 @@ class AccessDeniedPage extends ConsumerWidget {
     final reason = decision is AccessDenied ? l10n.decision(decision) : l10n.rulePermissionDenied;
 
     final isNotInPlan = decision is AccessDenied && decision.ruleCode == RuleCodes.moduleNotInPlan;
+    final isMicrofinance = moduleCode == 'commerce.microfinance';
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.accessDeniedTitle)),
       body: MessageView(
         icon: Icons.lock_outline,
-        title: l10n.accessDeniedTitle,
-        message: reason,
+        title: isMicrofinance ? 'Module Microfinance réservé à la formule Pro' : l10n.accessDeniedTitle,
+        message: isMicrofinance && isNotInPlan
+            ? 'Le module Microfinance est exclusivement accessible aux entreprises disposant d\'un abonnement Pro actif (5 000 FCFA/mois).'
+            : reason,
         action: isNotInPlan
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   FilledButton.icon(
                     icon: const Icon(Icons.arrow_upward_rounded),
-                    label: const Text('Passer à la formule Moyen ou Pro'),
+                    label: Text(isMicrofinance ? 'Passer à la formule Pro (5 000 FCFA)' : 'Passer à la formule Moyen ou Pro'),
                     onPressed: () => context.push(Routes.choixFormuleAbonnement),
                   ),
                   const SizedBox(height: 10),

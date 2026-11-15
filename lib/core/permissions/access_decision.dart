@@ -96,6 +96,11 @@ abstract final class RuleCodes {
   static const movementInvalid = 'MOUVEMENT_INVALIDE';
   static const productUsed = 'PRODUIT_UTILISE';
 
+  // Microfinance.
+  static const mfProRequired = 'MODULE_RESERVE_PRO';
+  static const mfLoanImmutable = 'PRET_DECAISSE_IMMUABLE';
+  static const mfTransactionDeleteForbidden = 'SUPPRESSION_TRANSACTION_INTERDITE';
+
   /// Refus techniques (données incohérentes) : un seul message à l'utilisateur.
   static const financeInconsistent = {
     'AFFECTATION_INVALIDE', 'ENGAGEMENT_INTROUVABLE', 'PAIEMENT_INTROUVABLE',

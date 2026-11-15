@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/routes.dart';
 import '../providers/super_admin_providers.dart';
+import '../widgets/donner_acces_sponsorise_dialog.dart';
 import '../widgets/super_admin_scaffold.dart';
 
 class SuperAdminSponsorPage extends ConsumerStatefulWidget {
@@ -471,22 +472,37 @@ class _SuperAdminSponsorPageState extends ConsumerState<SuperAdminSponsorPage> {
                                     ),
                                   ],
                                   const SizedBox(height: 14),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      TextButton.icon(
-                                        onPressed: () => context.go(Routes.superAdminEntreprise(e.id)),
-                                        icon: const Icon(Icons.visibility_rounded, size: 16),
-                                        label: const Text('Fiche détaillée'),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      TextButton.icon(
-                                        style: TextButton.styleFrom(foregroundColor: const Color(0xFFB45309)),
-                                        onPressed: () => _revoquerAcces(e.id, e.nom),
-                                        icon: const Icon(Icons.cancel_rounded, size: 16),
-                                        label: const Text('Révoquer'),
-                                      ),
-                                    ],
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: Wrap(
+                                      alignment: WrapAlignment.end,
+                                      spacing: 8,
+                                      runSpacing: 6,
+                                      children: [
+                                        TextButton.icon(
+                                          onPressed: () => DonnerAccesSponsoriseDialog.show(
+                                            context,
+                                            entrepriseId: e.id,
+                                            entrepriseNom: e.nom,
+                                            planActuel: e.planCode,
+                                          ),
+                                          icon: const Icon(Icons.verified_user_rounded, size: 16),
+                                          label: const Text('Modifier abonnement'),
+                                          style: TextButton.styleFrom(foregroundColor: const Color(0xFF7C3AED)),
+                                        ),
+                                        TextButton.icon(
+                                          onPressed: () => context.go(Routes.superAdminEntreprise(e.id)),
+                                          icon: const Icon(Icons.visibility_rounded, size: 16),
+                                          label: const Text('Fiche détaillée'),
+                                        ),
+                                        TextButton.icon(
+                                          style: TextButton.styleFrom(foregroundColor: const Color(0xFFB45309)),
+                                          onPressed: () => _revoquerAcces(e.id, e.nom),
+                                          icon: const Icon(Icons.cancel_rounded, size: 16),
+                                          label: const Text('Révoquer'),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),

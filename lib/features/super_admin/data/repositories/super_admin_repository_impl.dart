@@ -46,11 +46,15 @@ class SuperAdminRepositoryImpl implements SuperAdminRepository {
     required String entrepriseId,
     required String planCode,
     required String motif,
+    int? dureeMois,
+    String typeFacturation = 'SPONSORISE',
   }) =>
       _remote.accorderAccesSponsorise(
         entrepriseId: entrepriseId,
         planCode: planCode,
         motif: motif,
+        dureeMois: dureeMois,
+        typeFacturation: typeFacturation,
       );
 
   @override
