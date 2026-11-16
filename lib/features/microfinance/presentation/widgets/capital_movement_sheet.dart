@@ -345,7 +345,12 @@ class _FundMovementSheetState extends ConsumerState<_FundMovementSheet> {
                   child: DropdownButtonFormField<SourceFondsMicrofinance>(
                     initialValue: _source,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Source'),
+                    isDense: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Source',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                    ),
                     items: [
                       for (final s in SourceFondsMicrofinance.values)
                         DropdownMenuItem(
@@ -353,18 +358,24 @@ class _FundMovementSheetState extends ConsumerState<_FundMovementSheet> {
                           child: Text(
                             s.libelle(l10n.localeName),
                             overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                     ],
                     onChanged: (v) => setState(() => _source = v ?? _source),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<ModePaiementMicrofinance>(
                     initialValue: _mode,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Moyen'),
+                    isDense: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Moyen',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                    ),
                     items: [
                       for (final m in ModePaiementMicrofinance.values)
                         DropdownMenuItem(
@@ -372,6 +383,7 @@ class _FundMovementSheetState extends ConsumerState<_FundMovementSheet> {
                           child: Text(
                             m.libelle(l10n.localeName),
                             overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                     ],

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Script officiel de publication automatisée des mises à jour DubaGest (Android APK + PWA).
 .DESCRIPTION
