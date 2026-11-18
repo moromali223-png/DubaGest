@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -346,6 +347,13 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
 
   Future<void> _choisirSourcePhoto() async {
     final l10n = context.l10n;
+    if (kIsWeb) {
+      // Sur Web / PWA (Safari iOS & Chrome), ouvrir directement sans modal asynchrone
+      // pour préserver le geste utilisateur et laisser iOS afficher sa feuille native
+      // (Prendre une photo en direct / Photothèque / Choisir un fichier).
+      await _ajouterPhoto(ImageSource.gallery);
+      return;
+    }
     if (!ImagePicker().supportsImageSource(ImageSource.camera)) return _ajouterPhoto(ImageSource.gallery);
     HapticFeedback.mediumImpact();
     final source = await showModalBottomSheet<ImageSource>(
@@ -2229,6 +2237,10 @@ class _DialogueCategorieState extends State<_DialogueCategorie> {
   }
 
   Future<void> _choisirSourcePhoto() async {
+    if (kIsWeb) {
+      await _choisirPhoto(ImageSource.gallery);
+      return;
+    }
     HapticFeedback.mediumImpact();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,

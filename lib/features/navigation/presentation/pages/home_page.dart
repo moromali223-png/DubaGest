@@ -176,7 +176,6 @@ class HomePage extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            const PwaUpdateBanner(),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () => ref.read(contexteSessionProvider.notifier).rafraichir(),
