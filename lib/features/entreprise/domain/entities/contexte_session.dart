@@ -1,4 +1,5 @@
-import '../../../../core/permissions/permission_codes.dart';
+  
+  import '../../../../core/permissions/permission_codes.dart';
 import '../../../abonnement/domain/entities/abonnement.dart';
 import '../../../abonnement/domain/services/limites_engine.dart';
 import '../../../activites/domain/entities/activite.dart';
@@ -60,6 +61,10 @@ class ContexteSession {
     if (entreprise!.statut != EntrepriseStatut.active) return ContexteEtat.entrepriseSuspendue;
     return ContexteEtat.pret;
   }
+
+  /// Détermine si l'entreprise est en Mode B (DubaGest Catalogue Seul).
+  bool get isModeCatalogueSeul =>
+      plan?.code == 'CATALOGUE_SEUL' || abonnement?.planCode == 'CATALOGUE_SEUL';
 
   /// Indique si l'utilisateur a accès au périmètre donné (boutique/site).
   bool aAccesAuPerimetre(String perimetreId) => perimetres.any((p) => p.id == perimetreId);

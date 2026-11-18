@@ -9,6 +9,7 @@ enum NavDestination {
   loyers,
   ventes,
   finances,
+  catalogue,
   compte,
 }
 
@@ -25,6 +26,9 @@ enum QuickActionType {
 
   /// Multi-activités : Menu d'actions rapides contextuelles
   multi,
+
+  /// Mode Catalogue Seul : Publier un produit au catalogue
+  publierProduit,
 }
 
 class ModuleSection {
@@ -48,6 +52,7 @@ class NavigationModel {
     this.isWorkspaceVendeur = false,
     this.isWorkspaceGestionnaireStock = false,
     this.isWorkspaceSuperviseur = false,
+    this.isWorkspaceCatalogueSeul = false,
   });
 
   final List<NavDestination> destinations;
@@ -71,4 +76,5 @@ class NavigationModel {
   final bool isWorkspaceVendeur;
   final bool isWorkspaceGestionnaireStock;
   final bool isWorkspaceSuperviseur;
+  final bool isWorkspaceCatalogueSeul;
 }

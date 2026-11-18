@@ -30,6 +30,7 @@ class AppShell extends ConsumerWidget {
         NavDestination.loyers => ModuleRoutes.path('immobilier.loyers'),
         NavDestination.ventes => ModuleRoutes.path(ModuleCodes.commerceVentes),
         NavDestination.finances => Routes.finances,
+        NavDestination.catalogue => Routes.produits,
         NavDestination.compte => Routes.settings,
       };
 
@@ -39,6 +40,7 @@ class AppShell extends ConsumerWidget {
     if (location.startsWith(ModuleRoutes.path('immobilier.loyers'))) return NavDestination.loyers;
     if (location.startsWith(ModuleRoutes.path(ModuleCodes.commerceVentes))) return NavDestination.ventes;
     if (location.startsWith(Routes.finances)) return NavDestination.finances;
+    if (location.startsWith(Routes.produits)) return NavDestination.catalogue;
     if (location.startsWith(Routes.settings)) return NavDestination.compte;
     return NavDestination.accueil;
   }
@@ -57,6 +59,7 @@ class AppShell extends ConsumerWidget {
           NavDestination.loyers => (Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, 'Loyers'),
           NavDestination.ventes => (Icons.point_of_sale_outlined, Icons.point_of_sale, 'Ventes'),
           NavDestination.finances => (Icons.insights_outlined, Icons.insights, l10n.navFinances),
+          NavDestination.catalogue => (Icons.storefront_outlined, Icons.storefront_rounded, 'Catalogue'),
           NavDestination.compte => (Icons.person_outline_rounded, Icons.person_rounded, l10n.navAccount),
         };
 
@@ -84,6 +87,11 @@ class AppShell extends ConsumerWidget {
             Icons.add_rounded,
             'Action',
             () => QuickActionSheet.show(context),
+          ),
+        QuickActionType.publierProduit => (
+            Icons.add_rounded,
+            'Ajouter',
+            () => context.push(Routes.produitNouveau()),
           ),
       };
 

@@ -100,7 +100,7 @@ class OnboardingPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  // Grille responsive des choix
+                  // Grille responsive des deux modes V2
                   if (isTabletOrDesktop)
                     IntrinsicHeight(
                       child: Row(
@@ -110,35 +110,39 @@ class OnboardingPage extends ConsumerWidget {
                             child: _OnboardingCard(
                               key: const Key('onboarding-create'),
                               isPrimary: true,
-                              badgeText: 'Fondateur',
-                              icon: Icons.add_business_rounded,
-                              title: l10n.onboardingCreateTitle,
-                              subtitle: l10n.onboardingCreateSubtitle,
+                              badgeText: 'Mode A · Gestion & Catalogue',
+                              icon: Icons.store_mall_directory_rounded,
+                              title: 'Gestion Commerciale + Catalogue',
+                              subtitle: 'Gérez votre activité au quotidien (stock, ventes, caisse) et publiez vos produits sur Internet.',
                               bulletPoints: const [
-                                'Commerce, Services ou Immobilier',
-                                '10 jours d’essai sans engagement',
-                                'Gestion d’équipe et rôles inclus',
+                                'Gestion complète du stock et des ventes',
+                                'Catalogue public connecté à votre stock réel',
+                                'Photos, messages vocaux et vidéos courtes',
+                                '10 jours d’essai gratuit sans engagement',
                               ],
-                              buttonLabel: 'Démarrer la création',
-                              onTap: () => context.go(Routes.createCompany),
+                              buttonLabel: 'Choisir Gestion + Catalogue',
+                              onTap: () => context.go('${Routes.createCompany}?mode=gestion'),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.lg),
                           Expanded(
                             child: _OnboardingCard(
-                              key: const Key('onboarding-join'),
+                              key: const Key('onboarding-mode-b'),
                               isPrimary: false,
-                              badgeText: 'Collaborateur',
-                              icon: Icons.group_add_rounded,
-                              title: l10n.onboardingJoinTitle,
-                              subtitle: l10n.onboardingJoinSubtitle,
+                              badgeColor: const Color(0xFF0284C7),
+                              accentColor: const Color(0xFF0284C7),
+                              badgeText: 'Mode B · 3 000 FCFA / an',
+                              icon: Icons.auto_stories_rounded,
+                              title: 'Catalogue Numérique Seul',
+                              subtitle: 'Pour les commerçants souhaitant uniquement une boutique en ligne sans gestion comptable.',
                               bulletPoints: const [
-                                'Accès par code ou lien d’invitation',
-                                'Rôle et permissions configurés',
-                                'Aucun abonnement nécessaire',
+                                'Catalogue en ligne avec lien partageable',
+                                'Photos, présentations vocales et vidéos',
+                                'Commandes clients directement sur WhatsApp',
+                                'Abonnement direct : 3 000 FCFA par an',
                               ],
-                              buttonLabel: 'Rejoindre une équipe',
-                              onTap: () => context.go(Routes.joinCompany),
+                              buttonLabel: 'Choisir Catalogue Seul',
+                              onTap: () => context.go('${Routes.createCompany}?mode=catalogue'),
                             ),
                           ),
                         ],
@@ -148,35 +152,90 @@ class OnboardingPage extends ConsumerWidget {
                     _OnboardingCard(
                       key: const Key('onboarding-create'),
                       isPrimary: true,
-                      badgeText: 'Fondateur',
-                      icon: Icons.add_business_rounded,
-                      title: l10n.onboardingCreateTitle,
-                      subtitle: l10n.onboardingCreateSubtitle,
+                      badgeText: 'Mode A · Gestion & Catalogue',
+                      icon: Icons.store_mall_directory_rounded,
+                      title: 'Gestion Commerciale + Catalogue',
+                      subtitle: 'Gérez votre activité au quotidien (stock, ventes, caisse) et publiez vos produits sur Internet.',
                       bulletPoints: const [
-                        'Commerce, Services ou Immobilier',
-                        '10 jours d’essai sans engagement',
-                        'Gestion d’équipe et rôles inclus',
+                        'Gestion complète du stock et des ventes',
+                        'Catalogue public connecté à votre stock réel',
+                        'Photos, messages vocaux et vidéos courtes',
+                        '10 jours d’essai gratuit sans engagement',
                       ],
-                      buttonLabel: 'Démarrer la création',
-                      onTap: () => context.go(Routes.createCompany),
+                      buttonLabel: 'Choisir Gestion + Catalogue',
+                      onTap: () => context.go('${Routes.createCompany}?mode=gestion'),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _OnboardingCard(
-                      key: const Key('onboarding-join'),
+                      key: const Key('onboarding-mode-b'),
                       isPrimary: false,
-                      badgeText: 'Collaborateur',
-                      icon: Icons.group_add_rounded,
-                      title: l10n.onboardingJoinTitle,
-                      subtitle: l10n.onboardingJoinSubtitle,
+                      badgeColor: const Color(0xFF0284C7),
+                      accentColor: const Color(0xFF0284C7),
+                      badgeText: 'Mode B · 3 000 FCFA / an',
+                      icon: Icons.auto_stories_rounded,
+                      title: 'Catalogue Numérique Seul',
+                      subtitle: 'Pour les commerçants souhaitant uniquement une boutique en ligne sans gestion comptable.',
                       bulletPoints: const [
-                        'Accès par code ou lien d’invitation',
-                        'Rôle et permissions configurés',
-                        'Aucun abonnement nécessaire',
+                        'Catalogue en ligne avec lien partageable',
+                        'Photos, présentations vocales et vidéos',
+                        'Commandes clients directement sur WhatsApp',
+                        'Abonnement direct : 3 000 FCFA par an',
                       ],
-                      buttonLabel: 'Rejoindre une équipe',
-                      onTap: () => context.go(Routes.joinCompany),
+                      buttonLabel: 'Choisir Catalogue Seul',
+                      onTap: () => context.go('${Routes.createCompany}?mode=catalogue'),
                     ),
                   ],
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Option Collaborateur / Rejoindre une équipe
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.group_add_rounded, size: 22, color: AppColors.ink),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Vous êtes collaborateur ou vendeur ?',
+                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.ink),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Rejoignez une entreprise existante avec un code d’invitation.',
+                                style: TextStyle(fontSize: 12, color: AppColors.muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        OutlinedButton(
+                          key: const Key('onboarding-join'),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.border),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          ),
+                          onPressed: () => context.go(Routes.joinCompany),
+                          child: const Text('Rejoindre', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xl),
                   // Note d'assistance
                   Row(
@@ -214,6 +273,8 @@ class _OnboardingCard extends StatelessWidget {
     required this.bulletPoints,
     required this.buttonLabel,
     required this.onTap,
+    this.badgeColor,
+    this.accentColor,
   });
 
   final bool isPrimary;
@@ -224,6 +285,8 @@ class _OnboardingCard extends StatelessWidget {
   final List<String> bulletPoints;
   final String buttonLabel;
   final VoidCallback onTap;
+  final Color? badgeColor;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -268,14 +331,18 @@ class _OnboardingCard extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: isPrimary
                               ? [AppColors.green, AppColors.greenPressed]
-                              : [const Color(0xFF2C3E50), const Color(0xFF1A252F)],
+                              : (accentColor != null
+                                  ? [accentColor!, accentColor!.withValues(alpha: 0.85)]
+                                  : [const Color(0xFF2C3E50), const Color(0xFF1A252F)]),
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: isPrimary
                                 ? AppColors.green.withValues(alpha: 0.3)
-                                : Colors.black.withValues(alpha: 0.15),
+                                : (accentColor != null
+                                    ? accentColor!.withValues(alpha: 0.25)
+                                    : Colors.black.withValues(alpha: 0.15)),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -286,13 +353,17 @@ class _OnboardingCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isPrimary ? AppColors.greenLight : const Color(0xFFF1F5F9),
+                        color: isPrimary
+                            ? AppColors.greenLight
+                            : (badgeColor != null ? badgeColor!.withValues(alpha: 0.12) : const Color(0xFFF1F5F9)),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         badgeText,
                         style: TextStyle(
-                          color: isPrimary ? AppColors.green : const Color(0xFF475569),
+                          color: isPrimary
+                              ? AppColors.green
+                              : (badgeColor ?? const Color(0xFF475569)),
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -352,7 +423,9 @@ class _OnboardingCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: isPrimary ? AppColors.green : const Color(0xFFF1F5F9),
+                    color: isPrimary
+                        ? AppColors.green
+                        : (accentColor ?? const Color(0xFFF1F5F9)),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -363,7 +436,7 @@ class _OnboardingCard extends StatelessWidget {
                           buttonLabel,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isPrimary ? Colors.white : AppColors.ink,
+                            color: (isPrimary || accentColor != null) ? Colors.white : AppColors.ink,
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                           ),
@@ -373,7 +446,7 @@ class _OnboardingCard extends StatelessWidget {
                       Icon(
                         Icons.arrow_forward_rounded,
                         size: 16,
-                        color: isPrimary ? Colors.white : AppColors.ink,
+                        color: (isPrimary || accentColor != null) ? Colors.white : AppColors.ink,
                       ),
                     ],
                   ),

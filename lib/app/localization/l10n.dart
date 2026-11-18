@@ -49,6 +49,8 @@ extension AppLabels on AppLocalizations {
         'NORMAL' => planNormal,
         'MOYEN' => planMoyen,
         'PRO' => planPro,
+        'FAIBLE' => 'Faible',
+        'CATALOGUE_SEUL' => 'Catalogue Seul',
         _ => code ?? '',
       };
 

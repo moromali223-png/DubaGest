@@ -17,7 +17,8 @@ final _creationControllerProvider =
 
 /// « Créer mon entreprise » : nom, formule d'abonnement, activités métiers.
 class CreateCompanyPage extends ConsumerStatefulWidget {
-  const CreateCompanyPage({super.key});
+  const CreateCompanyPage({super.key, this.modeInitial});
+  final String? modeInitial;
 
   @override
   ConsumerState<CreateCompanyPage> createState() => _CreateCompanyPageState();
@@ -26,13 +27,19 @@ class CreateCompanyPage extends ConsumerStatefulWidget {
 class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
   final _formKey = GlobalKey<FormState>();
   final _nom = TextEditingController();
+  final _whatsapp = TextEditingController();
+  final _ville = TextEditingController();
   int _step = 1;
   OffrePlan? _offre;
   final Set<ActiviteCode> _activites = {};
 
+  bool get _isCatalogueMode => widget.modeInitial == 'catalogue';
+
   @override
   void dispose() {
     _nom.dispose();
+    _whatsapp.dispose();
+    _ville.dispose();
     super.dispose();
   }
 
@@ -65,12 +72,40 @@ class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
 
   Future<void> _submit(OffrePlan offre) async {
     if (!_formKey.currentState!.validate()) return;
+    final planFinal = _isCatalogueMode
+        ? const OffrePlan(
+            code: 'CATALOGUE_SEUL',
+            maxActivites: 1,
+            activites: [ActiviteCode.commerce],
+            prixMensuel: 250,
+            devisePrix: 'XOF',
+          )
+        : offre;
+    final activitesFinales = _isCatalogueMode ? {ActiviteCode.commerce} : _activites;
+
     final creer = ref.read(creerEntrepriseProvider);
     final ok = await ref.read(_creationControllerProvider.notifier).run(
-          () => creer(nom: _nom.text, offre: offre, activites: _activites),
+          () => creer(nom: _nom.text, offre: planFinal, activites: activitesFinales),
         );
     // Le contexte rechargé contient l'entreprise : le routeur ouvre l'application.
-    if (ok) await ref.read(contexteSessionProvider.notifier).rafraichir();
+    if (ok) {
+      await ref.read(contexteSessionProvider.notifier).rafraichir();
+      if (_isCatalogueMode && (_whatsapp.text.trim().isNotEmpty || _ville.text.trim().isNotEmpty)) {
+        final ctx = ref.read(contexteActifProvider);
+        if (ctx != null) {
+          try {
+            final profilActuel = await ref.read(chargerProfilEntrepriseProvider).call(ctx);
+            await ref.read(modifierProfilEntrepriseProvider).call(
+                  ctx,
+                  profilActuel.copyWith(
+                    telephone: _whatsapp.text.trim().isEmpty ? null : _whatsapp.text.trim(),
+                    ville: _ville.text.trim().isEmpty ? null : _ville.text.trim(),
+                  ),
+                );
+          } catch (_) {}
+        }
+      }
+    }
   }
 
   @override
@@ -109,6 +144,296 @@ class _CreateCompanyPageState extends ConsumerState<CreateCompanyPage> {
           data: (liste) {
             final offre = _offre ?? liste.first;
             final decision = ref.read(creerEntrepriseProvider).verifier(offre, _activites);
+
+            if (_isCatalogueMode) {
+              return Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_stories_rounded, size: 16, color: Color(0xFF0284C7)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Mode B · DubaGest Catalogue Numérique Seul',
+                            style: TextStyle(
+                              color: Color(0xFF0284C7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Créer ma Boutique Catalogue',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.ink,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Configurez votre vitrine en ligne et commencez à exposer vos produits sur WhatsApp.',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    const Text(
+                      'Nom de la boutique / commerce',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Ce nom sera affiché en grand sur votre catalogue public.',
+                      style: TextStyle(fontSize: 13, color: AppColors.muted),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextFormField(
+                      key: const Key('catalogue-company-name'),
+                      controller: _nom,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: InputDecoration(
+                        labelText: 'Nom de votre boutique',
+                        hintText: 'Ex: Fanta Élégance Bamako',
+                        prefixIcon: const Icon(Icons.storefront_rounded, color: Color(0xFF0284C7), size: 20),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 2),
+                        ),
+                      ),
+                      validator: (v) => (v ?? '').trim().length < 2 ? l10n.ruleNameInvalid : null,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    const Text(
+                      'Numéro WhatsApp Commercial',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Les clients utiliseront ce numéro pour vous envoyer leurs commandes.',
+                      style: TextStyle(fontSize: 13, color: AppColors.muted),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextFormField(
+                      key: const Key('catalogue-whatsapp'),
+                      controller: _whatsapp,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Numéro WhatsApp (avec indicatif)',
+                        hintText: 'Ex: +223 70 00 00 00',
+                        prefixIcon: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 20),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    const Text(
+                      'Ville / Emplacement (optionnel)',
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.ink),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Indiquez où vos clients peuvent vous trouver.',
+                      style: TextStyle(fontSize: 13, color: AppColors.muted),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextFormField(
+                      key: const Key('catalogue-ville'),
+                      controller: _ville,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        labelText: 'Ville / Quartier',
+                        hintText: 'Ex: Bamako, Grand Marché',
+                        prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.muted, size: 20),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Color(0xFF0284C7), width: 2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.3), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.06),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE0F2FE),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(Icons.card_membership_rounded, color: Color(0xFF0284C7), size: 24),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Abonnement Catalogue Seul',
+                                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.ink),
+                                    ),
+                                    Text(
+                                      'Tarif officiel : 3 000 FCFA / an',
+                                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF0284C7)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          const Divider(height: 1, color: AppColors.border),
+                          const SizedBox(height: AppSpacing.md),
+                          const Text(
+                            'Fonctionnalités incluses :',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink),
+                          ),
+                          const SizedBox(height: 8),
+                          for (final feat in const [
+                            'Catalogue numérique public avec lien partageable',
+                            'Jusqu’à 5 photos par produit (WebP compressé)',
+                            'Messages vocaux de présentation (60s)',
+                            'Vidéos commerciales courtes (30s)',
+                            'Publications de nouveautés et arrivages',
+                            'Commandes instantanées sur votre WhatsApp',
+                          ])
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF0284C7)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      feat,
+                                      style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.muted),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Paiement annuel direct sans période d’essai gratuit. Zéro déstockage automatique.',
+                                    style: TextStyle(fontSize: 11, color: AppColors.muted),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        backgroundColor: const Color(0xFF0284C7),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: action.isLoading ? null : () => _submit(offre),
+                      child: action.isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.auto_stories_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Valider et créer mon catalogue (3 000 F/an)',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                            ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
+                ),
+              );
+            }
 
             return Form(
               key: _formKey,

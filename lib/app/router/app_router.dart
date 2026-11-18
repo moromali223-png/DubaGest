@@ -242,7 +242,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const ChangePasswordPage(recuperation: true),
       ),
       GoRoute(path: Routes.onboarding, builder: (_, _) => const OnboardingPage()),
-      GoRoute(path: Routes.createCompany, builder: (_, _) => const CreateCompanyPage()),
+      GoRoute(
+        path: Routes.createCompany,
+        builder: (_, state) => CreateCompanyPage(modeInitial: state.uri.queryParameters['mode']),
+      ),
       GoRoute(
         path: Routes.joinCompany,
         builder: (_, state) => JoinCompanyPage(tokenFromLink: state.uri.queryParameters['token']),

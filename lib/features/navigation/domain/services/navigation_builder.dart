@@ -14,6 +14,41 @@ class NavigationBuilder {
   NavigationModel build(ContexteSession ctx, {DateTime? now, ActiviteCode? activite}) {
     final policy = ctx.accessPolicy(now);
     final abonnementActif = ctx.limites(now).abonnementActif;
+
+    // ISOLEMENT STRICT DU MODE B : DUBAGEST CATALOGUE SEUL (3 000 FCFA / AN)
+    // Aucun accès aux modules Stock, Ventes, Achats, Caisses, Dépenses, Dettes, Facturation
+    if (ctx.isModeCatalogueSeul) {
+      final admin = policy.accessibleModules().where((m) => m.estAdministration).toList();
+      return NavigationModel(
+        destinations: const [
+          NavDestination.accueil,
+          NavDestination.catalogue,
+          NavDestination.compte,
+        ],
+        sections: [
+          const ModuleSection(
+            activite: ActiviteCode.commerce,
+            modules: [
+              AppModule(
+                code: ModuleCodes.commerceProduits,
+                activite: ActiviteCode.commerce,
+                permissionAcces: PermissionCodes.productsView,
+                ordre: 10,
+              ),
+            ],
+          ),
+        ],
+        modulesCommuns: const [],
+        modulesFinances: const [],
+        modulesAdministration: admin,
+        abonnementActif: abonnementActif,
+        venteDisponible: false,
+        actionCentrale: QuickActionType.publierProduit,
+        activiteActive: ActiviteCode.commerce,
+        isWorkspaceCatalogueSeul: true,
+      );
+    }
+
     final isVendeur = ctx.membre?.roleCode == RoleCodes.vendeur &&
         policy.canPerform(moduleCode: ModuleCodes.commerceVentes, permission: PermissionCodes.salesCreate).isAllowed;
     final isGestionnaireStock = ctx.membre?.roleCode == RoleCodes.gestionnaireStock &&
@@ -92,7 +127,7 @@ class NavigationBuilder {
       // 5 positions : Accueil · Module principal · (Action +) · Finances · Compte
       destinations: [
         NavDestination.accueil,
-        if (pos2 != null) pos2,
+        ?pos2,
         if (finances) NavDestination.finances,
         NavDestination.compte,
       ],

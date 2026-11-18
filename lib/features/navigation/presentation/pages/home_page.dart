@@ -38,11 +38,11 @@ import '../../../commerce/presentation/widgets/resume_recus_accueil.dart';
 import '../../../commerce/presentation/widgets/workspace_gestionnaire_stock_accueil.dart';
 import '../../../commerce/presentation/widgets/workspace_superviseur_accueil.dart';
 import '../../../commerce/presentation/widgets/workspace_vendeur_accueil.dart';
+import '../../../commerce/presentation/widgets/workspace_catalogue_seul_accueil.dart';
 import '../../../immobilier/domain/entities/dashboard_immobilier.dart';
 import '../../../immobilier/presentation/providers/immobilier_providers.dart';
 import '../../../../core/updater/presentation/providers/updater_providers.dart';
 import '../../../../core/updater/presentation/widgets/dialog_mise_a_jour.dart';
-import '../../../../core/updater/presentation/widgets/pwa_update_banner.dart';
 
 /// Mémorise si la modal de mise à jour a déjà été présentée à l'ouverture.
 class ModalMiseAJourAfficheeNotifier extends Notifier<bool> {
@@ -80,6 +80,17 @@ class HomePage extends ConsumerWidget {
     final nav = ref.watch(navigationModelProvider);
     final espace = ref.watch(espaceCourantProvider);
     if (ctx == null || nav == null) return const Scaffold(body: LoadingView());
+
+    // WORKSPACE CATALOGUE SEUL DÉDIÉ (Vitrine en ligne, WhatsApp, zéro gestion comptable)
+    if (nav.isWorkspaceCatalogueSeul) {
+      return const Scaffold(
+        drawer: AppMenuDrawer(),
+        body: SafeArea(
+          bottom: false,
+          child: WorkspaceCatalogueSeulAccueil(),
+        ),
+      );
+    }
 
     // WORKSPACE VENDEUR DÉDIÉ (Épuré, Rapide, Mobile-first)
     if (nav.isWorkspaceVendeur && (espace.activite == ActiviteCode.commerce || espace.activite == null)) {
@@ -434,7 +445,7 @@ class HomePage extends ConsumerWidget {
         onTap: () => ReactivezCompteBottomSheet.show(
           context,
           startAtStep: 2,
-          initialPlanCode: abonnement?.planCode,
+          initialPlanCode: abonnement.planCode,
         ),
       ));
     }
