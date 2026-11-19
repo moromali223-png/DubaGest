@@ -127,8 +127,8 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
   late final _achat = _prixInitial((u) => u.prixAchat, widget.initial?.prixAchat);
   late bool _venteGros = widget.initial?.venteEnGros ?? (widget.initial == null && widget.etat.venteEnGros);
 
-  // V2: Paramètres Catalogue Public et Prix Indépendant
-  late bool _estPublieCatalogue = widget.initial?.estPublieCatalogue ?? true;
+  // V2: Paramètres Catalogue Public et Prix Indépendant gérés dans le Stock
+  late bool _estPublieCatalogue = widget.initial?.estPublieCatalogue ?? false;
   late final _prixPublic = TextEditingController(
     text: widget.initial?.prixPublic != null ? '${widget.initial!.prixPublic}' : '',
   );
@@ -302,12 +302,12 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
       estActif: widget.initial?.estActif ?? true,
       version: widget.initial?.version,
       syncStatus: widget.initial?.syncStatus ?? RecordSyncStatus.pendingSync,
-      estPublieCatalogue: _estPublieCatalogue,
-      prixPublic: int.tryParse(_prixPublic.text.trim()),
-      prixBarre: int.tryParse(_prixBarre.text.trim()),
+      estPublieCatalogue: widget.initial?.estPublieCatalogue ?? false,
+      prixPublic: widget.initial?.prixPublic,
+      prixBarre: widget.initial?.prixBarre,
       photosV2: _photos,
-      audioPresentationUrl: _audioPresentationUrl,
-      videoPresentationUrl: _videoPresentationUrl,
+      audioPresentationUrl: widget.initial?.audioPresentationUrl,
+      videoPresentationUrl: widget.initial?.videoPresentationUrl,
       collectionId: _collectionId,
     );
   }
@@ -749,132 +749,8 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
         ? (prixDetailBase - prixAchatBase)
         : null;
 
-    final sectionVitrine = _Section(
-      icone: Icons.storefront_outlined,
-      couleur: AppColors.green,
-      titre: 'Vitrine & Catalogue Public',
-      aide: 'Publiez ce produit sur votre vitrine en ligne et personnalisez son prix de vente affiché.',
-      action: isCatalogueSeul
-          ? null
-          : Switch(
-              key: const Key('produit-catalogue-switch'),
-              value: _estPublieCatalogue,
-              onChanged: (v) => setState(() => _estPublieCatalogue = v),
-            ),
-      children: [
-        AnimatedCrossFade(
-          duration: const Duration(milliseconds: 250),
-          crossFadeState: (_estPublieCatalogue || isCatalogueSeul)
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
-          firstChild: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Text(
-              'Ce produit est privé (non visible sur votre catalogue public). Activez l\'interrupteur pour le rendre visible en ligne.',
-              style: TextStyle(fontSize: 13, color: AppColors.muted.withValues(alpha: 0.9), height: 1.3),
-            ),
-          ),
-          secondChild: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (!isCatalogueSeul) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.greenSoft.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.green.withValues(alpha: 0.2)),
-                  ),
-                  child: const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline_rounded, color: AppColors.green, size: 20),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Le prix catalogue est totalement indépendant du prix de gestion DubaGest. '
-                          'Le modifier n\'affectera jamais votre comptabilité ni vos prix en caisse.',
-                          style: TextStyle(fontSize: 12.5, color: AppColors.ink, height: 1.3),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-              _Libelle('Prix public affiché dans le catalogue'),
-              TextField(
-                key: const Key('produit-prix-public'),
-                controller: _prixPublic,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: _decoration(
-                  hint: prixDetailBase != null && prixDetailBase > 0
-                      ? 'Ex: $prixDetailBase (par défaut prix du stock)'
-                      : 'Prix public affiché (FCFA)',
-                  prefixe: const Icon(Icons.sell_outlined, color: AppColors.muted),
-                  suffixe: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('FCFA', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted)),
-                  ),
-                ),
-                onChanged: (v) {
-                  if (isCatalogueSeul && v.trim().isNotEmpty) {
-                    _detail.montant.text = v.trim();
-                  }
-                  setState(() {});
-                },
-              ),
-              if (!isCatalogueSeul && prixDetailBase != null && prixDetailBase > 0) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _prixPublic.text = prixDetailBase.toString();
-                      });
-                    },
-                    icon: const Icon(Icons.sync_rounded, size: 16),
-                    label: Text('Reprendre le prix du stock ($prixDetailBase FCFA)'),
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              _Libelle('Prix barré promotionnel (facultatif)'),
-              TextField(
-                key: const Key('produit-prix-barre'),
-                controller: _prixBarre,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: _decoration(
-                  hint: 'Ex: 15000 (affiché barré pour indiquer une remise)',
-                  prefixe: const Icon(Icons.discount_outlined, color: AppColors.muted),
-                  suffixe: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('FCFA', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted)),
-                  ),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              _Libelle('Présentation vocale (60s max)'),
-              VocalPresentationWidget(
-                initialAudioUrl: _audioPresentationUrl,
-                onAudioChanged: (url) {
-                  setState(() => _audioPresentationUrl = url);
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-
     if (isCatalogueSeul) {
-      return [
-        sectionVitrine,
-      ];
+      return const [];
     }
 
     return [
@@ -900,10 +776,6 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
           ],
         ],
       ),
-      const SizedBox(height: AppSpacing.md),
-
-      // 2. Section Vitrine & Catalogue Public (Prix Indépendant)
-      sectionVitrine,
       if (droits.peutModifierPrixGros) ...[
         const SizedBox(height: AppSpacing.md),
         // 2. Section « Vente en gros » avec Toggle Switch Ecomiq

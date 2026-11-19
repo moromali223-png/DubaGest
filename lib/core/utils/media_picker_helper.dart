@@ -279,6 +279,11 @@ class MediaPickerHelper {
   /// Compresse et redimensionne une image en pur Dart pour éviter tout dépassement mémoire.
   /// Gère automatiquement les images JPEG, PNG, WebP et les formats convertis d'iPhone.
   static Uint8List compresserImage(Uint8List rawBytes, {int maxWidth = 1024, int quality = 80}) {
+    // Sur le Web ou si déjà compressé sous 400 Ko, le moteur matériel HTML5 a déjà opéré.
+    // Ne jamais exécuter img.decodeImage sur le Web pour préserver le thread UI et éviter les crashs mémoire.
+    if (kIsWeb || rawBytes.length < 400 * 1024) {
+      return rawBytes;
+    }
     try {
       final decoded = img.decodeImage(rawBytes);
       if (decoded == null) return rawBytes;
