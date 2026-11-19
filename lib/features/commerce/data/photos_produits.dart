@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/utils/app_logger.dart';
+import '../../catalogue/services/media_hybrid_resolver.dart';
 import '../../fichiers/data/fichiers_repository_impl.dart' show bucketFichiers;
 
 /// Photos des produits : gardées sur l'appareil (affichage immédiat, même
@@ -34,7 +35,20 @@ class PhotosProduits {
     return c;
   }
 
-  /// Octets d'une photo : copie locale, sinon téléchargée puis gardée.
+  /// Enregistre une nouvelle photo V2 (Cloudflare R2) ; elle partira au prochain envoi.
+  Future<String> ajouterV2({required String entrepriseId, required String produitId, required Uint8List octets}) async {
+    final c = MediaHybridResolver.createR2PhotoPath(entrepriseId: entrepriseId, produitId: produitId);
+    await _db.into(_db.photosLocales).insertOnConflictUpdate(PhotosLocalesCompanion.insert(
+          chemin: c,
+          octets: octets,
+          aEnvoyer: const Value(true),
+          majLe: DateTime.now(),
+        ));
+    unawaited(envoyerEnAttente());
+    return c;
+  }
+
+  /// Octets d'une photo : copie locale, sinon téléchargée via le résolveur hybride (R2 ou Supabase) puis gardée.
   Future<Uint8List?> octets(String chemin) => _enCours[chemin] ??= _charger(chemin).whenComplete(() {
         _enCours.remove(chemin);
       });
@@ -42,19 +56,22 @@ class PhotosProduits {
   Future<Uint8List?> _charger(String chemin) async {
     final local = await (_db.select(_db.photosLocales)..where((p) => p.chemin.equals(chemin))).getSingleOrNull();
     if (local != null) return local.octets;
-    final client = _client();
-    if (client == null) return null;
     try {
-      final octets = await client.storage.from(bucketFichiers).download(chemin);
-      await _db.into(_db.photosLocales).insertOnConflictUpdate(PhotosLocalesCompanion.insert(
-            chemin: chemin,
-            octets: octets,
-            majLe: DateTime.now(),
-          ));
+      final octets = await MediaHybridResolver.downloadBytes(
+        chemin,
+        supabaseClientProvider: _client,
+      );
+      if (octets != null) {
+        await _db.into(_db.photosLocales).insertOnConflictUpdate(PhotosLocalesCompanion.insert(
+              chemin: chemin,
+              octets: octets,
+              majLe: DateTime.now(),
+            ));
+      }
       return octets;
     } catch (e) {
       // Hors-ligne ou photo pas encore envoyée depuis un autre appareil.
-      AppLogger.info('Photo indisponible ($chemin) : $e', tag: 'photos');
+      AppLogger.info('Photo hybride indisponible ($chemin) : $e', tag: 'photos');
       return null;
     }
   }
