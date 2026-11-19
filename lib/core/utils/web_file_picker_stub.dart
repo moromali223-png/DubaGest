@@ -1,3 +1,5 @@
 import 'dart:typed_data';
 
-Future<Uint8List?> pickImageBytesWeb() async => null;
+enum WebImageSource { camera, gallery }
+
+Future<Uint8List?> pickImageBytesWeb({WebImageSource source = WebImageSource.gallery}) async => null;

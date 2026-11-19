@@ -799,9 +799,20 @@ void confirmer(BuildContext context, String message) {
 
 /// Message d'erreur compréhensible (règle métier traduite, ou texte déjà prêt).
 void signalerErreur(BuildContext context, Object erreur) {
+  debugPrint('[COMMERCE_ERREUR_DETAIL] Type=${erreur.runtimeType}, Erreur=$erreur');
   String message;
+  final errStr = erreur.toString().toLowerCase();
+
   if (erreur is String) {
     message = erreur;
+  } else if (errStr.contains('camera') || errStr.contains('caméra')) {
+    message = "Impossible d'accéder à la caméra.";
+  } else if (errStr.contains('galerie') || errStr.contains('gallery')) {
+    message = "Impossible d'ouvrir la galerie.";
+  } else if (errStr.contains('notallowederror') || errStr.contains('permission')) {
+    message = "Autorisation d'accès refusée par le navigateur.";
+  } else if (errStr.contains('blob') || errStr.contains('arraybuffer')) {
+    message = "Format ou lecture de photo impossible sur ce navigateur.";
   } else if (erreur is Failure) {
     if (erreur.kind == FailureKind.unknown && erreur.cause != null) {
       final c = erreur.cause.toString().replaceFirst(RegExp(r'^(Exception|Error):\s*'), '');

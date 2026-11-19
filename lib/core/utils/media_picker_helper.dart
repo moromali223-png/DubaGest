@@ -1,4 +1,4 @@
-import 'package:file_selector/file_selector.dart';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +10,7 @@ import '../../app/theme/app_theme.dart';
 import 'app_logger.dart';
 import 'web_file_picker_helper.dart';
 
-/// Données d'une photo sélectionnée ou capturée.
+/// Données complètes d'une photo sélectionnée ou capturée.
 class PhotoSelectionnee {
   const PhotoSelectionnee({
     required this.octets,
@@ -23,16 +23,18 @@ class PhotoSelectionnee {
   final String typeMime;
 }
 
-/// Helper universel et résilient pour la prise et la sélection de photos.
+/// Helper universel et résilient pour la prise de photo et la sélection de galerie.
 ///
-/// Résout définitivement le problème de prise de photo sur iPhone (Safari & PWA standalone) :
-/// - Sur Web (iOS Safari & PWA) : utilise `openFile` avec types MIME JPEG/PNG/WebP explicites,
-///   ce qui force iOS Safari à convertir automatiquement les prises de vue caméra et photos HEIC
-///   en JPEG standard, sans passer par le canvas HTML5 qui gèle ou crashe sur les appareils Apple.
-/// - Présente la feuille native iOS (Prendre une photo / Photothèque / Fichiers).
-/// - Sur Mobile natif (Android / iOS) : conserve la boîte de dialogue stylée et la compression native.
+/// Fonctionne de manière native et sécurisée sur :
+/// - Android : Chrome, Samsung Internet et PWA installée.
+/// - iPhone : Safari et PWA installée sur l'écran d'accueil.
+/// - Ordinateur : Chrome, Edge, Firefox, etc.
 class MediaPickerHelper {
   MediaPickerHelper._();
+
+  static bool get isMobile =>
+      !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) ||
+      kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
 
   /// Sélectionne ou prend une photo et renvoie ses détails complets (octets, nom, type).
   static Future<PhotoSelectionnee?> choisirPhotoDetail(
@@ -42,29 +44,165 @@ class MediaPickerHelper {
     int? imageQuality = 80,
     ImageSource? forceSource,
   }) async {
-    if (kIsWeb) {
-      try {
-        final rawBytes = await pickImageBytesWeb();
-        if (rawBytes == null || rawBytes.isEmpty) return null;
-        final compressed = compresserImage(
-          rawBytes,
-          maxWidth: maxWidth?.toInt() ?? 1024,
-          quality: imageQuality ?? 80,
+    final octets = await choisirPhoto(
+      context,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+      imageQuality: imageQuality,
+      forceSource: forceSource,
+    );
+    if (octets == null || octets.isEmpty) return null;
+    return PhotoSelectionnee(
+      octets: octets,
+      nom: 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      typeMime: 'image/jpeg',
+    );
+  }
+
+  /// Sélectionne ou prend une photo et renvoie directement les octets (`Uint8List`).
+  ///
+  /// Présente sur mobile la feuille native (Prendre une photo / Galerie).
+  /// Déclenche le sélecteur immédiatement dans l'événement tactile direct sans perte d'activation navigateur.
+  static Future<Uint8List?> choisirPhoto(
+    BuildContext context, {
+    double? maxWidth = 1024,
+    double? maxHeight,
+    int? imageQuality = 80,
+    ImageSource? forceSource,
+  }) async {
+    try {
+      if (kIsWeb) {
+        return await _choisirPhotoWeb(
+          context,
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+          imageQuality: imageQuality,
+          forceSource: forceSource,
         );
-        return PhotoSelectionnee(
-          octets: compressed,
-          nom: 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          typeMime: 'image/jpeg',
+      } else {
+        return await _choisirPhotoNatif(
+          context,
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+          imageQuality: imageQuality,
+          forceSource: forceSource,
         );
-      } catch (e) {
-        AppLogger.error('Échec sélection photo Web: $e', tag: 'media');
-        rethrow;
       }
+    } catch (e, stack) {
+      debugPrint('[PHOTO_DIAGNOSTIC] Échec choisirPhoto: $e\n$stack');
+      AppLogger.error('Échec sélection photo: $e', error: e, stackTrace: stack, tag: 'photos');
+      rethrow;
+    }
+  }
+
+  // --- Implémentation Web / PWA -----------------------------------------------
+
+  static Future<Uint8List?> _choisirPhotoWeb(
+    BuildContext context, {
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
+    ImageSource? forceSource,
+  }) async {
+    // Si la source est imposée (ex: caméra demandée explicitement)
+    if (forceSource != null) {
+      final webSource = forceSource == ImageSource.camera ? WebImageSource.camera : WebImageSource.gallery;
+      final rawBytes = await pickImageBytesWeb(source: webSource);
+      if (rawBytes == null || rawBytes.isEmpty) return null;
+      return compresserImage(rawBytes, maxWidth: maxWidth?.toInt() ?? 1024, quality: imageQuality ?? 80);
     }
 
-    // Plateformes natives (Android / iOS app installée)
+    // Sur ordinateur (Desktop Web) : ouvrir directement la boîte de dialogue de fichiers
+    if (!isMobile) {
+      final rawBytes = await pickImageBytesWeb(source: WebImageSource.gallery);
+      if (rawBytes == null || rawBytes.isEmpty) return null;
+      return compresserImage(rawBytes, maxWidth: maxWidth?.toInt() ?? 1024, quality: imageQuality ?? 80);
+    }
+
+    // Sur téléphone mobile (Safari / Chrome / PWA) : afficher le choix utilisateur
+    await HapticFeedback.lightImpact();
+    final l10n = context.l10n;
+
+    final futureBytes = await showModalBottomSheet<Future<Uint8List?>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.comTakePhoto,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              // Option 1 : Prendre une photo (Appareil photo direct)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
+                  child: const Icon(Icons.photo_camera_outlined, color: AppColors.green),
+                ),
+                title: Text(l10n.comTakePhoto, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Prendre une nouvelle photo avec la caméra arrière'),
+                onTap: () {
+                  // DÉCLENCHEMENT 100% SYNCHRONE DANS LE GESTE TACTILE
+                  final pending = pickImageBytesWeb(source: WebImageSource.camera);
+                  Navigator.pop(sheetContext, pending);
+                },
+              ),
+              // Option 2 : Galerie de photos
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
+                  child: const Icon(Icons.photo_library_outlined, color: Color(0xFF4F46E5)),
+                ),
+                title: Text(l10n.comChooseFromGallery, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Choisir une photo existante dans la galerie'),
+                onTap: () {
+                  // DÉCLENCHEMENT 100% SYNCHRONE DANS LE GESTE TACTILE
+                  final pending = pickImageBytesWeb(source: WebImageSource.gallery);
+                  Navigator.pop(sheetContext, pending);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (futureBytes == null) return null;
+    final rawBytes = await futureBytes;
+    if (rawBytes == null || rawBytes.isEmpty) return null;
+    return compresserImage(rawBytes, maxWidth: maxWidth?.toInt() ?? 1024, quality: imageQuality ?? 80);
+  }
+
+  // --- Implémentation Mobile Natif (Android / iOS APK) -------------------------
+
+  static Future<Uint8List?> _choisirPhotoNatif(
+    BuildContext context, {
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
+    ImageSource? forceSource,
+  }) async {
     final picker = ImagePicker();
     ImageSource? source = forceSource;
+
     if (source == null) {
       if (!picker.supportsImageSource(ImageSource.camera)) {
         source = ImageSource.gallery;
@@ -126,56 +264,26 @@ class MediaPickerHelper {
 
     final x = await picker.pickImage(
       source: source,
-      maxWidth: maxWidth,
+      maxWidth: maxWidth ?? 1024,
       maxHeight: maxHeight,
-      imageQuality: imageQuality,
+      imageQuality: imageQuality ?? 80,
     );
     if (x == null) return null;
     final octets = await x.readAsBytes();
     if (octets.isEmpty) return null;
-    return PhotoSelectionnee(
-      octets: octets,
-      nom: x.name.isNotEmpty ? x.name : 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      typeMime: x.mimeType ?? 'image/jpeg',
-    );
+    return compresserImage(octets, maxWidth: maxWidth?.toInt() ?? 1024, quality: imageQuality ?? 80);
   }
 
-  /// Sélectionne ou prend une photo et renvoie directement les octets (`Uint8List`).
-  static Future<Uint8List?> choisirPhoto(
-    BuildContext context, {
-    double? maxWidth = 1024,
-    double? maxHeight,
-    int? imageQuality = 80,
-    ImageSource? forceSource,
-  }) {
-    if (kIsWeb) {
-      // Déclenchement 100% synchrone pour préserver le contexte de geste utilisateur sur Safari mobile
-      return pickImageBytesWeb().then((rawBytes) {
-        if (rawBytes == null || rawBytes.isEmpty) return null;
-        return compresserImage(
-          rawBytes,
-          maxWidth: maxWidth?.toInt() ?? 1024,
-          quality: imageQuality ?? 80,
-        );
-      });
-    }
-
-    return choisirPhotoDetail(
-      context,
-      maxWidth: maxWidth,
-      maxHeight: maxHeight,
-      imageQuality: imageQuality,
-      forceSource: forceSource,
-    ).then((photo) => photo?.octets);
-  }
+  // --- Compression et redimensionnement pur Dart ------------------------------
 
   /// Compresse et redimensionne une image en pur Dart pour éviter tout dépassement mémoire.
+  /// Gère automatiquement les images JPEG, PNG, WebP et les formats convertis d'iPhone.
   static Uint8List compresserImage(Uint8List rawBytes, {int maxWidth = 1024, int quality = 80}) {
     try {
       final decoded = img.decodeImage(rawBytes);
       if (decoded == null) return rawBytes;
       if (decoded.width <= maxWidth && decoded.height <= maxWidth) {
-        if (rawBytes.length < 400 * 1024) return rawBytes;
+        if (rawBytes.length < 350 * 1024) return rawBytes;
         return Uint8List.fromList(img.encodeJpg(decoded, quality: quality));
       }
       final resized = img.copyResize(
@@ -185,7 +293,7 @@ class MediaPickerHelper {
       );
       return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
     } catch (e) {
-      AppLogger.warning('Compression image ignorée: $e', tag: 'media');
+      debugPrint('[PHOTO_DIAGNOSTIC] Compression image ignorée: $e');
       return rawBytes;
     }
   }
