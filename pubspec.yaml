@@ -37,6 +37,7 @@ dependencies:
   printing: ^5.14.3
   fl_chart: ^1.2.0
   image_picker: ^1.2.3
+  image: ^4.10.1
   file_selector: ^1.1.0
   mobile_scanner: ^7.4.2
   path_provider: ^2.1.5

@@ -2,6 +2,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/localization/l10n.dart';
@@ -43,36 +44,21 @@ class MediaPickerHelper {
   }) async {
     if (kIsWeb) {
       try {
-        final bytes = await pickImageBytesWeb();
-        if (bytes == null || bytes.isEmpty) return null;
+        final rawBytes = await pickImageBytesWeb();
+        if (rawBytes == null || rawBytes.isEmpty) return null;
+        final compressed = compresserImage(
+          rawBytes,
+          maxWidth: maxWidth?.toInt() ?? 1024,
+          quality: imageQuality ?? 80,
+        );
         return PhotoSelectionnee(
-          octets: bytes,
+          octets: compressed,
           nom: 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
           typeMime: 'image/jpeg',
         );
       } catch (e) {
-        AppLogger.info('Repli openFile sur Web suite exception pickImageBytesWeb: $e', tag: 'media');
-        try {
-          final x = await openFile(
-            acceptedTypeGroups: const [
-              XTypeGroup(
-                label: 'Photos',
-                extensions: ['jpg', 'jpeg', 'png', 'webp'],
-                mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-              ),
-            ],
-          );
-          if (x == null) return null;
-          final octets = await x.readAsBytes();
-          if (octets.isEmpty) return null;
-          final nom = x.name.isNotEmpty ? x.name : 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
-          final ext = nom.split('.').last.toLowerCase();
-          final mime = x.mimeType ?? (ext == 'png' ? 'image/png' : ext == 'webp' ? 'image/webp' : 'image/jpeg');
-          return PhotoSelectionnee(octets: octets, nom: nom, typeMime: mime);
-        } catch (e2) {
-          AppLogger.error('Échec sélection photo Web: $e2', tag: 'media');
-          rethrow;
-        }
+        AppLogger.error('Échec sélection photo Web: $e', tag: 'media');
+        rethrow;
       }
     }
 
@@ -170,5 +156,26 @@ class MediaPickerHelper {
       forceSource: forceSource,
     );
     return photo?.octets;
+  }
+
+  /// Compresse et redimensionne une image en pur Dart pour éviter tout dépassement mémoire.
+  static Uint8List compresserImage(Uint8List rawBytes, {int maxWidth = 1024, int quality = 80}) {
+    try {
+      final decoded = img.decodeImage(rawBytes);
+      if (decoded == null) return rawBytes;
+      if (decoded.width <= maxWidth && decoded.height <= maxWidth) {
+        if (rawBytes.length < 400 * 1024) return rawBytes;
+        return Uint8List.fromList(img.encodeJpg(decoded, quality: quality));
+      }
+      final resized = img.copyResize(
+        decoded,
+        width: decoded.width > decoded.height ? maxWidth : null,
+        height: decoded.height >= decoded.width ? maxWidth : null,
+      );
+      return Uint8List.fromList(img.encodeJpg(resized, quality: quality));
+    } catch (e) {
+      AppLogger.warning('Compression image ignorée: $e', tag: 'media');
+      return rawBytes;
+    }
   }
 }

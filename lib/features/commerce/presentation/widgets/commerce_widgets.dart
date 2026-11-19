@@ -799,13 +799,20 @@ void confirmer(BuildContext context, String message) {
 
 /// Message d'erreur compréhensible (règle métier traduite, ou texte déjà prêt).
 void signalerErreur(BuildContext context, Object erreur) {
-  final message = erreur is String
-      ? erreur
-      : (erreur is Failure
-          ? context.l10n.failure(erreur)
-          : (erreur.toString().isNotEmpty && !erreur.toString().startsWith('Instance of')
-              ? erreur.toString().replaceFirst(RegExp(r'^(Exception|Error):\s*'), '')
-              : context.l10n.failure(erreur)));
+  String message;
+  if (erreur is String) {
+    message = erreur;
+  } else if (erreur is Failure) {
+    if (erreur.kind == FailureKind.unknown && erreur.cause != null) {
+      final c = erreur.cause.toString().replaceFirst(RegExp(r'^(Exception|Error):\s*'), '');
+      message = (c.isNotEmpty && !c.startsWith('Instance of')) ? c : context.l10n.failure(erreur);
+    } else {
+      message = context.l10n.failure(erreur);
+    }
+  } else {
+    final s = erreur.toString().replaceFirst(RegExp(r'^(Exception|Error):\s*'), '');
+    message = (s.isNotEmpty && !s.startsWith('Instance of')) ? s : context.l10n.failure(erreur);
+  }
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(
