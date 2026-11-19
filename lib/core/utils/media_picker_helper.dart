@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../app/localization/l10n.dart';
 import '../../app/theme/app_theme.dart';
 import 'app_logger.dart';
+import 'web_file_picker_helper.dart';
 
 /// Données d'une photo sélectionnée ou capturée.
 class PhotoSelectionnee {
@@ -42,37 +43,34 @@ class MediaPickerHelper {
   }) async {
     if (kIsWeb) {
       try {
-        final x = await openFile(
-          acceptedTypeGroups: const [
-            XTypeGroup(
-              label: 'Photos',
-              extensions: ['jpg', 'jpeg', 'png', 'webp'],
-              mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-            ),
-          ],
+        final bytes = await pickImageBytesWeb();
+        if (bytes == null || bytes.isEmpty) return null;
+        return PhotoSelectionnee(
+          octets: bytes,
+          nom: 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          typeMime: 'image/jpeg',
         );
-        if (x == null) return null;
-        final octets = await x.readAsBytes();
-        if (octets.isEmpty) return null;
-        final nom = x.name.isNotEmpty ? x.name : 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final ext = nom.split('.').last.toLowerCase();
-        final mime = x.mimeType ?? (ext == 'png' ? 'image/png' : ext == 'webp' ? 'image/webp' : 'image/jpeg');
-        return PhotoSelectionnee(octets: octets, nom: nom, typeMime: mime);
       } catch (e) {
-        AppLogger.info('Repli ImagePicker sur Web suite exception openFile: $e', tag: 'media');
+        AppLogger.info('Repli openFile sur Web suite exception pickImageBytesWeb: $e', tag: 'media');
         try {
-          // Sur Web, NE PAS spécifier maxWidth/imageQuality pour éviter le canvas resizer défaillant sur Safari
-          final x = await ImagePicker().pickImage(source: forceSource ?? ImageSource.gallery);
+          final x = await openFile(
+            acceptedTypeGroups: const [
+              XTypeGroup(
+                label: 'Photos',
+                extensions: ['jpg', 'jpeg', 'png', 'webp'],
+                mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+              ),
+            ],
+          );
           if (x == null) return null;
           final octets = await x.readAsBytes();
           if (octets.isEmpty) return null;
-          return PhotoSelectionnee(
-            octets: octets,
-            nom: x.name.isNotEmpty ? x.name : 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            typeMime: x.mimeType ?? 'image/jpeg',
-          );
+          final nom = x.name.isNotEmpty ? x.name : 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final ext = nom.split('.').last.toLowerCase();
+          final mime = x.mimeType ?? (ext == 'png' ? 'image/png' : ext == 'webp' ? 'image/webp' : 'image/jpeg');
+          return PhotoSelectionnee(octets: octets, nom: nom, typeMime: mime);
         } catch (e2) {
-          AppLogger.error('Échec complet sélection photo Web: $e2', tag: 'media');
+          AppLogger.error('Échec sélection photo Web: $e2', tag: 'media');
           rethrow;
         }
       }

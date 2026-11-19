@@ -10,6 +10,7 @@ import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/sync/sync_models.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/media_picker_helper.dart';
 import '../../../../core/utils/recherche.dart';
 import '../../../../shared/widgets/state_views.dart';
@@ -364,7 +365,8 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
           .read(photosProduitsProvider)
           .ajouter(entrepriseId: eid, produitId: _id, octets: octets);
       if (mounted) setState(() => _photos.add(chemin));
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('Erreur ajout photo produit: $e', error: e, stackTrace: stack, tag: 'photos');
       if (mounted) signalerErreur(context, e);
     }
   }
@@ -386,7 +388,8 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
           _photos[index] = chemin;
         });
       }
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('Erreur remplacement photo produit: $e', error: e, stackTrace: stack, tag: 'photos');
       if (mounted) signalerErreur(context, e);
     }
   }

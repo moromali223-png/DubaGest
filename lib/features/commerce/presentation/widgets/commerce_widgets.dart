@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../finances/presentation/widgets/finances_widgets.dart' show deviseProvider;
 import '../../domain/entities/commerce.dart';
 import '../commerce_providers.dart';
@@ -798,6 +799,13 @@ void confirmer(BuildContext context, String message) {
 
 /// Message d'erreur compréhensible (règle métier traduite, ou texte déjà prêt).
 void signalerErreur(BuildContext context, Object erreur) {
+  final message = erreur is String
+      ? erreur
+      : (erreur is Failure
+          ? context.l10n.failure(erreur)
+          : (erreur.toString().isNotEmpty && !erreur.toString().startsWith('Instance of')
+              ? erreur.toString().replaceFirst(RegExp(r'^(Exception|Error):\s*'), '')
+              : context.l10n.failure(erreur)));
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(
@@ -805,7 +813,7 @@ void signalerErreur(BuildContext context, Object erreur) {
       content: Row(children: [
         const Icon(Icons.warning_amber_rounded, color: Colors.white),
         const SizedBox(width: 10),
-        Expanded(child: Text(erreur is String ? erreur : context.l10n.failure(erreur))),
+        Expanded(child: Text(message)),
       ]),
     ));
 }
