@@ -1,31 +1,32 @@
 ﻿{
-    "version":  1,
-    "updated_at":  "2026-11-15T00:12:17Z",
-    "android":  {
-                    "latest_version":  "1.0.2",
-                    "version_code":  3,
-                    "minimum_supported_version":  "1.0.0",
-                    "minimum_supported_code":  1,
-                    "apk_url":  "https://dubagest.com/downloads/DubaGest-Android.apk",
-                    "sha256":  "fd694f2faddbc1a18c7d65ddba9bf3cb0247cdd0bf028c78d7fbad4da3785a9f",
-                    "file_size":  54180475,
-                    "force_update":  false,
-                    "release_date":  "2026-11-15",
-                    "release_notes":  [
-                                          "Microfinance Pro",
-                                          "Activation Super Admin",
-                                          "Correctif synchronisation"
-                                      ]
-                },
-    "pwa":  {
-                "latest_version":  "1.0.2",
-                "minimum_supported_version":  "1.0.0",
-                "force_update":  false,
-                "release_date":  "2026-11-15",
-                "release_notes":  [
-                                      "Microfinance Pro",
-                                      "Activation Super Admin",
-                                      "Correctif synchronisation"
-                                  ]
-            }
+    "version": 1,
+    "updated_at": "2026-11-19T23:33:00Z",
+    "android": {
+        "latest_version": "1.0.3",
+        "version_code": 4,
+        "minimum_supported_version": "1.0.0",
+        "minimum_supported_code": 1,
+        "apk_url": "https://dubagest.com/downloads/DubaGest-Android.apk",
+        "sha256": "ce1e468a8ab1d37fa71d253ad434782d58877f9664eaca7a1d1a8d4e3b5d5693",
+        "file_size": 115179455,
+        "force_update": false,
+        "release_date": "2026-11-19",
+        "release_notes": [
+            "Mise à jour Android native officielle DubaGest v1.0.3",
+            "Installation directe par-dessus l'application existante sans désinstallation",
+            "Préservation intégrale des données locales et paramètres",
+            "Vérification cryptographique stricte d'intégrité SHA-256"
+        ]
+    },
+    "pwa": {
+        "latest_version": "1.0.2",
+        "minimum_supported_version": "1.0.0",
+        "force_update": false,
+        "release_date": "2026-11-15",
+        "release_notes": [
+            "Microfinance Pro",
+            "Activation Super Admin",
+            "Correctif synchronisation"
+        ]
+    }
 }

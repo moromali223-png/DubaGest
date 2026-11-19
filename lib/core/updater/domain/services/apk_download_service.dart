@@ -8,6 +8,16 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../utils/app_logger.dart';
 
+class _DigestAccumulator implements Sink<Digest> {
+  Digest? digest;
+
+  @override
+  void add(Digest data) => digest = data;
+
+  @override
+  void close() {}
+}
+
 typedef DownloadProgressCallback = void Function(double progress, int receivedBytes, int totalBytes);
 
 class ApkDownloadService {
@@ -50,12 +60,37 @@ class ApkDownloadService {
       throw UnsupportedError('Le téléchargement d\'APK est réservé aux appareils Android.');
     }
 
-    final uri = Uri.parse(apkUrl);
-    final request = http.Request('GET', uri);
-    final streamedResponse = await _client.send(request);
+    Uri currentUri = Uri.parse(apkUrl);
+    http.StreamedResponse? streamedResponse;
+    int redirectCount = 0;
+    const maxRedirects = 8;
 
-    if (streamedResponse.statusCode != 200 && streamedResponse.statusCode != 302) {
-      throw HttpException('Échec du téléchargement (${streamedResponse.statusCode})');
+    while (redirectCount < maxRedirects) {
+      final request = http.Request('GET', currentUri);
+      request.followRedirects = false;
+      request.headers['User-Agent'] = 'DubaGest-Android-Updater';
+      final response = await _client.send(request);
+
+      if (response.statusCode >= 300 && response.statusCode < 400) {
+        final location = response.headers['location'];
+        if (location == null || location.isEmpty) {
+          throw HttpException('Redirection sans cible reçue du serveur (${response.statusCode})');
+        }
+        currentUri = currentUri.resolve(location);
+        redirectCount++;
+        continue;
+      }
+
+      if (response.statusCode == 200) {
+        streamedResponse = response;
+        break;
+      }
+
+      throw HttpException('Échec du téléchargement HTTP ${response.statusCode}');
+    }
+
+    if (streamedResponse == null) {
+      throw const HttpException('Nombre maximal de redirections dépassé.');
     }
 
     final totalBytes = streamedResponse.contentLength ?? expectedFileSize;
@@ -67,6 +102,8 @@ class ApkDownloadService {
     }
 
     final sink = apkFile.openWrite();
+    final digestAccumulator = _DigestAccumulator();
+    final sha256Sink = sha256.startChunkedConversion(digestAccumulator);
 
     int receivedBytes = 0;
     final completer = Completer<void>();
@@ -75,6 +112,7 @@ class ApkDownloadService {
       (chunk) {
         receivedBytes += chunk.length;
         sink.add(chunk);
+        sha256Sink.add(chunk);
 
         final progress = totalBytes > 0 ? (receivedBytes / totalBytes).clamp(0.0, 1.0) : 0.0;
         onProgress(progress, receivedBytes, totalBytes);
@@ -92,6 +130,7 @@ class ApkDownloadService {
       await completer.future;
     } finally {
       await subscription.cancel();
+      sha256Sink.close();
       await sink.flush();
       await sink.close();
     }
@@ -109,9 +148,8 @@ class ApkDownloadService {
       );
     }
 
-    // 2. Vérification cryptographique stricte de l'empreinte SHA-256
-    final bytes = await apkFile.readAsBytes();
-    final actualHash = sha256.convert(bytes).toString().toLowerCase();
+    // 2. Vérification cryptographique stricte de l'empreinte SHA-256 (calculée en streaming)
+    final actualHash = digestAccumulator.digest?.toString().toLowerCase() ?? '';
     final targetHash = expectedSha256.trim().toLowerCase();
 
     if (targetHash.isNotEmpty && actualHash != targetHash) {
