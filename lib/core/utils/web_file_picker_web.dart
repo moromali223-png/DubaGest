@@ -7,21 +7,24 @@ import 'app_logger.dart';
 
 /// Sélecteur de photo web direct via FileReader HTML5 natif.
 ///
-/// Résout définitivement les problèmes de sélection/prise de photo sur iOS Safari et PWA :
-/// - Ne fait AUCUN appel HTTP ni URL blob (compatible Service Worker et isolation cross-origin).
-/// - Élément <input type="file" accept="image/*"> attaché au DOM pour garantir le déclenchement
-///   de la feuille native iOS (Appareil photo / Photothèque / Fichiers).
-/// - Écouteurs d'événements attachés rigoureusement avant la lecture du buffer.
-Future<Uint8List?> pickImageBytesWeb() async {
+/// Résout définitivement la sélection/prise de photo sur iOS Safari et navigateurs mobiles :
+/// - Exécution 100% synchrone du click() dès le tap utilisateur (conserve la "user activation" Safari).
+/// - Style visible dans le layout (opacity: 0, 1x1px) sans display:none pour empêcher le blocage WebKit.
+/// - Ne fait AUCUN appel HTTP ni URL blob (compatible PWA et Service Worker).
+Future<Uint8List?> pickImageBytesWeb() {
   final completer = Completer<Uint8List?>();
 
   final input = web.HTMLInputElement()
     ..type = 'file'
     ..accept = 'image/*'
-    ..style.display = 'none'
+    ..style.opacity = '0'
     ..style.position = 'fixed'
-    ..style.top = '-1000px'
-    ..style.left = '-1000px';
+    ..style.left = '0'
+    ..style.top = '0'
+    ..style.width = '1px'
+    ..style.height = '1px'
+    ..style.pointerEvents = 'none'
+    ..style.zIndex = '-1';
 
   void cleanup() {
     try {
@@ -97,7 +100,7 @@ Future<Uint8List?> pickImageBytesWeb() async {
     }.toJS,
   );
 
-  // 3. Attacher au DOM et déclencher
+  // 3. Attacher au DOM (obligatoire pour Safari)
   final body = web.document.body;
   if (body != null) {
     body.append(input);
@@ -105,6 +108,7 @@ Future<Uint8List?> pickImageBytesWeb() async {
     web.document.documentElement?.append(input);
   }
 
+  // 4. Déclencher le clic immédiatement et de manière synchrone
   try {
     input.click();
   } catch (err) {

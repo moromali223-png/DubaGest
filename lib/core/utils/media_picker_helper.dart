@@ -147,15 +147,26 @@ class MediaPickerHelper {
     double? maxHeight,
     int? imageQuality = 80,
     ImageSource? forceSource,
-  }) async {
-    final photo = await choisirPhotoDetail(
+  }) {
+    if (kIsWeb) {
+      // Déclenchement 100% synchrone pour préserver le contexte de geste utilisateur sur Safari mobile
+      return pickImageBytesWeb().then((rawBytes) {
+        if (rawBytes == null || rawBytes.isEmpty) return null;
+        return compresserImage(
+          rawBytes,
+          maxWidth: maxWidth?.toInt() ?? 1024,
+          quality: imageQuality ?? 80,
+        );
+      });
+    }
+
+    return choisirPhotoDetail(
       context,
       maxWidth: maxWidth,
       maxHeight: maxHeight,
       imageQuality: imageQuality,
       forceSource: forceSource,
-    );
-    return photo?.octets;
+    ).then((photo) => photo?.octets);
   }
 
   /// Compresse et redimensionne une image en pur Dart pour éviter tout dépassement mémoire.
