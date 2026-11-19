@@ -14,6 +14,10 @@ class ProfilEntreprise {
     this.logoPath,
     this.modesPaiement = tousLesModes,
     this.piedRecu,
+    this.slug,
+    this.whatsappCommercial,
+    this.descriptionCommerciale,
+    this.estCatalogueActif = true,
   });
 
   /// Devises proposées (code ISO 4217). XOF (FCFA) par défaut.
@@ -45,6 +49,18 @@ class ProfilEntreprise {
   /// Mention imprimée en bas des reçus (figée à l'émission).
   final String? piedRecu;
 
+  /// Identifiant d'URL publique (slug boutique e.g. dubagest.com/boutique/mon-magasin)
+  final String? slug;
+
+  /// Numéro WhatsApp dédié aux commandes du catalogue
+  final String? whatsappCommercial;
+
+  /// Présentation commerciale de la boutique
+  final String? descriptionCommerciale;
+
+  /// Indique si la vitrine/catalogue public est actif
+  final bool estCatalogueActif;
+
   ProfilEntreprise copyWith({
     String? nom,
     String? devise,
@@ -55,6 +71,13 @@ class ProfilEntreprise {
     String? ville,
     String? identifiantFiscal,
     String? registreCommerce,
+    String? logoPath,
+    List<String>? modesPaiement,
+    String? piedRecu,
+    String? slug,
+    String? whatsappCommercial,
+    String? descriptionCommerciale,
+    bool? estCatalogueActif,
   }) =>
       ProfilEntreprise(
         id: id,
@@ -67,8 +90,12 @@ class ProfilEntreprise {
         ville: ville ?? this.ville,
         identifiantFiscal: identifiantFiscal ?? this.identifiantFiscal,
         registreCommerce: registreCommerce ?? this.registreCommerce,
-        logoPath: logoPath,
-        modesPaiement: modesPaiement,
-        piedRecu: piedRecu,
+        logoPath: logoPath ?? this.logoPath,
+        modesPaiement: modesPaiement ?? this.modesPaiement,
+        piedRecu: piedRecu ?? this.piedRecu,
+        slug: slug ?? this.slug,
+        whatsappCommercial: whatsappCommercial ?? this.whatsappCommercial,
+        descriptionCommerciale: descriptionCommerciale ?? this.descriptionCommerciale,
+        estCatalogueActif: estCatalogueActif ?? this.estCatalogueActif,
       );
 }

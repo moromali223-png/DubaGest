@@ -160,6 +160,13 @@ abstract final class CommerceMapper {
         fournisseurId: j['fournisseur_id'] as String?,
         estActif: j['est_actif'] as bool? ?? true,
         version: _i(j['version']),
+        estPublieCatalogue: j['est_publie_catalogue'] as bool? ?? false,
+        prixPublic: _i(j['prix_public']),
+        prixBarre: _i(j['prix_barre']),
+        photosV2: [for (final p in (j['photos_v2'] as List?) ?? const []) p as String],
+        audioPresentationUrl: j['audio_presentation_url'] as String?,
+        videoPresentationUrl: j['video_presentation_url'] as String?,
+        collectionId: j['collection_id'] as String?,
       );
 
   static ProduitsCompanion produitServeur(Map<String, dynamic> j, RecordSyncStatus statut) =>
@@ -187,6 +194,13 @@ abstract final class CommerceMapper {
         'attributs': p.attributs,
         'fournisseur_id': p.fournisseurId,
         if (!creation) 'est_actif': p.estActif,
+        'est_publie_catalogue': p.estPublieCatalogue,
+        'prix_public': p.prixPublic,
+        'prix_barre': p.prixBarre,
+        'photos_v2': p.photosV2,
+        'audio_presentation_url': p.audioPresentationUrl,
+        'video_presentation_url': p.videoPresentationUrl,
+        'collection_id': p.collectionId,
       };
 
   static bool produitIdentique(ProduitRow l, Map<String, dynamic> s) {

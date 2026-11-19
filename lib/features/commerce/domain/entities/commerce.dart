@@ -146,6 +146,13 @@ class Produit {
     this.estActif = true,
     this.version,
     this.syncStatus = RecordSyncStatus.synced,
+    this.estPublieCatalogue = false,
+    this.prixPublic,
+    this.prixBarre,
+    this.photosV2 = const [],
+    this.audioPresentationUrl,
+    this.videoPresentationUrl,
+    this.collectionId,
   });
 
   final String id;
@@ -176,7 +183,37 @@ class Produit {
   final int? version;
   final RecordSyncStatus syncStatus;
 
-  String? get photoPrincipale => photos.isEmpty ? null : photos.first;
+  /// V2: Indique si le produit est publié sur le catalogue public
+  final bool estPublieCatalogue;
+
+  /// V2: Prix personnalisé pour le catalogue public (indépendant du stock)
+  final int? prixPublic;
+
+  /// V2: Prix barré promotionnel affiché sur le catalogue
+  final int? prixBarre;
+
+  /// V2: Galerie jusqu'à 5 photos (R2 ou Supabase)
+  final List<String> photosV2;
+
+  /// V2: Présentation vocale (60s max)
+  final String? audioPresentationUrl;
+
+  /// V2: Vidéo commerciale courte (30s max)
+  final String? videoPresentationUrl;
+
+  /// V2: Identifiant de la collection rattachée
+  final String? collectionId;
+
+  /// Prix affiché publiquement (prixPublic si défini, sinon prixDetail)
+  int get prixPublicEffectif => prixPublic ?? prixDetail;
+
+  /// Liste de toutes les photos utilisables (priorité à photosV2, sinon photos V1)
+  List<String> get toutesLesPhotos => photosV2.isNotEmpty ? photosV2 : photos;
+
+  String? get photoPrincipale {
+    if (photosV2.isNotEmpty) return photosV2.first;
+    return photos.isEmpty ? null : photos.first;
+  }
   bool get aPlusieursUnites => unites.isNotEmpty;
   bool get venteEnGros => prixGros != null || unites.any((u) => u.prixGros != null);
 
@@ -290,6 +327,13 @@ class Produit {
     Map<String, String>? attributs,
     String? Function()? fournisseurId,
     bool? estActif,
+    bool? estPublieCatalogue,
+    int? Function()? prixPublic,
+    int? Function()? prixBarre,
+    List<String>? photosV2,
+    String? Function()? audioPresentationUrl,
+    String? Function()? videoPresentationUrl,
+    String? Function()? collectionId,
   }) =>
       Produit(
         id: id,
@@ -313,6 +357,13 @@ class Produit {
         estActif: estActif ?? this.estActif,
         version: version,
         syncStatus: syncStatus,
+        estPublieCatalogue: estPublieCatalogue ?? this.estPublieCatalogue,
+        prixPublic: prixPublic == null ? this.prixPublic : prixPublic(),
+        prixBarre: prixBarre == null ? this.prixBarre : prixBarre(),
+        photosV2: photosV2 ?? this.photosV2,
+        audioPresentationUrl: audioPresentationUrl == null ? this.audioPresentationUrl : audioPresentationUrl(),
+        videoPresentationUrl: videoPresentationUrl == null ? this.videoPresentationUrl : videoPresentationUrl(),
+        collectionId: collectionId == null ? this.collectionId : collectionId(),
       );
 }
 

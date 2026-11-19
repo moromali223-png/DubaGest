@@ -60,7 +60,8 @@ class EntrepriseRepositoryImpl implements EntrepriseRepository {
       j = await _guard(() => _client
           .from('entreprises')
           .select('id, nom, devise, langue_defaut, pays, telephone, adresse, ville, '
-              'identifiant_fiscal, registre_commerce, logo_path, modes_paiement, pied_recu')
+              'identifiant_fiscal, registre_commerce, logo_path, modes_paiement, pied_recu, '
+              'slug, whatsapp_commercial, description_commerciale, est_catalogue_actif')
           .eq('id', entrepriseId)
           .single());
       await _cache?.write(_cleProfil(entrepriseId), j);
@@ -71,20 +72,24 @@ class EntrepriseRepositoryImpl implements EntrepriseRepository {
       j = cache.data;
     }
     return ProfilEntreprise(
-          id: j['id'] as String,
-          nom: j['nom'] as String,
-          devise: j['devise'] as String,
-          langueDocuments: j['langue_defaut'] as String,
-          pays: j['pays'] as String?,
-          telephone: j['telephone'] as String?,
-          adresse: j['adresse'] as String?,
-          ville: j['ville'] as String?,
-          identifiantFiscal: j['identifiant_fiscal'] as String?,
+      id: j['id'] as String,
+      nom: j['nom'] as String,
+      devise: j['devise'] as String,
+      langueDocuments: j['langue_defaut'] as String,
+      pays: j['pays'] as String?,
+      telephone: j['telephone'] as String?,
+      adresse: j['adresse'] as String?,
+      ville: j['ville'] as String?,
+      identifiantFiscal: j['identifiant_fiscal'] as String?,
       registreCommerce: j['registre_commerce'] as String?,
       logoPath: j['logo_path'] as String?,
       // Profil mis en cache avant l'étape 9 : tous les modes.
       modesPaiement: (j['modes_paiement'] as List?)?.cast<String>() ?? ProfilEntreprise.tousLesModes,
       piedRecu: j['pied_recu'] as String?,
+      slug: j['slug'] as String?,
+      whatsappCommercial: j['whatsapp_commercial'] as String?,
+      descriptionCommerciale: j['description_commerciale'] as String?,
+      estCatalogueActif: j['est_catalogue_actif'] as bool? ?? true,
     );
   }
 
@@ -118,6 +123,10 @@ class EntrepriseRepositoryImpl implements EntrepriseRepository {
           'ville': vide(p.ville),
           'identifiant_fiscal': vide(p.identifiantFiscal),
           'registre_commerce': vide(p.registreCommerce),
+          if (p.slug != null && p.slug!.trim().isNotEmpty) 'slug': p.slug!.trim(),
+          'whatsapp_commercial': vide(p.whatsappCommercial),
+          'description_commerciale': vide(p.descriptionCommerciale),
+          'est_catalogue_actif': p.estCatalogueActif,
         }).eq('id', p.id);
       });
 
