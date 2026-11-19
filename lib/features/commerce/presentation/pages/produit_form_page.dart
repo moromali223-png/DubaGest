@@ -10,6 +10,7 @@ import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/sync/sync_models.dart';
+import '../../../../core/utils/media_picker_helper.dart';
 import '../../../../core/utils/recherche.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../contacts/domain/entities/contact.dart';
@@ -350,90 +351,36 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
 
   // --- Photos -------------------------------------------------------------------
 
-  Future<void> _ajouterPhoto(ImageSource source) async {
+  Future<void> _choisirSourcePhoto() async {
     final ctx = ref.read(contexteActifProvider);
     if (ctx == null) return;
+    final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
+    if (eid == null || eid.isEmpty) return;
+
     try {
-      final x = await ImagePicker().pickImage(source: source, maxWidth: 1024, imageQuality: 75);
-      if (x == null) return;
-      final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
-      if (eid == null || eid.isEmpty) return;
+      final octets = await MediaPickerHelper.choisirPhoto(context);
+      if (octets == null) return;
       final chemin = await ref
           .read(photosProduitsProvider)
-          .ajouter(entrepriseId: eid, produitId: _id, octets: await x.readAsBytes());
+          .ajouterV2(entrepriseId: eid, produitId: _id, octets: octets);
       if (mounted) setState(() => _photos.add(chemin));
     } catch (e) {
       if (mounted) signalerErreur(context, e);
     }
   }
 
-  Future<void> _choisirSourcePhoto() async {
-    final l10n = context.l10n;
-    if (kIsWeb) {
-      // Sur Web / PWA (Safari iOS & Chrome), ouvrir directement sans modal asynchrone
-      // pour préserver le geste utilisateur et laisser iOS afficher sa feuille native
-      // (Prendre une photo en direct / Photothèque / Choisir un fichier).
-      await _ajouterPhoto(ImageSource.gallery);
-      return;
-    }
-    if (!ImagePicker().supportsImageSource(ImageSource.camera)) return _ajouterPhoto(ImageSource.gallery);
-    HapticFeedback.mediumImpact();
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 16),
-              Text(l10n.comTakePhoto, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
-                  child: const Icon(Icons.photo_camera_outlined, color: AppColors.green),
-                ),
-                title: Text(l10n.comTakePhoto, style: const TextStyle(fontWeight: FontWeight.w700)),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
-                  child: const Icon(Icons.photo_library_outlined, color: Color(0xFF4F46E5)),
-                ),
-                title: Text(l10n.comChooseFromGallery, style: const TextStyle(fontWeight: FontWeight.w700)),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (source != null) await _ajouterPhoto(source);
-  }
-
-  Future<void> _remplacerPhoto(int index, ImageSource source) async {
+  Future<void> _choisirSourceRemplacement(int index) async {
     final ctx = ref.read(contexteActifProvider);
     if (ctx == null || index < 0 || index >= _photos.length) return;
+    final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
+    if (eid == null || eid.isEmpty) return;
+
     try {
-      final x = await ImagePicker().pickImage(source: source, maxWidth: 1024, imageQuality: 75);
-      if (x == null) return;
-      final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
-      if (eid == null || eid.isEmpty) return;
+      final octets = await MediaPickerHelper.choisirPhoto(context);
+      if (octets == null) return;
       final chemin = await ref
           .read(photosProduitsProvider)
-          .ajouterV2(entrepriseId: eid, produitId: _id, octets: await x.readAsBytes());
+          .ajouterV2(entrepriseId: eid, produitId: _id, octets: octets);
       if (mounted) {
         setState(() {
           _photos[index] = chemin;
@@ -442,58 +389,6 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     } catch (e) {
       if (mounted) signalerErreur(context, e);
     }
-  }
-
-  Future<void> _choisirSourceRemplacement(int index) async {
-    if (kIsWeb) {
-      await _remplacerPhoto(index, ImageSource.gallery);
-      return;
-    }
-    if (!ImagePicker().supportsImageSource(ImageSource.camera)) return _remplacerPhoto(index, ImageSource.gallery);
-    HapticFeedback.mediumImpact();
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 16),
-              const Text('Remplacer la photo', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.ink)),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
-                  child: const Icon(Icons.photo_camera_outlined, color: AppColors.green),
-                ),
-                title: const Text('Prendre une nouvelle photo', style: TextStyle(fontWeight: FontWeight.w700)),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
-                  child: const Icon(Icons.photo_library_outlined, color: Color(0xFF4F46E5)),
-                ),
-                title: const Text('Choisir dans la galerie', style: TextStyle(fontWeight: FontWeight.w700)),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (source != null) await _remplacerPhoto(index, source);
   }
 
   // --- Rendu ----------------------------------------------------------------------
@@ -2497,11 +2392,10 @@ class _DialogueCategorieState extends State<_DialogueCategorie> {
     if (suggestion != _icone) setState(() => _icone = suggestion);
   }
 
-  Future<void> _choisirPhoto(ImageSource source) async {
+  Future<void> _choisirSourcePhoto() async {
     try {
-      final x = await ImagePicker().pickImage(source: source, maxWidth: 800, imageQuality: 80);
-      if (x == null) return;
-      final bytes = await x.readAsBytes();
+      final bytes = await MediaPickerHelper.choisirPhoto(context, maxWidth: 800, imageQuality: 80);
+      if (bytes == null) return;
       setState(() {
         _photoBytes = bytes;
         _photoExistanteChemin = null;
@@ -2509,57 +2403,6 @@ class _DialogueCategorieState extends State<_DialogueCategorie> {
     } catch (e) {
       if (mounted) signalerErreur(context, e);
     }
-  }
-
-  Future<void> _choisirSourcePhoto() async {
-    if (kIsWeb) {
-      await _choisirPhoto(ImageSource.gallery);
-      return;
-    }
-    HapticFeedback.mediumImpact();
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 16),
-              const Text('Source de la photo', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
-                  child: const Icon(Icons.photo_camera_outlined, color: AppColors.green),
-                ),
-                title: const Text('Prendre une photo', style: TextStyle(fontWeight: FontWeight.w700)),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
-                  child: const Icon(Icons.photo_library_outlined, color: Color(0xFF4F46E5)),
-                ),
-                title: const Text('Choisir depuis la galerie', style: TextStyle(fontWeight: FontWeight.w700)),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (source != null) await _choisirPhoto(source);
   }
 
   @override

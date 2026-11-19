@@ -8,6 +8,7 @@ import '../../../app/localization/l10n.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/sync/sync_models.dart';
+import '../../../core/utils/media_picker_helper.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../../agenda/domain/entities/agenda.dart';
 import '../../entreprise/presentation/providers/contexte_providers.dart';
@@ -64,9 +65,14 @@ class _SectionNotesPiecesState extends ConsumerState<SectionNotesPieces> {
   }
 
   Future<FichierChoisi?> _photo() async {
-    final x = await ImagePicker().pickImage(source: ImageSource.camera, maxWidth: 1280, imageQuality: 75);
+    final x = await MediaPickerHelper.choisirPhotoDetail(
+      context,
+      maxWidth: 1280,
+      imageQuality: 75,
+      forceSource: ImageSource.camera,
+    );
     if (x == null) return null;
-    return FichierChoisi(nom: x.name, octets: await x.readAsBytes(), typeMime: x.mimeType ?? 'image/jpeg');
+    return FichierChoisi(nom: x.nom, octets: x.octets, typeMime: x.typeMime);
   }
 
   Future<FichierChoisi?> _fichier() async {
