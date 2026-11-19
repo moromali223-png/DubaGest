@@ -34,6 +34,29 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <!-- Purge automatique de cache pour nouvelles versions PWA -->
+  <script>
+    (function() {
+      var CURRENT_VERSION = '1.0.2_3';
+      try {
+        var savedVersion = localStorage.getItem('dubagest_pwa_version');
+        if (savedVersion !== CURRENT_VERSION) {
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              names.forEach(function(name) { caches.delete(name); });
+            });
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(r) { r.unregister(); });
+            });
+          }
+          localStorage.setItem('dubagest_pwa_version', CURRENT_VERSION);
+        }
+      } catch (_) {}
+    })();
+  </script>
+
   <title>DubaGest</title>
   <link rel="manifest" href="manifest.json">
   <style>
@@ -93,6 +116,6 @@
       });
     }
   </script>
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="flutter_bootstrap.js?v=1.0.2_3" async></script>
 </body>
 </html>
