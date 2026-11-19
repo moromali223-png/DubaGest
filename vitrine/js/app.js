@@ -319,7 +319,7 @@
         <div class="plan-price-wrap">
           <span class="plan-price">${formattedPrice}</span>
           <span class="plan-currency">${plan.devise}</span>
-          <span class="plan-period">/ mois</span>
+          <span class="plan-period">${plan.periode || '/ mois'}</span>
         </div>
         <div class="plan-quotas">
           <div class="quota-item">
@@ -346,8 +346,8 @@
           ${plan.fonctionnalites.map((f) => `<li><span class="check-icon">✓</span> <span>${f}</span></li>`).join('')}
         </ul>
         <div class="plan-action">
-          <a href="${config.loginUrl}" class="btn ${plan.populaire ? 'btn-primary' : 'btn-outline'} btn-block">
-            Choisir la formule ${plan.nom}
+          <a href="${plan.ctaUrl || config.loginUrl}" class="btn ${plan.populaire ? 'btn-primary' : 'btn-outline'} btn-block">
+            ${plan.ctaText || `Choisir la formule ${plan.nom}`}
           </a>
         </div>
       `;

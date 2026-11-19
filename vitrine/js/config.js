@@ -51,6 +51,29 @@ window.DUBAGEST_CONFIG = {
   // Formules réelles issues de la base de données
   plans: [
     {
+      code: 'CATALOGUE_SEUL',
+      nom: 'Catalogue Seul',
+      prixMensuel: 3000,
+      devise: 'FCFA',
+      periode: '/ an',
+      description: 'Votre boutique vitrine publique en ligne avec commandes directes WhatsApp.',
+      maxActivites: 1,
+      maxPerimetres: 1,
+      maxUtilisateursCommerce: 1,
+      badge: 'Nouveau V2',
+      populaire: false,
+      ctaUrl: 'https://app.dubagest.com/#/create-company?mode=catalogue',
+      ctaText: 'Créer mon catalogue',
+      fonctionnalites: [
+        'Vitrine publique partageable (dubagest.com/boutique/votre-nom)',
+        'Jusqu\'à 5 photos par produit avec photo principale',
+        'Présentation vocale (60s) et vidéos courtes',
+        'Commandes directes reçues sur votre WhatsApp',
+        'Prix publics personnalisés et promotions',
+        'Idéal sans comptabilité ni gestion de stock'
+      ]
+    },
+    {
       code: 'NORMAL',
       nom: 'Normal',
       prixMensuel: 1000,
