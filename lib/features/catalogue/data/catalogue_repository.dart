@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../app/di/app_composition.dart';
+import '../../../../core/di/core_providers.dart';
 import '../../../../core/errors/error_mapper.dart';
 import '../domain/entities/catalogue_public_data.dart';
 
@@ -10,13 +10,15 @@ abstract class CatalogueRepository {
 }
 
 class CatalogueRepositoryImpl implements CatalogueRepository {
-  CatalogueRepositoryImpl(this._client);
-  final SupabaseClient _client;
+  CatalogueRepositoryImpl([SupabaseClient? client]) : _client = client;
+  final SupabaseClient? _client;
+
+  SupabaseClient get client => _client ?? Supabase.instance.client;
 
   @override
   Future<BoutiquePubliqueData> chargerBoutiquePublique(String slugOuId) async {
     try {
-      final res = await _client.rpc('consulter_catalogue_public', params: {
+      final res = await client.rpc('consulter_catalogue_public', params: {
         'p_slug_ou_id': slugOuId.trim(),
       });
       if (res == null) {
@@ -31,7 +33,11 @@ class CatalogueRepositoryImpl implements CatalogueRepository {
 }
 
 final catalogueRepositoryProvider = Provider<CatalogueRepository>((ref) {
-  return CatalogueRepositoryImpl(ref.watch(supabaseClientProvider));
+  try {
+    return CatalogueRepositoryImpl(ref.watch(supabaseClientProvider));
+  } catch (_) {
+    return CatalogueRepositoryImpl(Supabase.instance.client);
+  }
 });
 
 final boutiquePubliqueProvider = FutureProvider.family<BoutiquePubliqueData, String>((ref, slugOuId) {

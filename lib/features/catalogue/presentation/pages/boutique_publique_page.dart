@@ -250,6 +250,7 @@ class _BoutiquePubliquePageState extends ConsumerState<BoutiquePubliquePage> {
                               quantitePanier: qte,
                               onTap: () => _ouvrirFicheProduit(context, prod, boutique),
                               onAjouter: () => _ajouterAuPanier(prod.id),
+                              onRetirer: () => _retirerDuPanier(prod.id),
                             );
                           },
                           childCount: produitsFiltres.length,
@@ -261,7 +262,7 @@ class _BoutiquePubliquePageState extends ConsumerState<BoutiquePubliquePage> {
 
               // 5. Barre Flottante Panier WhatsApp
               if (_panier.isNotEmpty)
-                Positioned(
+                PositionedDirectional(
                   start: 16,
                   end: 16,
                   bottom: 20,
@@ -559,12 +560,14 @@ class _ProduitCard extends StatelessWidget {
     required this.quantitePanier,
     required this.onTap,
     required this.onAjouter,
+    required this.onRetirer,
   });
 
   final ProduitCataloguePublic produit;
   final int quantitePanier;
   final VoidCallback onTap;
   final VoidCallback onAjouter;
+  final VoidCallback onRetirer;
 
   @override
   Widget build(BuildContext context) {
@@ -651,18 +654,55 @@ class _ProduitCard extends StatelessWidget {
                         ),
                       ],
                       const Spacer(),
-                      InkWell(
-                        onTap: onAjouter,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.greenSoft,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.add_shopping_cart_rounded, size: 16, color: AppColors.green),
-                        ),
-                      ),
+                      quantitePanier > 0
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  onTap: onRetirer,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFF1F5F9),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.remove_rounded, size: 14, color: AppColors.ink),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                                  child: Text(
+                                    '$quantitePanier',
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.ink),
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: onAjouter,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.greenSoft,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.add_rounded, size: 14, color: AppColors.green),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : InkWell(
+                              onTap: onAjouter,
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.greenSoft,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.add_shopping_cart_rounded, size: 16, color: AppColors.green),
+                              ),
+                            ),
                     ],
                   ),
                 ],
