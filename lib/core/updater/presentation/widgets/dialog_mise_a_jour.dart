@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +28,7 @@ class DialogMiseAJour extends ConsumerWidget {
     final notifier = ref.read(updaterNotifierProvider.notifier);
     final info = state.versionInfo;
 
+    final isPwa = kIsWeb || (info?.isPwa ?? false);
     final isMandatory = info?.isMandatory ?? false;
     final isDownloading = state.status == UpdaterStatus.downloading;
     final isReady = state.status == UpdaterStatus.readyToInstall;
@@ -264,18 +266,22 @@ class DialogMiseAJour extends ConsumerWidget {
                         onPressed: isDownloading
                             ? null
                             : () {
-                                if (isReady) {
+                                if (isPwa) {
+                                  notifier.appliquerPwaUpdate();
+                                } else if (isReady) {
                                   notifier.relancerInstallation();
                                 } else {
                                   notifier.telechargerEtInstaller();
                                 }
                               },
                         child: Text(
-                          isReady
-                              ? 'Installer maintenant'
-                              : isDownloading
-                                  ? 'Téléchargement...'
-                                  : 'Mettre à jour maintenant',
+                          isPwa
+                              ? 'Actualiser maintenant'
+                              : isReady
+                                  ? 'Installer maintenant'
+                                  : isDownloading
+                                      ? 'Téléchargement...'
+                                      : 'Mettre à jour maintenant',
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                         ),
                       ),

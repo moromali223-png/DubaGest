@@ -1,4 +1,8 @@
-import 'package:flutter/foundation.dart';
+/// Configuration statique de version officielle de l'application
+abstract final class AppVersionConfig {
+  static const String currentVersionName = '1.0.2';
+  static const int currentVersionCode = 3;
+}
 
 /// Statut de disponibilité de la mise à jour
 enum UpdateAvailability {

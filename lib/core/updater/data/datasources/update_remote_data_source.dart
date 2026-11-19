@@ -18,21 +18,27 @@ class UpdateRemoteDataSource {
   /// Récupère la version installée sur l'appareil (via canal natif sous Android)
   Future<({String versionName, int versionCode})> getInstalledVersion() async {
     if (kIsWeb) {
-      return (versionName: '1.0.1', versionCode: 2);
+      return (
+        versionName: AppVersionConfig.currentVersionName,
+        versionCode: AppVersionConfig.currentVersionCode,
+      );
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
         final res = await _nativeChannel.invokeMapMethod<String, dynamic>('getAppVersion');
         if (res != null) {
-          final name = res['versionName'] as String? ?? '1.0.0';
-          final code = (res['versionCode'] as num?)?.toInt() ?? 1;
+          final name = res['versionName'] as String? ?? AppVersionConfig.currentVersionName;
+          final code = (res['versionCode'] as num?)?.toInt() ?? AppVersionConfig.currentVersionCode;
           return (versionName: name, versionCode: code);
         }
       } catch (e) {
         AppLogger.warning('Erreur récupération version Android native: $e', tag: 'updater');
       }
     }
-    return (versionName: '1.0.0', versionCode: 1);
+    return (
+      versionName: AppVersionConfig.currentVersionName,
+      versionCode: AppVersionConfig.currentVersionCode,
+    );
   }
 
   /// Télécharge et analyse le manifeste de version centralisé hébergé sur Cloudflare

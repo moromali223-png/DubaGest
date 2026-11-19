@@ -6,6 +6,7 @@ import '../../../utils/app_logger.dart';
 import '../../data/datasources/update_remote_data_source.dart';
 import '../../domain/entities/app_version_info.dart';
 import '../../domain/services/apk_download_service.dart';
+import '../../domain/services/pwa_reload_helper.dart';
 
 enum UpdaterStatus {
   idle,
@@ -116,6 +117,11 @@ class UpdaterNotifier extends Notifier<UpdaterState> {
 
   /// Déclenche le téléchargement progressif avec vérification SHA-256 puis l'installation
   Future<void> telechargerEtInstaller() async {
+    if (kIsWeb) {
+      appliquerPwaUpdate();
+      return;
+    }
+
     final info = state.versionInfo;
     if (info == null || info.apkUrl.isEmpty) {
       state = state.copyWith(
@@ -152,6 +158,16 @@ class UpdaterNotifier extends Notifier<UpdaterState> {
         downloadedApkPath: apkFile.path,
       );
 
+      // Vérification permission installation inconnue sur Android 8.0+
+      if (!await _downloadService.canRequestPackageInstalls()) {
+        await _downloadService.openInstallPermissionSettings();
+        state = state.copyWith(
+          status: UpdaterStatus.readyToInstall,
+          errorMessage: 'Veuillez autoriser l\'installation d\'applications dans les réglages Android qui viennent de s\'ouvrir, puis revenez ici appuyer sur "Installer maintenant".',
+        );
+        return;
+      }
+
       // Lancement de l'installeur Android
       await _downloadService.triggerInstall(apkFile);
     } catch (e) {
@@ -173,6 +189,14 @@ class UpdaterNotifier extends Notifier<UpdaterState> {
     try {
       final file = File(path);
       if (await file.exists()) {
+        if (!await _downloadService.canRequestPackageInstalls()) {
+          await _downloadService.openInstallPermissionSettings();
+          state = state.copyWith(
+            status: UpdaterStatus.readyToInstall,
+            errorMessage: 'Veuillez autoriser l\'installation d\'applications dans les réglages Android, puis réappuyez sur "Installer maintenant".',
+          );
+          return;
+        }
         await _downloadService.triggerInstall(file);
       } else {
         await telechargerEtInstaller();
@@ -194,12 +218,15 @@ class UpdaterNotifier extends Notifier<UpdaterState> {
   void appliquerPwaUpdate() {
     if (!kIsWeb) return;
     try {
-      // ignore: avoid_dynamic_calls
-      // Appel de la méthode JavaScript globale injectée dans index.html
-      // import 'dart:js' as js;
+      reloadPwaPage();
     } catch (e) {
       AppLogger.warning('Erreur application mise à jour PWA: $e', tag: 'updater');
     }
+  }
+
+  /// Masque temporairement la notification de mise à jour
+  void masquerNotification() {
+    state = state.copyWith(status: UpdaterStatus.idle);
   }
 }
 

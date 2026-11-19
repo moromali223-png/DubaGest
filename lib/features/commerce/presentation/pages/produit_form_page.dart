@@ -362,7 +362,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
       if (octets == null) return;
       final chemin = await ref
           .read(photosProduitsProvider)
-          .ajouterV2(entrepriseId: eid, produitId: _id, octets: octets);
+          .ajouter(entrepriseId: eid, produitId: _id, octets: octets);
       if (mounted) setState(() => _photos.add(chemin));
     } catch (e) {
       if (mounted) signalerErreur(context, e);
@@ -380,7 +380,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
       if (octets == null) return;
       final chemin = await ref
           .read(photosProduitsProvider)
-          .ajouterV2(entrepriseId: eid, produitId: _id, octets: octets);
+          .ajouter(entrepriseId: eid, produitId: _id, octets: octets);
       if (mounted) {
         setState(() {
           _photos[index] = chemin;

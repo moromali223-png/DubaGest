@@ -61,7 +61,7 @@ class PwaUpdateBanner extends ConsumerWidget {
               const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
-                onPressed: () => notifier.state = notifier.state.copyWith(status: UpdaterStatus.idle),
+                onPressed: notifier.masquerNotification,
                 tooltip: 'Plus tard',
               ),
             ],
