@@ -187,6 +187,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
   }
 
   Future<void> _recupererPhotoPerdue() async {
+    if (kIsWeb) return;
     try {
       final response = await ImagePicker().retrieveLostData();
       if (response.isEmpty || response.file == null) return;

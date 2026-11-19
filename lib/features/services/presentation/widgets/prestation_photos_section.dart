@@ -1,12 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/sync/sync_models.dart';
+import '../../../../core/utils/media_picker_helper.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../domain/entities/prestation.dart';
 import 'photo_viewer_dialog.dart';
@@ -36,10 +39,13 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
   @override
   void initState() {
     super.initState();
-    _recupererPhotoPerdue();
+    if (!kIsWeb) {
+      _recupererPhotoPerdue();
+    }
   }
 
   Future<void> _recupererPhotoPerdue() async {
+    if (kIsWeb) return;
     try {
       final response = await _picker.retrieveLostData();
       if (response.isEmpty || response.file == null) return;
@@ -53,20 +59,34 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
 
   Future<void> _capturerPhoto(ImageSource source) async {
     try {
-      final xFile = await _picker.pickImage(
-        source: source,
+      final photoSelectionnee = await MediaPickerHelper.choisirPhotoDetail(
+        context,
+        forceSource: source,
         maxWidth: 1280,
         maxHeight: 1280,
         imageQuality: 75,
       );
-      if (xFile == null || !mounted) return;
+      if (photoSelectionnee == null || !mounted) return;
 
-      final taille = await xFile.length();
-      _ouvrirDialogueCategorie(xFile.path, taille);
+      String chemin;
+      if (kIsWeb) {
+        chemin = 'data:image/jpeg;base64,${base64Encode(photoSelectionnee.octets)}';
+      } else {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/${photoSelectionnee.nom}');
+        await file.writeAsBytes(photoSelectionnee.octets);
+        chemin = file.path;
+      }
+
+      _ouvrirDialogueCategorie(chemin, photoSelectionnee.octets.length);
     } catch (e) {
       if (mounted) {
+        final errStr = e.toString();
+        final msg = errStr.contains('MissingPluginException')
+            ? "Impossible d'accéder à l'image sur ce navigateur."
+            : 'Impossible d\'accéder à l\'image : $e';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Impossible d\'accéder à l\'image : $e'), backgroundColor: AppColors.negative),
+          SnackBar(content: Text(msg), backgroundColor: AppColors.negative),
         );
       }
     }
@@ -365,6 +385,9 @@ class _PhotoThumbnailCard extends StatelessWidget {
       } else {
         miniature = _fallbackThumbnail();
       }
+    } else if (photo.cheminLocal != null &&
+        (photo.cheminLocal!.startsWith('data:') || photo.cheminLocal!.startsWith('http'))) {
+      miniature = Image.network(photo.cheminLocal!, fit: BoxFit.cover, width: 110, height: 120);
     } else if (photo.cheminDistant != null) {
       miniature = Image.network(photo.cheminDistant!, fit: BoxFit.cover, width: 110, height: 120);
     } else {

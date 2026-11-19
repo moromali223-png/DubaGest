@@ -1,4 +1,5 @@
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -102,7 +103,7 @@ class _SectionNotesPiecesState extends ConsumerState<SectionNotesPieces> {
     final admin = ctx?.permissionEngine.has(PermissionCodes.entrepriseManage) ?? false;
     final notes = ref.watch(notesFicheProvider(_fiche)).value ?? const <Note>[];
     final pieces = ref.watch(piecesFicheProvider(_fiche)).value ?? const <PieceJointe>[];
-    final photoPossible = ImagePicker().supportsImageSource(ImageSource.camera);
+    final photoPossible = kIsWeb ? true : ImagePicker().supportsImageSource(ImageSource.camera);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

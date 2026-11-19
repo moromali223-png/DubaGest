@@ -36,6 +36,9 @@ class PhotoViewerDialog extends StatelessWidget {
       } else {
         imageWidget = _placeholderErreur();
       }
+    } else if (photo.cheminLocal != null &&
+        (photo.cheminLocal!.startsWith('data:') || photo.cheminLocal!.startsWith('http'))) {
+      imageWidget = Image.network(photo.cheminLocal!, fit: BoxFit.contain);
     } else if (photo.cheminDistant != null) {
       imageWidget = Image.network(photo.cheminDistant!, fit: BoxFit.contain);
     } else {
