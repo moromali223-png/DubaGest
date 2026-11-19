@@ -21,6 +21,7 @@ import '../widgets/champ_quantite.dart';
 import '../widgets/choix_contact.dart';
 import '../widgets/commerce_widgets.dart';
 import '../widgets/scanner.dart';
+import '../../../catalogue/presentation/widgets/vocal_presentation_widget.dart';
 
 /// Création / modification d'un produit en deux étapes inspirées d'Ecomiq SaaS :
 ///   1. Le produit et ses unités (photos, nom, catégorie, unité de base, emballages) ;
@@ -956,6 +957,14 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                   ),
                 ),
                 onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _Libelle('Présentation vocale (60s max)'),
+              VocalPresentationWidget(
+                initialAudioUrl: _audioPresentationUrl,
+                onAudioChanged: (url) {
+                  setState(() => _audioPresentationUrl = url);
+                },
               ),
             ],
           ),
