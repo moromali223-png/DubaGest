@@ -62,10 +62,24 @@ create trigger trg_generer_slug_boutique
   before insert or update of nom, slug on public.entreprises
   for each row execute function app.generer_slug_boutique();
 
--- Rétrocompatibilité : Générer les slugs pour les entreprises existantes
-update public.entreprises
-set slug = lower(trim(regexp_replace(trim(nom), '[^a-zA-Z0-9]+', '-', 'g')))
-where slug is null or slug = '';
+-- Rétrocompatibilité : Générer les slugs uniques pour les entreprises existantes
+with num_entreprises as (
+  select id, nom,
+         row_number() over (
+           partition by lower(regexp_replace(trim(nom), '[^a-zA-Z0-9]+', '-', 'g'))
+           order by created_at asc
+         ) as rn,
+         coalesce(nullif(trim(both '-' from lower(regexp_replace(trim(nom), '[^a-zA-Z0-9]+', '-', 'g'))), ''), 'boutique') as base_slug
+  from public.entreprises
+  where slug is null or slug = ''
+)
+update public.entreprises e
+set slug = case
+  when n.rn = 1 then n.base_slug
+  else n.base_slug || '-' || n.rn
+end
+from num_entreprises n
+where e.id = n.id;
 
 -- -----------------------------------------------------------------------------
 -- 2. EXTENSION DE LA TABLE PUBLIC.PRODUITS POUR LE CATALOGUE V2
@@ -247,9 +261,9 @@ create trigger trg_catalogue_seul_bloquer_achats
   before insert or update on public.achats
   for each row execute function app.verifier_interdiction_gestion_catalogue_seul();
 
-drop trigger if exists trg_catalogue_seul_bloquer_caisses on public.caisses_mouvements;
+drop trigger if exists trg_catalogue_seul_bloquer_caisses on public.caisse_mouvements;
 create trigger trg_catalogue_seul_bloquer_caisses
-  before insert or update on public.caisses_mouvements
+  before insert or update on public.caisse_mouvements
   for each row execute function app.verifier_interdiction_gestion_catalogue_seul();
 
 drop trigger if exists trg_catalogue_seul_bloquer_depenses on public.depenses;
@@ -299,8 +313,8 @@ create policy collections_lecture_catalogue_public on public.catalogue_collectio
 create policy collections_gestion_entreprise on public.catalogue_collections
   for all
   to authenticated
-  using (app.peut(entreprise_id, 'products.update'))
-  with check (app.peut(entreprise_id, 'products.update'));
+  using (app.est_membre(entreprise_id))
+  with check (app.est_membre(entreprise_id));
 
 -- Lecture publique des nouveautés actives (non expirées)
 create policy nouveautes_lecture_catalogue_public on public.catalogue_nouveautes
@@ -319,8 +333,8 @@ create policy nouveautes_lecture_catalogue_public on public.catalogue_nouveautes
 create policy nouveautes_gestion_entreprise on public.catalogue_nouveautes
   for all
   to authenticated
-  using (app.peut(entreprise_id, 'products.update'))
-  with check (app.peut(entreprise_id, 'products.update'));
+  using (app.est_membre(entreprise_id))
+  with check (app.est_membre(entreprise_id));
 
 -- Enregistrement des statistiques de visite (Autorisé à anon)
 create policy statistiques_enregistrement_public on public.catalogue_statistiques
@@ -338,7 +352,7 @@ create policy statistiques_enregistrement_public on public.catalogue_statistique
 create policy statistiques_consultation_entreprise on public.catalogue_statistiques
   for select
   to authenticated
-  using (app.peut(entreprise_id, 'products.view'));
+  using (app.est_membre(entreprise_id));
 
 -- -----------------------------------------------------------------------------
 -- 7. FONCTION RPC DE CONSULTATION SÉCURISÉE DU CATALOGUE PUBLIC
