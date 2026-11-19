@@ -108,7 +108,7 @@ class _Formulaire extends ConsumerStatefulWidget {
 
 class _FormulaireState extends ConsumerState<_Formulaire> {
   late final String _id = widget.initial?.id ?? const Uuid().v4();
-  late final List<String> _photos = [...?widget.initial?.photos];
+  late final List<String> _photos = [...?widget.initial?.toutesLesPhotos];
   late final _nom = TextEditingController(text: widget.initial?.nom);
   late final _reference = TextEditingController(text: widget.initial?.reference);
   late final _codeBarres = TextEditingController(text: widget.initial?.codeBarres ?? widget.codeBarres);
@@ -123,6 +123,18 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
   late final _gros = _prixInitial((u) => u.prixGros, widget.initial?.prixGros);
   late final _achat = _prixInitial((u) => u.prixAchat, widget.initial?.prixAchat);
   late bool _venteGros = widget.initial?.venteEnGros ?? (widget.initial == null && widget.etat.venteEnGros);
+
+  // V2: Paramètres Catalogue Public et Prix Indépendant
+  late bool _estPublieCatalogue = widget.initial?.estPublieCatalogue ?? true;
+  late final _prixPublic = TextEditingController(
+    text: widget.initial?.prixPublic != null ? '${widget.initial!.prixPublic}' : '',
+  );
+  late final _prixBarre = TextEditingController(
+    text: widget.initial?.prixBarre != null ? '${widget.initial!.prixBarre}' : '',
+  );
+  late String? _audioPresentationUrl = widget.initial?.audioPresentationUrl;
+  late String? _videoPresentationUrl = widget.initial?.videoPresentationUrl;
+  late String? _collectionId = widget.initial?.collectionId;
 
   String? _boutique;
   late bool _estCatalogueGlobal = widget.initial?.estGlobal ?? true;
@@ -194,6 +206,8 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
 
   @override
   void dispose() {
+    _prixPublic.dispose();
+    _prixBarre.dispose();
     for (final c in [_nom, _reference, _codeBarres, _description, _detail.montant, _gros.montant, _achat.montant]) {
       c.dispose();
     }
@@ -284,6 +298,13 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
       estActif: widget.initial?.estActif ?? true,
       version: widget.initial?.version,
       syncStatus: widget.initial?.syncStatus ?? RecordSyncStatus.pendingSync,
+      estPublieCatalogue: _estPublieCatalogue,
+      prixPublic: int.tryParse(_prixPublic.text.trim()),
+      prixBarre: int.tryParse(_prixBarre.text.trim()),
+      photosV2: _photos,
+      audioPresentationUrl: _audioPresentationUrl,
+      videoPresentationUrl: _videoPresentationUrl,
+      collectionId: _collectionId,
     );
   }
 
@@ -401,6 +422,79 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     if (source != null) await _ajouterPhoto(source);
   }
 
+  Future<void> _remplacerPhoto(int index, ImageSource source) async {
+    final ctx = ref.read(contexteActifProvider);
+    if (ctx == null || index < 0 || index >= _photos.length) return;
+    try {
+      final x = await ImagePicker().pickImage(source: source, maxWidth: 1024, imageQuality: 75);
+      if (x == null) return;
+      final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
+      if (eid == null || eid.isEmpty) return;
+      final chemin = await ref
+          .read(photosProduitsProvider)
+          .ajouterV2(entrepriseId: eid, produitId: _id, octets: await x.readAsBytes());
+      if (mounted) {
+        setState(() {
+          _photos[index] = chemin;
+        });
+      }
+    } catch (e) {
+      if (mounted) signalerErreur(context, e);
+    }
+  }
+
+  Future<void> _choisirSourceRemplacement(int index) async {
+    if (kIsWeb) {
+      await _remplacerPhoto(index, ImageSource.gallery);
+      return;
+    }
+    if (!ImagePicker().supportsImageSource(ImageSource.camera)) return _remplacerPhoto(index, ImageSource.gallery);
+    HapticFeedback.mediumImpact();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 16),
+              const Text('Remplacer la photo', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.ink)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
+                  child: const Icon(Icons.photo_camera_outlined, color: AppColors.green),
+                ),
+                title: const Text('Prendre une nouvelle photo', style: TextStyle(fontWeight: FontWeight.w700)),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
+                  child: const Icon(Icons.photo_library_outlined, color: Color(0xFF4F46E5)),
+                ),
+                title: const Text('Choisir dans la galerie', style: TextStyle(fontWeight: FontWeight.w700)),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source != null) await _remplacerPhoto(index, source);
+  }
+
   // --- Rendu ----------------------------------------------------------------------
 
   @override
@@ -516,11 +610,19 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
             produit: _produit(),
             onAjouter: _photos.length < 5 ? _choisirSourcePhoto : null,
             onRetirer: (i) => setState(() => _photos.removeAt(i)),
+            onRemplacer: _choisirSourceRemplacement,
             onDefinirPrincipale: (i) {
               if (i == 0 || i >= _photos.length) return;
               setState(() {
                 final photo = _photos.removeAt(i);
                 _photos.insert(0, photo);
+              });
+            },
+            onDeplacer: (oldIdx, newIdx) {
+              if (oldIdx < 0 || oldIdx >= _photos.length || newIdx < 0 || newIdx >= _photos.length) return;
+              setState(() {
+                final photo = _photos.removeAt(oldIdx);
+                _photos.insert(newIdx, photo);
               });
             },
           ),
@@ -727,6 +829,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
 
   List<Widget> _etapePrixStock() {
     final l10n = context.l10n;
+    final isCatalogueSeul = ref.watch(contexteActifProvider)?.isModeCatalogueSeul ?? false;
     final droits = ref.watch(droitsCommerceProvider);
     final unites = _unitesChoisissables;
     final apercu = _produit();
@@ -746,15 +849,135 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
         ? (prixDetailBase - prixAchatBase)
         : null;
 
+    final sectionVitrine = _Section(
+      icone: Icons.storefront_outlined,
+      couleur: AppColors.green,
+      titre: 'Vitrine & Catalogue Public',
+      aide: 'Publiez ce produit sur votre vitrine en ligne et personnalisez son prix de vente affiché.',
+      action: isCatalogueSeul
+          ? null
+          : Switch(
+              key: const Key('produit-catalogue-switch'),
+              value: _estPublieCatalogue,
+              onChanged: (v) => setState(() => _estPublieCatalogue = v),
+            ),
+      children: [
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 250),
+          crossFadeState: (_estPublieCatalogue || isCatalogueSeul)
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          firstChild: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              'Ce produit est privé (non visible sur votre catalogue public). Activez l\'interrupteur pour le rendre visible en ligne.',
+              style: TextStyle(fontSize: 13, color: AppColors.muted.withValues(alpha: 0.9), height: 1.3),
+            ),
+          ),
+          secondChild: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!isCatalogueSeul) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.greenSoft.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.green.withValues(alpha: 0.2)),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: AppColors.green, size: 20),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Le prix catalogue est totalement indépendant du prix de gestion DubaGest. '
+                          'Le modifier n\'affectera jamais votre comptabilité ni vos prix en caisse.',
+                          style: TextStyle(fontSize: 12.5, color: AppColors.ink, height: 1.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              _Libelle('Prix public affiché dans le catalogue'),
+              TextField(
+                key: const Key('produit-prix-public'),
+                controller: _prixPublic,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: _decoration(
+                  hint: prixDetailBase != null && prixDetailBase > 0
+                      ? 'Ex: $prixDetailBase (par défaut prix du stock)'
+                      : 'Prix public affiché (FCFA)',
+                  prefixe: const Icon(Icons.sell_outlined, color: AppColors.muted),
+                  suffix: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('FCFA', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted)),
+                  ),
+                ),
+                onChanged: (v) {
+                  if (isCatalogueSeul && v.trim().isNotEmpty) {
+                    _detail.montant.text = v.trim();
+                  }
+                  setState(() {});
+                },
+              ),
+              if (!isCatalogueSeul && prixDetailBase != null && prixDetailBase > 0) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _prixPublic.text = prixDetailBase.toString();
+                      });
+                    },
+                    icon: const Icon(Icons.sync_rounded, size: 16),
+                    label: Text('Reprendre le prix du stock ($prixDetailBase FCFA)'),
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              _Libelle('Prix barré promotionnel (facultatif)'),
+              TextField(
+                key: const Key('produit-prix-barre'),
+                controller: _prixBarre,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: _decoration(
+                  hint: 'Ex: 15000 (affiché barré pour indiquer une remise)',
+                  prefixe: const Icon(Icons.discount_outlined, color: AppColors.muted),
+                  suffix: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('FCFA', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted)),
+                  ),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (isCatalogueSeul) {
+      return [
+        sectionVitrine,
+      ];
+    }
+
     return [
-      // 1. Section « Prix & Tarification »
+      // 1. Section « Prix & Tarification » (Gestion interne DubaGest)
       _Section(
         icone: Icons.monetization_on_outlined,
         couleur: AppColors.gold,
-        titre: 'Prix & Tarification',
+        titre: 'Prix & Tarification (Gestion interne)',
         aide: droits.peutModifierPrixAchat
-            ? 'Fixez les tarifs d\'achat et de vente, et surveillez votre rentabilité.'
-            : 'Fixez le tarif de vente de détail pour vos clients.',
+            ? 'Fixez les tarifs d\'achat et de vente en caisse, et surveillez votre rentabilité.'
+            : 'Fixez le tarif de vente en caisse pour vos clients.',
         children: [
           _Libelle('${l10n.comRetailPrice} *', aide: l10n.comRetailPriceHint),
           _SaisiePrix(cle: 'detail', prix: _detail, unites: unites, onChanged: () => setState(() {})),
@@ -769,6 +992,10 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
           ],
         ],
       ),
+      const SizedBox(height: AppSpacing.md),
+
+      // 2. Section Vitrine & Catalogue Public (Prix Indépendant)
+      sectionVitrine,
       if (droits.peutModifierPrixGros) ...[
         const SizedBox(height: AppSpacing.md),
         // 2. Section « Vente en gros » avec Toggle Switch Ecomiq
@@ -1381,6 +1608,8 @@ class _BoxUploadMedias extends StatelessWidget {
     required this.onAjouter,
     required this.onRetirer,
     required this.onDefinirPrincipale,
+    this.onRemplacer,
+    this.onDeplacer,
   });
 
   final List<String> photos;
@@ -1388,6 +1617,8 @@ class _BoxUploadMedias extends StatelessWidget {
   final VoidCallback? onAjouter;
   final ValueChanged<int> onRetirer;
   final ValueChanged<int> onDefinirPrincipale;
+  final ValueChanged<int>? onRemplacer;
+  final void Function(int oldIndex, int newIndex)? onDeplacer;
 
   @override
   Widget build(BuildContext context) {
@@ -1472,6 +1703,23 @@ class _BoxUploadMedias extends StatelessWidget {
             ),
             PositionedDirectional(
               top: 8,
+              end: 46,
+              child: Material(
+                color: Colors.white,
+                shape: const CircleBorder(),
+                elevation: 2,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => onRemplacer?.call(0),
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Icon(Icons.cached_rounded, size: 18, color: AppColors.green),
+                  ),
+                ),
+              ),
+            ),
+            PositionedDirectional(
+              top: 8,
               end: 8,
               child: Material(
                 color: Colors.white,
@@ -1517,15 +1765,28 @@ class _BoxUploadMedias extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (onRemplacer != null)
+                      PositionedDirectional(
+                        top: 4,
+                        start: 4,
+                        child: InkWell(
+                          onTap: () => onRemplacer!(i),
+                          child: const CircleAvatar(
+                            radius: 11,
+                            backgroundColor: Colors.white,
+                            child: Icon(Icons.cached_rounded, size: 13, color: AppColors.green),
+                          ),
+                        ),
+                      ),
                     PositionedDirectional(
                       top: 4,
                       end: 12,
                       child: InkWell(
                         onTap: () => onRetirer(i),
                         child: const CircleAvatar(
-                          radius: 10,
+                          radius: 11,
                           backgroundColor: Colors.white,
-                          child: Icon(Icons.close, size: 12, color: AppColors.negative),
+                          child: Icon(Icons.close, size: 13, color: AppColors.negative),
                         ),
                       ),
                     ),
@@ -1556,6 +1817,11 @@ class _BoxUploadMedias extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Tapez sur une photo pour la définir comme principale. La 1ère photo apparaît en tête de votre catalogue public.',
+          style: TextStyle(fontSize: 11.5, color: AppColors.muted.withValues(alpha: 0.8)),
         ),
       ],
     );
