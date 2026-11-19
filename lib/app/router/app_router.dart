@@ -32,6 +32,7 @@ import '../../features/rapports/presentation/rapports_page.dart';
 import '../../features/recherche/presentation/recherche_page.dart';
 import '../../features/tableau_de_bord/presentation/tableau_de_bord_page.dart';
 import '../../features/entreprise/presentation/pages/create_company_page.dart';
+import '../../features/catalogue/presentation/pages/boutique_publique_page.dart';
 import '../../features/invitations/presentation/pages/join_company_page.dart';
 import '../../features/invitations/presentation/providers/invitations_providers.dart';
 import '../../features/authentication/presentation/providers/auth_providers.dart';
@@ -142,6 +143,7 @@ String? globalRedirect({
   bool oauthEnCours = false,
 }) {
   String? aller(String cible) => location == cible ? null : cible;
+  if (Routes.estRouteBoutiquePublique(location)) return null;
   final isPublic = Routes.publicRoutes.contains(location);
   final isOAuthCallbackRoute =
       location == Routes.authCallback || location == Routes.loginCallback;
@@ -249,6 +251,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.joinCompany,
         builder: (_, state) => JoinCompanyPage(tokenFromLink: state.uri.queryParameters['token']),
+      ),
+      GoRoute(
+        path: Routes.boutique,
+        builder: (_, state) => BoutiquePubliquePage(slug: state.pathParameters['slug'] ?? ''),
+      ),
+      GoRoute(
+        path: Routes.boutiqueCourt,
+        builder: (_, state) => BoutiquePubliquePage(slug: state.pathParameters['slug'] ?? ''),
       ),
       GoRoute(path: Routes.blocked, builder: (_, _) => const ContexteBloquePage()),
 
