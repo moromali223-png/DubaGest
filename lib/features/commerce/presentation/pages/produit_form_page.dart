@@ -913,7 +913,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                       ? 'Ex: $prixDetailBase (par défaut prix du stock)'
                       : 'Prix public affiché (FCFA)',
                   prefixe: const Icon(Icons.sell_outlined, color: AppColors.muted),
-                  suffix: const Padding(
+                  suffixe: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
                     child: Text('FCFA', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted)),
                   ),
@@ -950,7 +950,7 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
                 decoration: _decoration(
                   hint: 'Ex: 15000 (affiché barré pour indiquer une remise)',
                   prefixe: const Icon(Icons.discount_outlined, color: AppColors.muted),
-                  suffix: const Padding(
+                  suffixe: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
                     child: Text('FCFA', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted)),
                   ),
