@@ -706,7 +706,7 @@ class PrestationDetailsPage extends ConsumerWidget {
     if (etat == null) return const [];
     final items = <_PaiementContratItem>[];
     for (final p in etat.paiements) {
-      if (p.annule || p.sens != fin.SensPaiement.entree) continue;
+      if (etat.estAnnule(p) || p.refuse || p.sens != fin.SensPaiement.entree) continue;
       final sommePourContrat = p.affectations
           .where((a) => a.engagementId == prestationId)
           .fold<int>(0, (sum, a) => sum + a.montant);
@@ -1026,11 +1026,14 @@ class _DialogueEncaissementContratState extends ConsumerState<_DialogueEncaissem
     setState(() => _enCours = true);
     try {
       final finRepo = ref.read(financesRepositoryProvider);
-      var etat = ref.read(etatFinancesProvider).value;
-      etat ??= await ref.read(etatFinancesProvider.future);
+      final etatBase = ref.read(etatFinancesProvider).value ?? await ref.read(etatFinancesProvider.future);
+      if (etatBase == null) {
+        throw Exception('État des finances non disponible.');
+      }
+      var etatCourant = etatBase;
 
       // S'assurer que l'engagement financier existe bien pour ce contrat avant l'affectation
-      final engagementExiste = etat.engagements.any((e) => e.id == widget.prestation.id && !e.annule);
+      final engagementExiste = etatCourant.engagements.any((e) => e.id == widget.prestation.id && !e.annule);
       if (!engagementExiste) {
         final nouvelEngagement = fin.Engagement(
           id: widget.prestation.id,
@@ -1046,12 +1049,12 @@ class _DialogueEncaissementContratState extends ConsumerState<_DialogueEncaissem
           origineType: 'PRESTATION',
         );
         await finRepo.creerEngagement(nouvelEngagement);
-        etat = EtatFinances(
-          caisses: etat.caisses,
-          sessions: etat.sessions,
-          mouvements: etat.mouvements,
-          engagements: [...etat.engagements, nouvelEngagement],
-          paiements: etat.paiements,
+        etatCourant = EtatFinances(
+          caisses: etatCourant.caisses,
+          sessions: etatCourant.sessions,
+          mouvements: etatCourant.mouvements,
+          engagements: [...etatCourant.engagements, nouvelEngagement],
+          paiements: etatCourant.paiements,
         );
       }
 
@@ -1059,7 +1062,7 @@ class _DialogueEncaissementContratState extends ConsumerState<_DialogueEncaissem
 
       await ref.read(enregistrerPaiementProvider).call(
             ctx,
-            etat,
+            etatCourant,
             SaisiePaiement(
               sens: fin.SensPaiement.entree,
               montant: montantSaisi,

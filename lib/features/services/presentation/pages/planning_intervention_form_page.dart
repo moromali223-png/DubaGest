@@ -16,8 +16,6 @@ import '../../../entreprise/presentation/providers/espace_providers.dart';
 import '../../../activites/domain/entities/activite.dart';
 import '../../../finances/domain/entities/finances.dart' as fin;
 import '../../../finances/presentation/providers/finances_providers.dart';
-import '../../../utilisateurs/domain/entities/membre.dart';
-import '../../../utilisateurs/presentation/providers/membres_providers.dart';
 import '../../domain/entities/prestation.dart';
 import '../../domain/entities/service_catalogue.dart';
 import '../services_providers.dart';
@@ -1370,30 +1368,6 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
                   ],
                 ),
               ),
-              if (_priorite == PrioritePrestation.haute)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.negativeSoft,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.negative.withValues(alpha: 0.3)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.negative),
-                      SizedBox(width: 4),
-                      Text(
-                        'Urgent',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.negative,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
           if (contact != null) ...[
