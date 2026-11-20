@@ -13,6 +13,7 @@ import '../../../entreprise/domain/entities/contexte_session.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../../modules/domain/entities/app_module.dart';
 import '../../../parametres/presentation/widgets/deconnexion.dart';
+import '../../../super_admin/presentation/providers/super_admin_providers.dart';
 import '../providers/navigation_providers.dart';
 import 'aide_support_dialog.dart';
 import 'conditions_confidentialite_dialog.dart';
@@ -29,6 +30,7 @@ class AppMenuDrawer extends ConsumerWidget {
     final l10n = context.l10n;
     final ctx = ref.watch(contexteActifProvider);
     final nav = ref.watch(navigationModelProvider);
+    final estSuperAdmin = ref.watch(estSuperAdminProvider).value ?? false;
     if (ctx == null || nav == null) return const Drawer();
 
     void aller(String path) {
@@ -118,6 +120,16 @@ class AppMenuDrawer extends ConsumerWidget {
               _Titre(l10n.navAdministration),
               for (final m in nav.modulesAdministration)
                 _Ligne(icon: moduleIcon(m.code), label: l10n.module(m.code), onTap: () => aller(ModuleRoutes.path(m.code))),
+            ],
+
+            if (estSuperAdmin) ...[
+              const _Titre('Administration Centrale'),
+              _Ligne(
+                key: const Key('menu-super-admin'),
+                icon: Icons.shield_rounded,
+                label: '🛡️ Console Super Admin',
+                onTap: () => aller(Routes.superAdmin),
+              ),
             ],
 
             const _Titre('Aide & Légal'),
