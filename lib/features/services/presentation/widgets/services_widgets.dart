@@ -68,7 +68,7 @@ class StatutFinancierBadge extends ConsumerWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Text(
-          '✓ Payé',
+          '✓ Entièrement réglé',
           style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w800, fontSize: 11.5),
         ),
       );
@@ -82,7 +82,7 @@ class StatutFinancierBadge extends ConsumerWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          'Acompte (${montant(context, ref, prestation.montantRegle)})',
+          'Partiellement réglé (${montant(context, ref, prestation.montantRegle)})',
           style: const TextStyle(color: Color(0xFFDF9540), fontWeight: FontWeight.w800, fontSize: 11),
         ),
       );

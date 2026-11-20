@@ -125,12 +125,17 @@ class MediaPickerHelper {
 
     final futureBytes = await showModalBottomSheet<Future<Uint8List?>>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (sheetContext) => Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(sheetContext).bottom + 16,
         ),
         child: SafeArea(
           child: Column(
@@ -211,12 +216,17 @@ class MediaPickerHelper {
         final l10n = context.l10n;
         source = await showModalBottomSheet<ImageSource>(
           context: context,
+          useRootNavigator: true,
           backgroundColor: Colors.transparent,
           isScrollControlled: true,
-          builder: (_) => Container(
+          useSafeArea: true,
+          builder: (sheetContext) => Container(
             decoration: const BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.paddingOf(sheetContext).bottom + 16,
             ),
             child: SafeArea(
               child: Column(

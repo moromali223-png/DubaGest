@@ -172,10 +172,34 @@ class ServicesRepositoryImpl implements ServicesRepository {
     try {
       final remoteItems = await _remote.chargerPrestations(entrepriseId, perimetreId: perimetreId);
       final currentLocal = _prestationsCache[key] ?? [];
+      final localById = {for (final p in currentLocal) p.id: p};
+
+      // Fusionner intelligemment : conserver les photos locales non encore présentes côté distant
+      final mergedRemote = remoteItems.map((remoteP) {
+        final localP = localById[remoteP.id];
+        if (localP == null) return remoteP;
+
+        final remotePhotoIds = remoteP.photos.map((ph) => ph.id).toSet();
+        final photosLocalesEnAttente = localP.photos
+            .where((ph) => !remotePhotoIds.contains(ph.id) && !ph.estDistante)
+            .toList();
+        final photosFusionnees = [...remoteP.photos, ...photosLocalesEnAttente];
+
+        // Conserver aussi le montant réglé le plus élevé en cas de paiement local non encore sync
+        final regleFusionne = remoteP.montantRegle >= localP.montantRegle
+            ? remoteP.montantRegle
+            : localP.montantRegle;
+
+        return remoteP.copyWith(
+          photos: photosFusionnees,
+          montantRegle: regleFusionne,
+        );
+      }).toList();
+
       final remoteIds = remoteItems.map((p) => p.id).toSet();
       // Conserver les prestations locales non encore présentes sur le serveur
       final localOnly = currentLocal.where((p) => !remoteIds.contains(p.id)).toList();
-      final merged = [...remoteItems, ...localOnly];
+      final merged = [...mergedRemote, ...localOnly];
 
       _prestationsCache[key] = merged;
       _prestationsControllers[key]?.add(merged);
@@ -222,6 +246,23 @@ class ServicesRepositoryImpl implements ServicesRepository {
 
         try {
           final res = await _remote.creerPrestation(prestation);
+          void mettreAJourSynced(String k, String? perimetre) {
+            final list = List<Prestation>.from(_prestationsCache[k] ?? []);
+            final idx = list.indexWhere((p) => p.id == res.id);
+            if (idx >= 0) {
+              list[idx] = res;
+            } else {
+              list.insert(0, res);
+            }
+            _prestationsCache[k] = list;
+            _prestationsControllers[k]?.add(list);
+            _local?.sauvegarderPrestations(res.entrepriseId, list, perimetreId: perimetre);
+          }
+
+          mettreAJourSynced(key, prestation.perimetreId);
+          if (key != allKey) {
+            mettreAJourSynced(allKey, null);
+          }
           return res;
         } catch (_) {
           await _local?.empilerOperationSync(
@@ -241,26 +282,30 @@ class ServicesRepositoryImpl implements ServicesRepository {
         final key = '${prestation.entrepriseId}:${prestation.perimetreId ?? "all"}';
         final allKey = '${prestation.entrepriseId}:all';
 
-        void mettreAJourCache(String k, String? perimetre) {
+        void mettreAJourCache(String k, String? perimetre, Prestation valeur) {
           final list = List<Prestation>.from(_prestationsCache[k] ?? []);
-          final index = list.indexWhere((p) => p.id == prestation.id);
+          final index = list.indexWhere((p) => p.id == valeur.id);
           if (index >= 0) {
-            list[index] = prestation;
+            list[index] = valeur;
           } else {
-            list.insert(0, prestation);
+            list.insert(0, valeur);
           }
           _prestationsCache[k] = list;
           _prestationsControllers[k]?.add(list);
-          _local?.sauvegarderPrestations(prestation.entrepriseId, list, perimetreId: perimetre);
+          _local?.sauvegarderPrestations(valeur.entrepriseId, list, perimetreId: perimetre);
         }
 
-        mettreAJourCache(key, prestation.perimetreId);
+        mettreAJourCache(key, prestation.perimetreId, prestation);
         if (key != allKey) {
-          mettreAJourCache(allKey, null);
+          mettreAJourCache(allKey, null, prestation);
         }
 
         try {
           final res = await _remote.modifierPrestation(prestation);
+          mettreAJourCache(key, prestation.perimetreId, res);
+          if (key != allKey) {
+            mettreAJourCache(allKey, null, res);
+          }
           return res;
         } catch (_) {
           await _local?.empilerOperationSync(
@@ -274,6 +319,24 @@ class ServicesRepositoryImpl implements ServicesRepository {
           return prestation;
         }
       });
+
+  /// Met à jour immédiatement le montant réglé dans le cache local et le stockage Drift
+  /// après un encaissement réussi (sans attendre le prochain cycle réseau).
+  void mettreAJourMontantRegleLocal(String prestationId, int nouveauMontantRegle) {
+    for (final entry in _prestationsCache.entries) {
+      final list = List<Prestation>.from(entry.value);
+      final index = list.indexWhere((p) => p.id == prestationId);
+      if (index >= 0) {
+        final p = list[index];
+        list[index] = p.copyWith(montantRegle: nouveauMontantRegle);
+        _prestationsCache[entry.key] = list;
+        _prestationsControllers[entry.key]?.add(list);
+        final parts = entry.key.split(':');
+        final perimetre = parts.length > 1 && parts[1] != 'all' ? parts[1] : null;
+        _local?.sauvegarderPrestations(p.entrepriseId, list, perimetreId: perimetre);
+      }
+    }
+  }
 
   @override
   Future<void> changerStatutPrestation(String prestationId, StatutPrestation nouveauStatut, {String? motif}) => _guard(() async {

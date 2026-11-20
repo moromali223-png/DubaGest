@@ -12,8 +12,6 @@ import '../../../contacts/domain/entities/contact.dart';
 import '../../../contacts/presentation/providers/contacts_providers.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../../entreprise/presentation/providers/espace_providers.dart';
-import '../../../utilisateurs/domain/entities/membre.dart';
-import '../../../utilisateurs/presentation/providers/membres_providers.dart';
 import '../../../activites/domain/entities/activite.dart';
 import '../../../finances/domain/entities/finances.dart' as fin;
 import '../../../finances/presentation/providers/finances_providers.dart';
@@ -46,7 +44,6 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _formController = SmartFormController(initialOpenIndex: 0, allowMultipleOpen: true);
 
-  final _titreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _lieuCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
@@ -54,13 +51,13 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
   final _dureeCtrl = TextEditingController();
 
   String? _contactId;
-  String? _responsableId;
+  String? _titreExistant;
+  String? _responsableIdExistant;
   MetierCode _metierSelectionne = MetierCode.generique;
   UniteDuree _uniteDuree = UniteDuree.jours;
   final Map<String, dynamic> _champsMetier = {};
-  final Map<String, TextEditingController> _champsMetierCtrls = {};
 
-  PrioritePrestation _priorite = PrioritePrestation.normale;
+  PrioritePrestation _prioriteExistante = PrioritePrestation.normale;
   DateTime? _debutPrevu;
   DateTime? _echeanceJour;
   DateTime? _dateRemisePrevue;
@@ -81,23 +78,18 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
     }
     _formController.openSection(0);
     _formController.openSection(1);
-    _formController.openSection(2);
+    _formController.openSection(3);
     _formController.openSection(4);
-    _formController.openSection(5);
   }
 
   @override
   void dispose() {
     _formController.dispose();
-    _titreCtrl.dispose();
     _descCtrl.dispose();
     _lieuCtrl.dispose();
     _noteCtrl.dispose();
     _remiseCtrl.dispose();
     _dureeCtrl.dispose();
-    for (final c in _champsMetierCtrls.values) {
-      c.dispose();
-    }
     super.dispose();
   }
 
@@ -107,26 +99,19 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
 
   // --- Statuts et Résumés dynamiques des sections ---
 
-  FormSectionStatus get _metierStatus => FormSectionStatus.complete;
-  String _metierSummary() => _metierSelectionne.libelle;
-
   FormSectionStatus get _clientStatus => _contactId != null ? FormSectionStatus.complete : FormSectionStatus.emptyRequired;
   String _clientSummary(List<Contact> contacts) {
     final c = contacts.where((c) => c.id == _contactId).firstOrNull;
     return c?.nom ?? 'Aucun client sélectionné';
   }
 
-  FormSectionStatus get _infosStatus => _titreCtrl.text.trim().isNotEmpty ? FormSectionStatus.complete : FormSectionStatus.emptyRequired;
-  String _infosSummary() {
-    if (_titreCtrl.text.isEmpty) return 'Titre requis';
-    return _titreCtrl.text;
-  }
-
-  FormSectionStatus get _techStatus => FormSectionStatus.complete;
-  String _techSummary(MetierTemplate template) {
-    final filled = template.champs.where((f) => _champsMetier[f.cle] != null && _champsMetier[f.cle].toString().isNotEmpty).length;
-    if (filled == 0) return 'Aucun détail technique saisi';
-    return '$filled champ(s) renseigné(s)';
+  FormSectionStatus get _descStatus =>
+      _descCtrl.text.trim().isNotEmpty ? FormSectionStatus.complete : FormSectionStatus.emptyOptional;
+  String _descSummary() {
+    final t = _descCtrl.text.trim();
+    if (t.isEmpty) return 'Facultatif';
+    final premiereLigne = t.split('\n').first.trim();
+    return premiereLigne.length > 42 ? '${premiereLigne.substring(0, 39)}...' : premiereLigne;
   }
 
   FormSectionStatus get _photosStatus => _photos.isNotEmpty ? FormSectionStatus.complete : FormSectionStatus.emptyOptional;
@@ -137,7 +122,7 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
     final debutStr = _debutPrevu != null ? DateFormat('dd/MM/yyyy').format(_debutPrevu!) : 'Immédiat';
     final finStr = DateFormat('dd/MM/yyyy').format(_echeanceJour!);
     final dureeStr = _dureeCtrl.text.isNotEmpty ? ' (${_dureeCtrl.text} ${_uniteDuree.libelle.toLowerCase()})' : '';
-    return '$debutStr → $finStr$dureeStr • ${_priorite == PrioritePrestation.haute ? "Urgent" : "Normal"}';
+    return '$debutStr → $finStr$dureeStr';
   }
 
   FormSectionStatus get _lignesStatus => _lignes.isNotEmpty ? FormSectionStatus.complete : FormSectionStatus.emptyRequired;
@@ -148,33 +133,6 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
 
   FormSectionStatus get _lieuStatus => _lieuCtrl.text.trim().isNotEmpty ? FormSectionStatus.complete : FormSectionStatus.emptyOptional;
   String _lieuSummary() => _lieuCtrl.text.trim().isEmpty ? 'Lieu non précisé' : _lieuCtrl.text.trim();
-
-  void _changerModeleMetier(MetierCode code) {
-    setState(() {
-      _metierSelectionne = code;
-      final template = MetierTemplate.templatePour(code);
-      if (_titreCtrl.text.trim().isEmpty ||
-          _titreCtrl.text == MetierTemplate.templatePour(MetierCode.generique).titreParDefaut) {
-        _titreCtrl.text = template.titreParDefaut;
-      }
-      _dureeCtrl.text = template.dureeParDefaut.toString();
-      _uniteDuree = template.uniteParDefaut;
-      _recalculerEcheanceDepuisDuree();
-
-      for (final f in template.champs) {
-        if (f.options.isEmpty) {
-          if (!_champsMetierCtrls.containsKey(f.cle)) {
-            _champsMetierCtrls[f.cle] = TextEditingController(
-              text: _champsMetier[f.cle]?.toString() ?? '',
-            );
-          }
-        }
-      }
-      if (template.champs.isNotEmpty) {
-        _formController.openSection(3);
-      }
-    });
-  }
 
   void _recalculerEcheanceDepuisDuree() {
     final duree = int.tryParse(_dureeCtrl.text.trim()) ?? 0;
@@ -210,13 +168,13 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
 
     setState(() {
       _metierSelectionne = p.metierCode;
-      _titreCtrl.text = p.titre;
-      _descCtrl.text = p.description ?? '';
+      _titreExistant = p.titre;
+      _descCtrl.text = (p.description != null && p.description!.trim().isNotEmpty) ? p.description! : p.titre;
       _lieuCtrl.text = p.lieu ?? '';
       _noteCtrl.text = p.note ?? '';
       _remiseCtrl.text = p.remise.toString();
       _contactId = p.contactId;
-      _priorite = p.priorite;
+      _prioriteExistante = p.priorite;
       _debutPrevu = p.debutPrevu;
       _echeanceJour = p.echeanceJour;
 
@@ -224,7 +182,7 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
       _uniteDuree = p.uniteDuree;
       _dateRemisePrevue = p.dateRemisePrevue;
       _livraisonRequise = p.livraisonRequise;
-      _responsableId = p.responsableId;
+      _responsableIdExistant = p.responsableId;
 
       _lignes
         ..clear()
@@ -236,21 +194,10 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
         ..clear()
         ..addAll(p.champsMetier);
 
-      final template = MetierTemplate.templatePour(p.metierCode);
-      for (final f in template.champs) {
-        if (f.options.isEmpty) {
-          _champsMetierCtrls[f.cle] = TextEditingController(
-            text: p.champsMetier[f.cle]?.toString() ?? '',
-          );
-        }
-      }
-
       _formController.openSection(0);
       _formController.openSection(1);
-      _formController.openSection(2);
-      if (template.champs.isNotEmpty) _formController.openSection(3);
-      _formController.openSection(template.champs.isNotEmpty ? 5 : 4);
-      _formController.openSection(template.champs.isNotEmpty ? 6 : 5);
+      _formController.openSection(3);
+      _formController.openSection(4);
     });
   }
 
@@ -258,7 +205,6 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
   Widget build(BuildContext context) {
     final catalogueAsync = ref.watch(servicesCatalogueProvider);
     final contacts = ref.watch(contactsProvider).value ?? const <Contact>[];
-    final membres = ref.watch(membresProvider).value ?? const <Membre>[];
 
     // Chargement sécurisé (pas d’effet de bord dans le build)
     if (widget.prestationId != null) {
@@ -289,24 +235,22 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
               if (mounted) _chargerDonneesPrestation(value!);
             });
           }
-          return _construireFormulaire(context, catalogueAsync.value ?? const [], contacts, membres);
+          return _construireFormulaire(context, catalogueAsync.value ?? const [], contacts);
         }(),
       };
     }
 
-    return _construireFormulaire(context, catalogueAsync.value ?? const [], contacts, membres);
+    return _construireFormulaire(context, catalogueAsync.value ?? const [], contacts);
   }
 
   // ─────────────────────────────────────────────
-  //  FORMULAIRE PRINCIPAL
+  //  FORMULAIRE PRINCIPAL SIMPLIFIÉ
   // ─────────────────────────────────────────────
   Widget _construireFormulaire(
-      BuildContext context,
-      List<ServiceCatalogue> catalogue,
-      List<Contact> contacts,
-      List<Membre> membres,
-      ) {
-    final templateCourant = MetierTemplate.templatePour(_metierSelectionne);
+    BuildContext context,
+    List<ServiceCatalogue> catalogue,
+    List<Contact> contacts,
+  ) {
     final selectedContact = contacts.cast<Contact?>().firstWhere(
       (c) => c?.id == _contactId,
       orElse: () => null,
@@ -315,7 +259,7 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(widget.prestationId != null ? 'Modifier le contrat de service' : 'Formulaire de nouveau contrat de service'),
+        title: Text(widget.prestationId != null ? 'Modifier le contrat de service' : 'Nouveau contrat de service'),
       ),
       body: Column(
         children: [
@@ -336,239 +280,76 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
                       )
                     : null,
                 children: [
-                  // 1. Modèle métier
-            CollapsibleFormSection(
-              key: _formController.registerSectionKey(0),
-              title: 'Type de service',
-              icon: Icons.category_rounded,
-              summary: _metierSummary(),
-              status: _metierStatus,
-              isExpanded: _formController.isSectionOpen(0),
-              onToggle: () => setState(() => _formController.toggleSection(0)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: [
-                        for (final m in MetierCode.values)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: FilterChip(
-                              avatar: Icon(
-                                m.icone,
-                                size: 18,
-                                color: _metierSelectionne == m ? AppColors.gold : AppColors.primary,
-                              ),
-                              label: Text(m.libelle),
-                              selected: _metierSelectionne == m,
-                              onSelected: (sel) {
-                                if (sel) _changerModeleMetier(m);
-                              },
-                              selectedColor: AppColors.primary,
-                              labelStyle: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: _metierSelectionne == m ? Colors.white : AppColors.ink,
-                              ),
-                              backgroundColor: AppColors.surface,
-                              side: BorderSide(
-                                color: _metierSelectionne == m ? AppColors.primary : AppColors.border,
-                                width: 1.5,
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            ),
-                          ),
-                      ],
+                  // 0. Client
+                  CollapsibleFormSection(
+                    key: _formController.registerSectionKey(0),
+                    title: 'Client',
+                    icon: Icons.person_rounded,
+                    summary: _clientSummary(contacts),
+                    status: _clientStatus,
+                    isRequired: true,
+                    isExpanded: _formController.isSectionOpen(0),
+                    onToggle: () => setState(() => _formController.toggleSection(0)),
+                    child: SectionClientProspect(
+                      selectedContact: selectedContact,
+                      onChoisir: () => _ouvrirSelectionContact(contacts),
+                      onCreerNouveau: () => _ouvrirCreationContactRapide(),
+                      onRetirer: () => setState(() => _contactId = null),
                     ),
                   ),
-                  if (templateCourant.instructions.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.greenSoft,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.green.withValues(alpha: 0.1)),
+
+                  // 1. Description détaillée du contrat
+                  CollapsibleFormSection(
+                    key: _formController.registerSectionKey(1),
+                    title: 'Description du contrat',
+                    icon: Icons.edit_note_rounded,
+                    summary: _descSummary(),
+                    status: _descStatus,
+                    isExpanded: _formController.isSectionOpen(1),
+                    onToggle: () => setState(() => _formController.toggleSection(1)),
+                    child: TextFormField(
+                      controller: _descCtrl,
+                      minLines: 3,
+                      maxLines: 6,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Description détaillée du contrat',
+                        hintText: 'Précisez les travaux, clauses, besoins ou consignes particulières...',
+                        alignLabelWithHint: true,
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.lightbulb_outline, size: 20, color: AppColors.green),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              templateCourant.instructions,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.green,
-                                fontWeight: FontWeight.w600,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // 2. Client
-            CollapsibleFormSection(
-              key: _formController.registerSectionKey(1),
-              title: 'Client',
-              icon: Icons.person_rounded,
-              summary: _clientSummary(contacts),
-              status: _clientStatus,
-              isRequired: true,
-              isExpanded: _formController.isSectionOpen(1),
-              onToggle: () => setState(() => _formController.toggleSection(1)),
-              child: SectionClientProspect(
-                selectedContact: selectedContact,
-                onChoisir: () => _ouvrirSelectionContact(contacts),
-                onCreerNouveau: () => _ouvrirCreationContactRapide(),
-                onRetirer: () => setState(() => _contactId = null),
-              ),
-            ),
-
-            // 3. Informations générales
-            CollapsibleFormSection(
-              key: _formController.registerSectionKey(2),
-              title: 'Informations de base',
-              icon: Icons.edit_note_rounded,
-              summary: _infosSummary(),
-              status: _infosStatus,
-              isRequired: true,
-              isExpanded: _formController.isSectionOpen(2),
-              onToggle: () => setState(() => _formController.toggleSection(2)),
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _titreCtrl,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                    decoration: const InputDecoration(
-                      labelText: 'Intitulé du contrat de service *',
-                      hintText: 'Ex. Contrat de maintenance annuelle, Couvaison lot B...',
-                      prefixIcon: Icon(Icons.edit_note_rounded),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'L\'intitulé du contrat est obligatoire' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descCtrl,
-                    maxLines: 3,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Description détaillée du contrat',
-                      hintText: 'Précisez les clauses, besoins ou consignes particulières...',
-                      alignLabelWithHint: true,
+                      onChanged: (_) => setState(() {}),
                     ),
                   ),
-                ],
-              ),
-            ),
 
-            // 4. Champs spécifiques métier
-            if (templateCourant.champs.isNotEmpty)
-              CollapsibleFormSection(
-                key: _formController.registerSectionKey(3),
-                title: 'Détails techniques',
-                icon: Icons.tune_rounded,
-                summary: _techSummary(templateCourant),
-                status: _techStatus,
-                isExpanded: _formController.isSectionOpen(3),
-                onToggle: () => setState(() => _formController.toggleSection(3)),
-                child: Column(
-                  children: [
-                    for (final champ in templateCourant.champs) ...[
-                      if (champ.options.isNotEmpty)
-                        DropdownButtonFormField<String>(
-                          isExpanded: true,
-                          value: champ.options.contains(_champsMetier[champ.cle]) ? _champsMetier[champ.cle] as String : null,
-                          decoration: InputDecoration(
-                            labelText: champ.libelle,
-                            hintText: champ.hint,
-                            prefixIcon: const Icon(Icons.tune_rounded),
-                          ),
-                          items: [
-                            for (final opt in champ.options) DropdownMenuItem(value: opt, child: Text(opt)),
-                          ],
-                          validator: champ.requis ? (val) => val == null || val.isEmpty ? 'Ce champ est requis' : null : null,
-                          onChanged: (val) {
-                            setState(() {
-                              _champsMetier[champ.cle] = val;
-                              if (champ.cle == 'espece' && val != null) {
-                                if (val.contains('17j')) _dureeCtrl.text = '17';
-                                if (val.contains('21j')) _dureeCtrl.text = '21';
-                                if (val.contains('28j')) _dureeCtrl.text = '28';
-                                if (val.contains('30j')) _dureeCtrl.text = '30';
-                                _recalculerEcheanceDepuisDuree();
-                              }
-                            });
-                          },
-                        )
-                      else
-                        TextFormField(
-                          controller: _champsMetierCtrls[champ.cle] ??= TextEditingController(
-                            text: _champsMetier[champ.cle]?.toString() ?? '',
-                          ),
-                          keyboardType: champ.type,
-                          decoration: InputDecoration(
-                            labelText: champ.libelle,
-                            hintText: champ.hint,
-                            prefixIcon: const Icon(Icons.info_outline_rounded),
-                          ),
-                          validator: (val) {
-                            if (champ.requis && (val == null || val.trim().isEmpty)) {
-                              return 'Ce champ est requis';
-                            }
-                            if (champ.type == TextInputType.number && val != null && val.trim().isNotEmpty) {
-                              if (double.tryParse(val.trim()) == null) return 'Nombre invalide';
-                            }
-                            return null;
-                          },
-                          onChanged: (val) => _champsMetier[champ.cle] = val.trim(),
-                        ),
-                      if (champ != templateCourant.champs.last) const SizedBox(height: 16),
-                    ],
-                  ],
-                ),
-              ),
+                  // 2. Photos & Documents
+                  CollapsibleFormSection(
+                    key: _formController.registerSectionKey(2),
+                    title: 'Photos & Documents',
+                    icon: Icons.camera_alt_rounded,
+                    summary: _photos.isNotEmpty ? '${_photos.length} photo(s)' : 'Facultatif',
+                    status: _photosStatus,
+                    isExpanded: _formController.isSectionOpen(2),
+                    onToggle: () => setState(() => _formController.toggleSection(2)),
+                    child: PrestationPhotosSection(
+                      photos: _photos,
+                      onPhotosChanged: (maj) => setState(() {
+                        _photos
+                          ..clear()
+                          ..addAll(maj);
+                      }),
+                    ),
+                  ),
 
-            // 5. Photos
+            // 3. Planification & Échéance (simplifiée)
             CollapsibleFormSection(
-              key: _formController.registerSectionKey(templateCourant.champs.isNotEmpty ? 4 : 3),
-              title: 'Photos & Documents',
-              icon: Icons.camera_alt_rounded,
-              summary: _photos.isNotEmpty ? '${_photos.length} document(s)' : 'Facultatif',
-              status: _photosStatus,
-              isExpanded: _formController.isSectionOpen(templateCourant.champs.isNotEmpty ? 4 : 3),
-              onToggle: () => setState(() => _formController.toggleSection(templateCourant.champs.isNotEmpty ? 4 : 3)),
-              child: PrestationPhotosSection(
-                photos: _photos,
-                onPhotosChanged: (maj) => setState(() {
-                  _photos
-                    ..clear()
-                    ..addAll(maj);
-                }),
-              ),
-            ),
-
-            // 6. Planification & Échéance
-            CollapsibleFormSection(
-              key: _formController.registerSectionKey(templateCourant.champs.isNotEmpty ? 5 : 4),
+              key: _formController.registerSectionKey(3),
               title: 'Planification & Échéance',
               icon: Icons.calendar_today_rounded,
               summary: _planningSummary(context),
               status: _planningStatus,
               isRequired: true,
-              isExpanded: _formController.isSectionOpen(templateCourant.champs.isNotEmpty ? 5 : 4),
-              onToggle: () => setState(() => _formController.toggleSection(templateCourant.champs.isNotEmpty ? 5 : 4)),
+              isExpanded: _formController.isSectionOpen(3),
+              onToggle: () => setState(() => _formController.toggleSection(3)),
               child: Column(
                 children: [
                   Row(
@@ -630,53 +411,7 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<PrioritePrestation>(
-                    isExpanded: true,
-                    value: _priorite,
-                    decoration: const InputDecoration(
-                      labelText: 'Niveau de priorité',
-                      prefixIcon: Icon(Icons.flag_rounded),
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: PrioritePrestation.normale,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, size: 10, color: AppColors.muted.withValues(alpha: 0.5)),
-                            const SizedBox(width: 8),
-                            const Text('Normale'),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: PrioritePrestation.haute,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.circle, size: 10, color: AppColors.negative),
-                            const SizedBox(width: 8),
-                            const Text('Haute (Urgent)', style: TextStyle(color: AppColors.negative, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onChanged: (v) => setState(() => _priorite = v ?? PrioritePrestation.normale),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String?>(
-                    isExpanded: true,
-                    value: _responsableId,
-                    decoration: const InputDecoration(
-                      labelText: 'Responsable du suivi',
-                      prefixIcon: Icon(Icons.person_outline_rounded),
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('Non assigné')),
-                      for (final m in membres) DropdownMenuItem(value: m.id, child: Text(m.nomAffiche)),
-                    ],
-                    onChanged: (v) => setState(() => _responsableId = v),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Livraison requise', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
@@ -690,16 +425,16 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
               ),
             ),
 
-            // 7. Lignes & chiffrage
+            // 4. Lignes & chiffrage
             CollapsibleFormSection(
-              key: _formController.registerSectionKey(templateCourant.champs.isNotEmpty ? 6 : 5),
+              key: _formController.registerSectionKey(4),
               title: 'Prestations & Tarifs',
               icon: Icons.receipt_long_rounded,
               summary: _lignesSummary(context),
               status: _lignesStatus,
               isRequired: true,
-              isExpanded: _formController.isSectionOpen(templateCourant.champs.isNotEmpty ? 6 : 5),
-              onToggle: () => setState(() => _formController.toggleSection(templateCourant.champs.isNotEmpty ? 6 : 5)),
+              isExpanded: _formController.isSectionOpen(4),
+              onToggle: () => setState(() => _formController.toggleSection(4)),
               child: Column(
                 children: [
                   if (_lignes.isEmpty)
@@ -741,15 +476,15 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
               ),
             ),
 
-            // 8. Lieu & notes
+            // 5. Lieu & notes
             CollapsibleFormSection(
-              key: _formController.registerSectionKey(templateCourant.champs.isNotEmpty ? 7 : 6),
+              key: _formController.registerSectionKey(5),
               title: 'Localisation & Notes',
               icon: Icons.location_on_rounded,
               summary: _lieuSummary(),
               status: _lieuStatus,
-              isExpanded: _formController.isSectionOpen(templateCourant.champs.isNotEmpty ? 7 : 6),
-              onToggle: () => setState(() => _formController.toggleSection(templateCourant.champs.isNotEmpty ? 7 : 6)),
+              isExpanded: _formController.isSectionOpen(5),
+              onToggle: () => setState(() => _formController.toggleSection(5)),
               child: Column(
                 children: [
                   TextFormField(
@@ -823,6 +558,7 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
   Future<void> _ouvrirSelectionContact(List<Contact> contacts) async {
     final result = await showModalBottomSheet<dynamic>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
@@ -893,6 +629,7 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
 
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
@@ -1003,30 +740,41 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
     if (_envoi) return;
     if (!_formKey.currentState!.validate()) {
       HapticFeedback.heavyImpact();
-      // On tente de scroller vers la première section en erreur
       if (_clientStatus == FormSectionStatus.emptyRequired) {
-        _formController.scrollToSection(1);
-      } else if (_infosStatus == FormSectionStatus.emptyRequired) {
-        _formController.scrollToSection(2);
+        _formController.scrollToSection(0);
       } else if (_planningStatus == FormSectionStatus.emptyRequired) {
-        _formController.scrollToSection(_metierSelectionne == MetierCode.generique ? 4 : 5);
+        _formController.scrollToSection(3);
       } else if (_lignesStatus == FormSectionStatus.emptyRequired) {
-        _formController.scrollToSection(_metierSelectionne == MetierCode.generique ? 5 : 6);
+        _formController.scrollToSection(4);
       }
       return;
     }
 
+    // Dérivation automatique et fiable du libellé principal (sans champ intitulé séparé)
+    final descTexte = _descCtrl.text.trim();
+    final premiereLigneDesc = descTexte.isNotEmpty ? descTexte.split('\n').first.trim() : '';
+    final String titreFinal;
+    if (premiereLigneDesc.isNotEmpty) {
+      titreFinal = premiereLigneDesc.length > 60 ? '${premiereLigneDesc.substring(0, 57)}...' : premiereLigneDesc;
+    } else if (_lignes.isNotEmpty) {
+      titreFinal = _lignes.first.libelle;
+    } else if (_titreExistant != null && _titreExistant!.trim().isNotEmpty) {
+      titreFinal = _titreExistant!.trim();
+    } else {
+      titreFinal = 'Contrat de service';
+    }
+
     if (_lignes.isEmpty) {
-      if (_titreCtrl.text.trim().isNotEmpty) {
+      if (descTexte.isNotEmpty) {
         _lignes.add(LignePrestation(
           id: const Uuid().v4(),
-          libelle: _titreCtrl.text.trim(),
+          libelle: titreFinal,
           quantite: 1.0,
           prixUnitaire: 0,
         ));
       } else {
-        showFailureSnackBar(context, 'Veuillez renseigner un titre ou ajouter au moins une ligne.');
-        _formController.scrollToSection(2);
+        showFailureSnackBar(context, 'Veuillez ajouter au moins une prestation ou une description.');
+        _formController.scrollToSection(4);
         return;
       }
     }
@@ -1035,17 +783,6 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
     final espace = ref.read(espaceCourantProvider);
     final entrepriseId = ctx?.entreprise?.id;
     if (entrepriseId == null) return;
-
-    // Collecter les valeurs des champs métiers depuis les contrôleurs
-    final template = MetierTemplate.templatePour(_metierSelectionne);
-    for (final champ in template.champs) {
-      if (champ.options.isEmpty) {
-        final ctrl = _champsMetierCtrls[champ.cle];
-        if (ctrl != null) {
-          _champsMetier[champ.cle] = ctrl.text.trim();
-        }
-      }
-    }
 
     setState(() => _envoi = true);
     try {
@@ -1062,12 +799,12 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
               metierCode: _metierSelectionne,
               champsMetier: _champsMetier,
               contactId: _contactId,
-              responsableId: _responsableId,
-              titre: _titreCtrl.text.trim(),
-              description: _descCtrl.text.trim(),
+              responsableId: _responsableIdExistant,
+              titre: titreFinal,
+              description: descTexte,
               lignes: _lignes,
               remise: _remise,
-              priorite: _priorite,
+              priorite: _prioriteExistante,
               debutPrevu: _debutPrevu,
               echeanceJour: _echeanceJour,
               echeanceHeure: null,
@@ -1086,12 +823,12 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
           entrepriseId: entrepriseId,
           perimetreId: espace.perimetreId,
           contactId: _contactId,
-          responsableId: _responsableId,
-          titre: _titreCtrl.text.trim(),
-          description: _descCtrl.text.trim(),
+          responsableId: null,
+          titre: titreFinal,
+          description: descTexte,
           lignes: _lignes,
           remise: _remise,
-          priorite: _priorite,
+          priorite: PrioritePrestation.normale,
           debutPrevu: _debutPrevu,
           echeanceJour: _echeanceJour,
           echeanceHeure: null,
@@ -1111,23 +848,27 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
           await gerer.modifierPrestation(pMaj);
         }
 
-        // Création de l'engagement financier associé pour traçabilité du CA
+        // Création de l'engagement financier local associé (origine PRESTATION conforme au schéma)
         if (_total > 0) {
-          final engagement = fin.Engagement(
-            id: nouv.id,
-            entrepriseId: entrepriseId,
-            activite: ActiviteCode.services,
-            perimetreId: espace.perimetreId,
-            sens: fin.SensEngagement.aRecevoir,
-            contactId: _contactId,
-            libelle: 'Contrat - ${_titreCtrl.text.trim()}',
-            montantTotal: _total,
-            dateEngagement: _debutPrevu ?? DateTime.now(),
-            echeance: _echeanceJour,
-            origineType: 'CONTRAT_SERVICE',
-          );
-          await ref.read(financesRepositoryProvider).creerEngagement(engagement);
-          ref.invalidate(etatFinancesProvider);
+          try {
+            final engagement = fin.Engagement(
+              id: nouv.id,
+              entrepriseId: entrepriseId,
+              activite: ActiviteCode.services,
+              perimetreId: espace.perimetreId,
+              sens: fin.SensEngagement.aRecevoir,
+              contactId: _contactId,
+              libelle: titreFinal,
+              montantTotal: _total,
+              dateEngagement: _debutPrevu ?? DateTime.now(),
+              echeance: _echeanceJour,
+              origineType: 'PRESTATION',
+            );
+            await ref.read(financesRepositoryProvider).creerEngagement(engagement);
+            ref.invalidate(etatFinancesProvider);
+          } catch (_) {
+            // Déjà créé par le trigger serveur `tg_prestations_apres`
+          }
         }
       }
 

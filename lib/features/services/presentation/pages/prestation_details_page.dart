@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -7,8 +10,19 @@ import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
-import '../../../contacts/presentation/providers/contacts_providers.dart';
+import '../../../activites/domain/entities/activite.dart';
 import '../../../commerce/presentation/widgets/commerce_widgets.dart' show montant;
+import '../../../contacts/presentation/providers/contacts_providers.dart';
+import '../../../documents/domain/entities/document.dart';
+import '../../../documents/presentation/providers/documents_providers.dart';
+import '../../../entreprise/presentation/providers/contexte_providers.dart';
+import '../../../entreprise/presentation/providers/espace_providers.dart';
+import '../../../finances/domain/entities/finances.dart' as fin;
+import '../../../finances/domain/services/etat_finances.dart';
+import '../../../finances/domain/usecases/gerer_finances.dart';
+import '../../../finances/presentation/providers/finances_providers.dart';
+import '../../../finances/presentation/widgets/finances_widgets.dart' show ChampMontant;
+import '../../data/repositories/services_repository_impl.dart';
 import '../../domain/entities/metier_template.dart';
 import '../../domain/entities/prestation.dart';
 import '../services_providers.dart';
@@ -16,12 +30,10 @@ import '../widgets/bon_prise_en_charge_dialog.dart';
 import '../widgets/prestation_photos_section.dart';
 import '../widgets/prestation_rappel_dialog.dart';
 import '../widgets/services_widgets.dart';
-import '../../../documents/domain/entities/document.dart';
-import '../../../documents/presentation/providers/documents_providers.dart';
-import '../../../entreprise/presentation/providers/contexte_providers.dart';
 
-/// Fiche détaillée d'une prestation / ordre de travail multi-métiers.
-/// Double dimension indépendante : Statut Travail vs Statut Paiement.
+/// Fiche détaillée d'un contrat de service ou d'une intervention.
+/// Double dimension indépendante : Statut Travail vs Statut Paiement (calculé en temps réel
+/// depuis les paiements validés du module Finances).
 class PrestationDetailsPage extends ConsumerWidget {
   const PrestationDetailsPage({super.key, required this.prestationId});
   final String prestationId;
@@ -29,6 +41,7 @@ class PrestationDetailsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final prestationsAsync = ref.watch(prestationsProvider);
+    final etatFinances = ref.watch(etatFinancesProvider).value;
     final historiqueAsync = ref.watch(historiquePrestationProvider(prestationId));
     final droits = ref.watch(droitsServicesProvider);
     final documents = ref.watch(documentsProvider).value ?? const <Document>[];
@@ -63,10 +76,15 @@ class PrestationDetailsPage extends ConsumerWidget {
         value: prestationsAsync,
         onRetry: () => ref.invalidate(prestationsProvider),
         data: (prestations) {
-          final prestation = prestations.where((p) => p.id == prestationId).firstOrNull;
-          if (prestation == null) {
+          final prestationBrute = prestations.where((p) => p.id == prestationId).firstOrNull;
+          if (prestationBrute == null) {
             return const Center(child: Text('Prestation introuvable'));
           }
+
+          // Calcul financier en temps réel basé sur les paiements réellement validés
+          final paiementsContrat = _extrairePaiementsValides(etatFinances, prestationBrute.id);
+          final montantRegleReel = _calculerMontantRegleReel(prestationBrute, etatFinances, paiementsContrat);
+          final prestation = prestationBrute.copyWith(montantRegle: montantRegleReel);
 
           final contact = prestation.contactId != null
               ? ref.watch(contactProvider(prestation.contactId!)).value
@@ -78,7 +96,8 @@ class PrestationDetailsPage extends ConsumerWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 820),
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                // Marge inférieure suffisante pour éviter tout chevauchement avec la Navbar mobile
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
                 children: [
                   // 1. En-tête Titre, Montant et Badges
                   Container(
@@ -255,8 +274,8 @@ class PrestationDetailsPage extends ConsumerWidget {
                     ),
                   const SizedBox(height: 16),
 
-                  // 3. Spécifications & Caractéristiques Métier (si configurées)
-                  if (prestation.champsMetier.isNotEmpty)
+                  // 3. Spécifications & Caractéristiques Métier (si configurées hors type_dossier)
+                  if (prestation.champsMetier.entries.any((e) => e.key != 'type_dossier')) ...[
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -284,7 +303,7 @@ class PrestationDetailsPage extends ConsumerWidget {
                             spacing: 12,
                             runSpacing: 8,
                             children: [
-                              for (final entry in prestation.champsMetier.entries)
+                              for (final entry in prestation.champsMetier.entries.where((e) => e.key != 'type_dossier'))
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
@@ -313,22 +332,35 @@ class PrestationDetailsPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                  if (prestation.champsMetier.isNotEmpty) const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ],
 
-                  // 4. Photographies du Dossier (Capture, Galerie, Catégories)
+                  // 4. Photographies du Dossier (Prise directe, aperçu, enregistrement réel et synchronisation)
                   PrestationPhotosSection(
                     photos: prestation.photos,
                     prestationId: prestation.id,
+                    modeDetail: true,
                     onPhotosChanged: (photos) async {
-                      final maj = prestation.copyWith(photos: photos);
-                      await ref.read(servicesRepositoryProvider).modifierPrestation(maj);
-                      ref.invalidate(prestationsProvider);
-                      ref.invalidate(prestationDetailProvider(prestation.id));
+                      try {
+                        final maj = prestation.copyWith(photos: photos);
+                        await ref.read(servicesRepositoryProvider).modifierPrestation(maj);
+                        ref.invalidate(prestationsProvider);
+                        ref.invalidate(prestationDetailProvider(prestation.id));
+                        if (context.mounted) {
+                          final ajoutee = photos.length > prestation.photos.length;
+                          showMessageSnackBar(
+                            context,
+                            ajoutee ? 'Photo enregistrée dans le dossier.' : 'Photo retirée du dossier.',
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) showFailureSnackBar(context, e);
+                      }
                     },
                   ),
                   const SizedBox(height: 16),
 
-                  // 5. Suivi Financier & Encaissements
+                  // 5. Suivi Financier, Encaissement atomique & Historique des Paiements
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -345,12 +377,17 @@ class PrestationDetailsPage extends ConsumerWidget {
                             const Expanded(
                               child: Text('Règlement & Caisse', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                             ),
-                            if (prestation.soldeRestant > 0)
-                              FilledButton.tonalIcon(
-                                style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
+                            if (prestation.soldeRestant > 0 && prestation.statut != StatutPrestation.annulee)
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  minimumSize: const Size(0, 38),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
                                 icon: const Icon(Icons.payments_outlined, size: 18),
-                                label: const Text('Encaisser'),
-                                onPressed: () => context.push(Routes.paiementNouveau(engagementId: prestation.id)),
+                                label: const Text('Encaisser', style: TextStyle(fontWeight: FontWeight.w700)),
+                                onPressed: () => _ouvrirEncaissement(context, ref, prestation),
                               ),
                           ],
                         ),
@@ -382,6 +419,57 @@ class PrestationDetailsPage extends ConsumerWidget {
                             ),
                           ],
                         ),
+                        if (paiementsContrat.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          const Divider(height: 1),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Historique des encaissements (${paiementsContrat.length})',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.muted),
+                          ),
+                          const SizedBox(height: 6),
+                          for (final item in paiementsContrat)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.greenSoft,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.south_west_rounded, size: 14, color: AppColors.green),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _libelleModePaiement(item.paiement.mode),
+                                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink),
+                                        ),
+                                        Text(
+                                          '${DateFormat('dd/MM/yyyy à HH:mm').format(item.paiement.datePaiement)}'
+                                          '${item.paiement.reference != null && item.paiement.reference!.isNotEmpty ? ' • Réf: ${item.paiement.reference}' : ''}',
+                                          style: const TextStyle(fontSize: 11, color: AppColors.muted),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '+ ${montant(context, ref, item.montantAffecte)}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ],
                     ),
                   ),
@@ -612,6 +700,63 @@ class PrestationDetailsPage extends ConsumerWidget {
     );
   }
 
+  // --- Helpers financiers temps réel ---
+
+  static List<_PaiementContratItem> _extrairePaiementsValides(EtatFinances? etat, String prestationId) {
+    if (etat == null) return const [];
+    final items = <_PaiementContratItem>[];
+    for (final p in etat.paiements) {
+      if (p.annule || p.sens != fin.SensPaiement.entree) continue;
+      final sommePourContrat = p.affectations
+          .where((a) => a.engagementId == prestationId)
+          .fold<int>(0, (sum, a) => sum + a.montant);
+      if (sommePourContrat > 0) {
+        items.add(_PaiementContratItem(paiement: p, montantAffecte: sommePourContrat));
+      }
+    }
+    items.sort((a, b) => b.paiement.datePaiement.compareTo(a.paiement.datePaiement));
+    return items;
+  }
+
+  static int _calculerMontantRegleReel(
+    Prestation prestation,
+    EtatFinances? etat,
+    List<_PaiementContratItem> paiementsContrat,
+  ) {
+    final sommePaiements = paiementsContrat.fold<int>(0, (sum, item) => sum + item.montantAffecte);
+    if (etat == null) return prestation.montantRegle.clamp(0, prestation.total);
+
+    final eng = etat.engagements.where((e) => e.id == prestation.id && !e.annule).firstOrNull;
+    final regleEngagement = eng != null ? etat.suivi(eng).regle : 0;
+    final maxCalcule = math.max(sommePaiements, regleEngagement);
+    return math.max(maxCalcule, prestation.montantRegle).clamp(0, prestation.total);
+  }
+
+  static String _libelleModePaiement(fin.ModePaiement mode) => switch (mode) {
+        fin.ModePaiement.especes => 'Espèces (Caisse)',
+        fin.ModePaiement.mobileMoney => 'Mobile Money',
+        fin.ModePaiement.carte => 'Carte bancaire',
+        fin.ModePaiement.virement => 'Virement bancaire',
+        fin.ModePaiement.cheque => 'Chèque',
+        fin.ModePaiement.autre => 'Autre mode',
+      };
+
+  Future<void> _ouvrirEncaissement(BuildContext context, WidgetRef ref, Prestation prestation) async {
+    final encaisse = await showDialog<int>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      builder: (_) => _DialogueEncaissementContrat(prestation: prestation),
+    );
+
+    if (encaisse != null && encaisse > 0 && context.mounted) {
+      showMessageSnackBar(
+        context,
+        'Encaissement de ${montant(context, ref, encaisse)} enregistré avec succès !',
+      );
+    }
+  }
+
   Future<void> _changerStatut(BuildContext context, WidgetRef ref, Prestation p, StatutPrestation nouveau) async {
     try {
       final now = DateTime.now();
@@ -650,6 +795,7 @@ class PrestationDetailsPage extends ConsumerWidget {
 
     await showDialog<void>(
       context: context,
+      useRootNavigator: true,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (context, setDlgState) => AlertDialog(
           title: const Text('Reporter la prestation'),
@@ -706,6 +852,7 @@ class PrestationDetailsPage extends ConsumerWidget {
     final motifCtrl = TextEditingController();
     await showDialog<void>(
       context: context,
+      useRootNavigator: true,
       builder: (dlgCtx) => AlertDialog(
         title: const Text('Annuler la prestation'),
         content: TextField(
@@ -800,6 +947,403 @@ class PrestationDetailsPage extends ConsumerWidget {
         showFailureSnackBar(context, e);
       }
     }
+  }
+}
+
+class _PaiementContratItem {
+  const _PaiementContratItem({required this.paiement, required this.montantAffecte});
+  final fin.Paiement paiement;
+  final int montantAffecte;
+}
+
+/// Fenêtre modale d'encaissement fiable, atomique et anti-double-clic pour un contrat de service.
+/// Utilise exclusivement le système existant (`enregistrerPaiementProvider` + `financesRepositoryProvider`).
+class _DialogueEncaissementContrat extends ConsumerStatefulWidget {
+  const _DialogueEncaissementContrat({required this.prestation});
+  final Prestation prestation;
+
+  @override
+  ConsumerState<_DialogueEncaissementContrat> createState() => _DialogueEncaissementContratState();
+}
+
+class _DialogueEncaissementContratState extends ConsumerState<_DialogueEncaissementContrat> {
+  final _formKey = GlobalKey<FormState>();
+  final _montantCtrl = TextEditingController();
+  final _referenceCtrl = TextEditingController();
+  final _noteCtrl = TextEditingController();
+
+  fin.ModePaiement _mode = fin.ModePaiement.especes;
+  String? _sessionId;
+  bool _enCours = false;
+  String? _erreurLocale;
+
+  @override
+  void initState() {
+    super.initState();
+    _montantCtrl.text = widget.prestation.soldeRestant.toString();
+
+    final etat = ref.read(etatFinancesProvider).value;
+    final site = widget.prestation.perimetreId ?? ref.read(espaceCourantProvider).perimetreId;
+    if (etat != null) {
+      final sessions = [
+        for (final c in etat.caisses)
+          if (etat.sessionOuverte(c.id) case final s?) (s, c),
+      ];
+      _sessionId = (sessions.where((x) => x.$1.perimetreId == site).firstOrNull ?? sessions.firstOrNull)?.$1.id;
+    }
+  }
+
+  @override
+  void dispose() {
+    _montantCtrl.dispose();
+    _referenceCtrl.dispose();
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _validerEncaissement() async {
+    if (_enCours) return;
+    setState(() => _erreurLocale = null);
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final montantSaisi = ChampMontant.lire(_montantCtrl.text) ?? 0;
+    final resteDu = widget.prestation.soldeRestant;
+    if (montantSaisi <= 0) {
+      setState(() => _erreurLocale = 'Veuillez saisir un montant strictement positif.');
+      return;
+    }
+    if (montantSaisi > resteDu) {
+      setState(() => _erreurLocale = 'Le montant ne peut pas dépasser le solde restant ($resteDu FCFA).');
+      return;
+    }
+
+    final ctx = ref.read(contexteActifProvider);
+    if (ctx == null || ctx.entreprise == null) {
+      setState(() => _erreurLocale = 'Session entreprise introuvable.');
+      return;
+    }
+
+    setState(() => _enCours = true);
+    try {
+      final finRepo = ref.read(financesRepositoryProvider);
+      var etat = ref.read(etatFinancesProvider).value;
+      etat ??= await ref.read(etatFinancesProvider.future);
+
+      // S'assurer que l'engagement financier existe bien pour ce contrat avant l'affectation
+      final engagementExiste = etat.engagements.any((e) => e.id == widget.prestation.id && !e.annule);
+      if (!engagementExiste) {
+        final nouvelEngagement = fin.Engagement(
+          id: widget.prestation.id,
+          entrepriseId: widget.prestation.entrepriseId,
+          activite: ActiviteCode.services,
+          perimetreId: widget.prestation.perimetreId ?? ref.read(espaceCourantProvider).perimetreId,
+          sens: fin.SensEngagement.aRecevoir,
+          contactId: widget.prestation.contactId,
+          libelle: widget.prestation.titre,
+          montantTotal: widget.prestation.total,
+          dateEngagement: widget.prestation.debutPrevu ?? DateTime.now(),
+          echeance: widget.prestation.echeanceJour,
+          origineType: 'PRESTATION',
+        );
+        await finRepo.creerEngagement(nouvelEngagement);
+        etat = EtatFinances(
+          caisses: etat.caisses,
+          sessions: etat.sessions,
+          mouvements: etat.mouvements,
+          engagements: [...etat.engagements, nouvelEngagement],
+          paiements: etat.paiements,
+        );
+      }
+
+      final passeParCaisse = _mode.passeParCaisse && _sessionId != null;
+
+      await ref.read(enregistrerPaiementProvider).call(
+            ctx,
+            etat,
+            SaisiePaiement(
+              sens: fin.SensPaiement.entree,
+              montant: montantSaisi,
+              mode: _mode,
+              contactId: widget.prestation.contactId,
+              reference: _referenceCtrl.text.trim().isEmpty ? null : _referenceCtrl.text.trim(),
+              note: _noteCtrl.text.trim().isEmpty
+                  ? 'Règlement contrat — ${widget.prestation.titre}'
+                  : _noteCtrl.text.trim(),
+              perimetreId: passeParCaisse
+                  ? null
+                  : (widget.prestation.perimetreId ?? ref.read(espaceCourantProvider).perimetreId),
+              sessionId: passeParCaisse ? _sessionId : null,
+              affectations: {widget.prestation.id: montantSaisi},
+            ),
+          );
+
+      // Mettre à jour immédiatement le cache Services + invalider Finances & Services
+      final nouveauRegle = (widget.prestation.montantRegle + montantSaisi).clamp(0, widget.prestation.total);
+      final repo = ref.read(servicesRepositoryProvider);
+      if (repo is ServicesRepositoryImpl) {
+        repo.mettreAJourMontantRegleLocal(widget.prestation.id, nouveauRegle);
+      }
+      ref.invalidate(etatFinancesProvider);
+      ref.invalidate(prestationsProvider);
+      ref.invalidate(prestationDetailProvider(widget.prestation.id));
+
+      if (!mounted) return;
+      Navigator.of(context).pop(montantSaisi);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _erreurLocale = 'Échec de l\'encaissement : $e');
+      }
+    } finally {
+      if (mounted) setState(() => _enCours = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final modes = ref.watch(modesPaiementProvider);
+    if (!modes.contains(_mode) && modes.isNotEmpty) {
+      _mode = modes.first;
+    }
+    final etat = ref.watch(etatFinancesProvider).value;
+    final sessions = etat == null
+        ? const <(fin.SessionCaisse, fin.Caisse)>[]
+        : [
+            for (final c in etat.caisses)
+              if (etat.sessionOuverte(c.id) case final s?) (s, c),
+          ];
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.surface,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.greenSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.payments_outlined, color: AppColors.green, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Encaisser un règlement',
+                        style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: AppColors.ink),
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: _enCours ? null : () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Résumé compact du contrat
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Déjà réglé', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                          Text(
+                            montant(context, ref, widget.prestation.montantRegle),
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.green),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text('Solde restant', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                          Text(
+                            montant(context, ref, widget.prestation.soldeRestant),
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.negative),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Saisie du montant
+                TextFormField(
+                  controller: _montantCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(
+                    labelText: 'Montant à encaisser (FCFA) *',
+                    prefixIcon: Icon(Icons.monetization_on_outlined),
+                    suffixText: 'FCFA',
+                  ),
+                  validator: (v) {
+                    final val = ChampMontant.lire(v ?? '') ?? 0;
+                    if (val <= 0) return 'Saisissez un montant supérieur à 0';
+                    if (val > widget.prestation.soldeRestant) {
+                      return 'Ne peut pas dépasser ${widget.prestation.soldeRestant} FCFA';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                // Mode de paiement
+                const Text(
+                  'Mode de paiement',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.ink),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final m in modes)
+                      ChoiceChip(
+                        label: Text(PrestationDetailsPage._libelleModePaiement(m)),
+                        selected: _mode == m,
+                        selectedColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: _mode == m ? FontWeight.w700 : FontWeight.w500,
+                          color: _mode == m ? Colors.white : AppColors.ink,
+                        ),
+                        onSelected: (sel) {
+                          if (sel) setState(() => _mode = m);
+                        },
+                      ),
+                  ],
+                ),
+
+                // Caisse ouverte si espèces
+                if (_mode.passeParCaisse) ...[
+                  const SizedBox(height: 12),
+                  if (sessions.isNotEmpty)
+                    DropdownButtonFormField<String?>(
+                      value: sessions.any((s) => s.$1.id == _sessionId) ? _sessionId : sessions.first.$1.id,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Caisse active',
+                        prefixIcon: Icon(Icons.point_of_sale_outlined),
+                      ),
+                      items: [
+                        for (final (s, c) in sessions)
+                          DropdownMenuItem(value: s.id, child: Text(c.nom, overflow: TextOverflow.ellipsis)),
+                      ],
+                      onChanged: (v) => setState(() => _sessionId = v),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFD97706)),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Aucune session de caisse ouverte. Le paiement sera enregistré hors session de caisse.',
+                              style: TextStyle(fontSize: 11.5, color: Color(0xFF92400E)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _referenceCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Référence (optionnel)',
+                    hintText: 'N° reçu, ID transaction Mobile Money...',
+                    prefixIcon: Icon(Icons.tag_rounded),
+                  ),
+                ),
+
+                if (_erreurLocale != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.negativeSoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      _erreurLocale!,
+                      style: const TextStyle(fontSize: 12, color: AppColors.negative, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 46),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: _enCours ? null : () => Navigator.of(context).pop(),
+                        child: const Text('Annuler'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.green,
+                          minimumSize: const Size(0, 46),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: _enCours ? null : _validerEncaissement,
+                        icon: _enCours
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.check_circle_outline_rounded, size: 18),
+                        label: Text(
+                          _enCours ? 'Validation...' : 'Confirmer',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

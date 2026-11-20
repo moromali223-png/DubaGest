@@ -1,5 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/sync/sync_models.dart';
+import '../../../../core/utils/app_logger.dart';
+import '../../../fichiers/data/fichiers_repository_impl.dart' show bucketFichiers;
 import '../../domain/entities/prestation.dart';
 import '../../domain/entities/service_catalogue.dart';
 
@@ -59,36 +65,219 @@ class ServicesRemoteDataSource {
     }
     final response = await query.order('created_at', ascending: false);
 
-    // Récupérer les montants réglés des engagements associés
-    final prestationIds = (response as List<dynamic>).map((p) => p['id'] as String).toList();
+    final rows = response as List<dynamic>;
+    final prestationIds = rows.map((p) => p['id'] as String).toList();
     final montantsRegles = <String, int>{};
+    final photosParPrestation = <String, List<PhotoPrestation>>{};
+
     if (prestationIds.isNotEmpty) {
-      final engagements = await _client
-          .from('engagements')
-          .select('id, montant_regle')
-          .inFilter('id', prestationIds);
-      for (final e in engagements as List<dynamic>) {
-        montantsRegles[e['id'] as String] = (e['montant_regle'] as num?)?.toInt() ?? 0;
-      }
+      // 1. Récupérer les montants réglés des engagements associés
+      try {
+        final engagements = await _client
+            .from('engagements')
+            .select('id, montant_regle')
+            .inFilter('id', prestationIds);
+        for (final e in engagements as List<dynamic>) {
+          montantsRegles[e['id'] as String] = (e['montant_regle'] as num?)?.toInt() ?? 0;
+        }
+      } catch (_) {}
+
+      // 2. Récupérer les photos stockées dans pieces_jointes (compatibilité universelle)
+      try {
+        final pjs = await _client
+            .from('pieces_jointes')
+            .select()
+            .eq('cible_type', 'ENGAGEMENT')
+            .inFilter('cible_id', prestationIds)
+            .isFilter('deleted_at', null)
+            .order('created_at', ascending: true);
+        for (final pj in pjs as List<dynamic>) {
+          final map = pj as Map<String, dynamic>;
+          final mime = map['type_mime'] as String? ?? '';
+          if (!mime.startsWith('image/')) continue;
+          final cibleId = map['cible_id'] as String;
+          photosParPrestation.putIfAbsent(cibleId, () => []).add(_photoDepuisPieceJointe(map));
+        }
+      } catch (_) {}
     }
 
-    return response
-        .map((j) => _mapPrestation(j, montantsRegles[j['id'] as String] ?? 0))
-        .toList();
+    return rows.map((j) {
+      final map = j as Map<String, dynamic>;
+      final id = map['id'] as String;
+      return _mapPrestation(
+        map,
+        montantsRegles[id] ?? 0,
+        photosPiecesJointes: photosParPrestation[id] ?? const [],
+      );
+    }).toList();
   }
 
   Future<Prestation?> getPrestation(String prestationId) async {
     final response = await _client.from('prestations').select().eq('id', prestationId).maybeSingle();
     if (response == null) return null;
 
-    final engagement = await _client.from('engagements').select('montant_regle').eq('id', prestationId).maybeSingle();
-    final regle = (engagement?['montant_regle'] as num?)?.toInt() ?? 0;
+    int regle = 0;
+    try {
+      final engagement = await _client.from('engagements').select('montant_regle').eq('id', prestationId).maybeSingle();
+      regle = (engagement?['montant_regle'] as num?)?.toInt() ?? 0;
+    } catch (_) {}
 
-    return _mapPrestation(response, regle);
+    final photosPj = <PhotoPrestation>[];
+    try {
+      final pjs = await _client
+          .from('pieces_jointes')
+          .select()
+          .eq('cible_type', 'ENGAGEMENT')
+          .eq('cible_id', prestationId)
+          .isFilter('deleted_at', null)
+          .order('created_at', ascending: true);
+      for (final pj in pjs as List<dynamic>) {
+        final map = pj as Map<String, dynamic>;
+        final mime = map['type_mime'] as String? ?? '';
+        if (mime.startsWith('image/')) {
+          photosPj.add(_photoDepuisPieceJointe(map));
+        }
+      }
+    } catch (_) {}
+
+    return _mapPrestation(response, regle, photosPiecesJointes: photosPj);
   }
 
+  /// Extrait les octets d'une photo locale (data URI base64 sur Web ou fichier local sur Mobile).
+  Future<Uint8List?> _lireOctetsLocaux(String? cheminLocal) async {
+    if (cheminLocal == null || cheminLocal.isEmpty) return null;
+    if (cheminLocal.startsWith('data:')) {
+      final idx = cheminLocal.indexOf(',');
+      if (idx > 0 && idx < cheminLocal.length - 1) {
+        return base64Decode(cheminLocal.substring(idx + 1));
+      }
+      return null;
+    }
+    if (!kIsWeb && !cheminLocal.startsWith('http')) {
+      final file = File(cheminLocal);
+      if (await file.exists()) {
+        return await file.readAsBytes();
+      }
+    }
+    return null;
+  }
+
+  /// Upload une photo dans le bucket Supabase Storage « fichiers » et l'associe au dossier.
+  Future<PhotoPrestation> _synchroniserPhotoVersStorage({
+    required String entrepriseId,
+    required String prestationId,
+    required PhotoPrestation photo,
+  }) async {
+    if (photo.estDistante) {
+      return photo.copyWith(prestationId: prestationId, syncStatus: RecordSyncStatus.synced);
+    }
+
+    final octets = await _lireOctetsLocaux(photo.cheminLocal);
+    if (octets == null || octets.isEmpty) {
+      return photo.copyWith(prestationId: prestationId);
+    }
+
+    // 1. Tenter le chemin dédié prestations (si migration appliquée)
+    final cheminPrestation = '$entrepriseId/prestations/$prestationId/${photo.id}.jpg';
+    try {
+      await _client.storage.from(bucketFichiers).uploadBinary(
+            cheminPrestation,
+            octets,
+            fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+          );
+      return photo.copyWith(
+        prestationId: prestationId,
+        cheminDistant: cheminPrestation,
+        syncStatus: RecordSyncStatus.synced,
+      );
+    } catch (_) {
+      // Fallback automatique sur le stockage pieces_jointes / ENGAGEMENT déjà actif en production
+    }
+
+    // 2. Fallback sur pieces_jointes (ENGAGEMENT id == prestationId)
+    final cheminPj = '$entrepriseId/pj/ENGAGEMENT/$prestationId/${photo.id}.jpg';
+    try {
+      await _client.storage.from(bucketFichiers).uploadBinary(
+            cheminPj,
+            octets,
+            fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+          );
+      await _client.from('pieces_jointes').upsert({
+        'id': photo.id,
+        'entreprise_id': entrepriseId,
+        'cible_type': 'ENGAGEMENT',
+        'cible_id': prestationId,
+        'chemin': cheminPj,
+        'nom_fichier': 'photo_${photo.id.substring(0, 8)}.jpg',
+        'type_mime': 'image/jpeg',
+        'taille': octets.length,
+      });
+      return photo.copyWith(
+        prestationId: prestationId,
+        cheminDistant: cheminPj,
+        syncStatus: RecordSyncStatus.synced,
+      );
+    } catch (e) {
+      AppLogger.warning('Upload photo prestation reporté (${photo.id}) : $e', tag: 'services_photos');
+      return photo.copyWith(prestationId: prestationId);
+    }
+  }
+
+  Future<List<PhotoPrestation>> _synchroniserPhotosPrestation(Prestation prestation) async {
+    if (prestation.photos.isEmpty) return const [];
+    final resultat = <PhotoPrestation>[];
+    for (final photo in prestation.photos) {
+      final synced = await _synchroniserPhotoVersStorage(
+        entrepriseId: prestation.entrepriseId,
+        prestationId: prestation.id,
+        photo: photo,
+      );
+      resultat.add(synced);
+    }
+    return resultat;
+  }
+
+  /// Synchronise les suppressions éventuelles de photos stockées dans pieces_jointes.
+  Future<void> _nettoyerPhotosSupprimees(String prestationId, List<PhotoPrestation> photosActuelles) async {
+    try {
+      final idsActuels = photosActuelles.map((p) => p.id).toSet();
+      final pjs = await _client
+          .from('pieces_jointes')
+          .select('id, chemin')
+          .eq('cible_type', 'ENGAGEMENT')
+          .eq('cible_id', prestationId)
+          .isFilter('deleted_at', null);
+      for (final pj in pjs as List<dynamic>) {
+        final id = pj['id'] as String;
+        if (!idsActuels.contains(id)) {
+          await _client
+              .from('pieces_jointes')
+              .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+              .eq('id', id);
+        }
+      }
+    } catch (_) {}
+  }
+
+  /// Transforme une liste de photos en JSON léger pour la colonne `prestations.photos`
+  /// (sans inclure de data URI base64 lourde dès que `cheminDistant` existe).
+  static List<Map<String, dynamic>> _photosPourServeur(List<PhotoPrestation> photos) => photos
+      .map((p) => {
+            'id': p.id,
+            'prestation_id': p.prestationId,
+            'categorie': p.categorie.code,
+            if (p.cheminDistant != null) 'chemin_distant': p.cheminDistant,
+            if (p.legende != null) 'legende': p.legende,
+            if (p.auteurNom != null) 'auteur_nom': p.auteurNom,
+            if (p.createdBy != null) 'created_by': p.createdBy,
+            'created_at': p.createdAt.toIso8601String(),
+            if (p.taille != null) 'taille': p.taille,
+            'sync_status': p.syncStatus.name,
+          })
+      .toList();
+
   Future<Prestation> creerPrestation(Prestation prestation) async {
-    final payload = {
+    final payload = <String, dynamic>{
       'id': prestation.id,
       'entreprise_id': prestation.entrepriseId,
       'activite_code': prestation.activiteCode,
@@ -113,11 +302,26 @@ class ServicesRemoteDataSource {
     };
 
     final response = await _client.from('prestations').insert(payload).select().single();
-    return _mapPrestation(response, 0);
+
+    // Une fois la prestation (et son engagement trigger) créée, synchroniser les photos
+    final photosSynced = await _synchroniserPhotosPrestation(prestation);
+    if (photosSynced.isNotEmpty) {
+      try {
+        await _client
+            .from('prestations')
+            .update({'photos': _photosPourServeur(photosSynced)})
+            .eq('id', prestation.id);
+      } catch (_) {}
+    }
+
+    return _mapPrestation(response, 0).copyWith(photos: photosSynced);
   }
 
   Future<Prestation> modifierPrestation(Prestation prestation) async {
-    final payload = {
+    final photosSynced = await _synchroniserPhotosPrestation(prestation);
+    await _nettoyerPhotosSupprimees(prestation.id, photosSynced);
+
+    final payload = <String, dynamic>{
       'perimetre_id': prestation.perimetreId,
       'contact_id': prestation.contactId,
       'titre': prestation.titre,
@@ -136,10 +340,23 @@ class ServicesRemoteDataSource {
       'responsable_id': prestation.responsableId,
       'lieu': prestation.lieu,
       'note': prestation.note,
+      'photos': _photosPourServeur(photosSynced),
     };
 
-    final response = await _client.from('prestations').update(payload).eq('id', prestation.id).select().single();
-    return _mapPrestation(response, prestation.montantRegle);
+    Map<String, dynamic> response;
+    try {
+      response = await _client.from('prestations').update(payload).eq('id', prestation.id).select().single();
+    } catch (e) {
+      // Compatibilité si la colonne `photos` n'est pas encore déployée côté DB distante
+      if (e.toString().contains('photos')) {
+        payload.remove('photos');
+        response = await _client.from('prestations').update(payload).eq('id', prestation.id).select().single();
+      } else {
+        rethrow;
+      }
+    }
+    return _mapPrestation(response, prestation.montantRegle, photosPiecesJointes: photosSynced)
+        .copyWith(photos: photosSynced);
   }
 
   Future<void> changerStatutPrestation(String prestationId, StatutPrestation statut, {String? motif}) async {
@@ -288,11 +505,42 @@ class ServicesRemoteDataSource {
         version: j['version'] as int?,
       );
 
-  static Prestation _mapPrestation(Map<String, dynamic> j, int montantRegle) {
+  static PhotoPrestation _photoDepuisPieceJointe(Map<String, dynamic> j) => PhotoPrestation(
+        id: j['id'] as String,
+        prestationId: j['cible_id'] as String? ?? '',
+        categorie: CategoriePhoto.reception,
+        cheminDistant: j['chemin'] as String?,
+        auteurNom: j['auteur_nom'] as String?,
+        createdBy: j['created_by'] as String?,
+        createdAt: DateTime.tryParse(j['created_at'] as String? ?? '') ?? DateTime.now(),
+        taille: (j['taille'] as num?)?.toInt(),
+        syncStatus: RecordSyncStatus.synced,
+      );
+
+  static Prestation _mapPrestation(
+    Map<String, dynamic> j,
+    int montantRegle, {
+    List<PhotoPrestation> photosPiecesJointes = const [],
+  }) {
     final lignesRaw = j['lignes'];
     final lignesList = lignesRaw is List
         ? lignesRaw.map((x) => LignePrestation.fromJson(x as Map<String, dynamic>)).toList()
         : <LignePrestation>[];
+
+    // Fusionner les photos de la colonne JSONB `photos` et de `pieces_jointes` sans doublons
+    final photosMap = <String, PhotoPrestation>{};
+    final photosRaw = j['photos'];
+    if (photosRaw is List) {
+      for (final x in photosRaw) {
+        if (x is Map<String, dynamic>) {
+          final p = PhotoPrestation.fromJson(x);
+          photosMap[p.id] = p;
+        }
+      }
+    }
+    for (final p in photosPiecesJointes) {
+      photosMap.putIfAbsent(p.id, () => p);
+    }
 
     final echeanceStr = j['echeance_jour'] as String?;
     DateTime? echeance;
@@ -336,6 +584,7 @@ class ServicesRemoteDataSource {
       annuleLe: j['annule_le'] != null ? DateTime.tryParse(j['annule_le'] as String) : null,
       createdBy: j['created_by'] as String?,
       montantRegle: montantRegle,
+      photos: photosMap.values.toList(),
       version: j['version'] as int?,
     );
   }

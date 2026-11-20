@@ -89,23 +89,12 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
             ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton(
-            onPressed: _envoi ? null : _enregistrer,
-            child: _envoi
-                ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Enregistrer le service'),
-          ),
-        ),
-      ),
       body: ResponsiveBody(
         maxWidth: 640,
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
             children: [
               TextFormField(
                 controller: _nomCtrl,
@@ -211,6 +200,20 @@ class _ServiceFormPageState extends ConsumerState<ServiceFormPage> {
                   labelText: 'Description / Conditions',
                   hintText: 'Détails inclus dans ce service type...',
                 ),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: _envoi ? null : _enregistrer,
+                child: _envoi
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Enregistrer le service', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               ),
             ],
           ),

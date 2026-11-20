@@ -2,48 +2,293 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../app/theme/app_theme.dart';
+import '../../../fichiers/data/fichiers_repository_impl.dart' show bucketFichiers;
 import '../../domain/entities/prestation.dart';
 
-/// Visionneuse plein écran haute qualité pour les photos de prestation.
-class PhotoViewerDialog extends StatelessWidget {
-  const PhotoViewerDialog({
+/// Cache mémoire partagé des octets de photos téléchargées depuis Supabase Storage
+/// afin d'assurer un affichage instantané et fluide sur mobile et Web.
+final Map<String, Uint8List> _prestationPhotoBytesCache = {};
+
+/// Widget réutilisable qui affiche une [PhotoPrestation] qu'elle soit locale,
+/// en base64, via URL HTTP ou stockée dans le bucket privé Supabase Storage « fichiers ».
+class PrestationPhotoImage extends StatefulWidget {
+  const PrestationPhotoImage({
     super.key,
     required this.photo,
-    this.onSupprimer,
+    this.fit = BoxFit.cover,
+    this.width,
+    this.height,
   });
 
   final PhotoPrestation photo;
-  final VoidCallback? onSupprimer;
+  final BoxFit fit;
+  final double? width;
+  final double? height;
 
-  static Future<void> show(BuildContext context, {required PhotoPrestation photo, VoidCallback? onSupprimer}) {
+  @override
+  State<PrestationPhotoImage> createState() => _PrestationPhotoImageState();
+}
+
+class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
+  Future<Uint8List?>? _remoteFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRemoteLoader();
+  }
+
+  @override
+  void didUpdateWidget(covariant PrestationPhotoImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.photo.cheminDistant != widget.photo.cheminDistant ||
+        oldWidget.photo.cheminLocal != widget.photo.cheminLocal) {
+      _initRemoteLoader();
+    }
+  }
+
+  void _initRemoteLoader() {
+    final distant = widget.photo.cheminDistant;
+    if (distant != null && distant.isNotEmpty && !distant.startsWith('http') && !distant.startsWith('data:')) {
+      if (_prestationPhotoBytesCache.containsKey(distant)) {
+        _remoteFuture = Future.value(_prestationPhotoBytesCache[distant]);
+      } else {
+        _remoteFuture = _telechargerDepuisStorage(distant);
+      }
+    } else {
+      _remoteFuture = null;
+    }
+  }
+
+  Future<Uint8List?> _telechargerDepuisStorage(String path) async {
+    try {
+      final bytes = await Supabase.instance.client.storage.from(bucketFichiers).download(path);
+      if (bytes.isNotEmpty) {
+        _prestationPhotoBytesCache[path] = bytes;
+        return bytes;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.photo;
+
+    // 1. Fichier local sur appareil mobile (Android / iOS)
+    if (p.cheminLocal != null && p.cheminLocal!.isNotEmpty && !kIsWeb && !p.cheminLocal!.startsWith('data:') && !p.cheminLocal!.startsWith('http')) {
+      final file = File(p.cheminLocal!);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          fit: widget.fit,
+          width: widget.width,
+          height: widget.height,
+          errorBuilder: (_, _, _) => _buildRemoteOrFallback(),
+        );
+      }
+    }
+
+    // 2. Data URI base64 ou URL directe dans cheminLocal
+    if (p.cheminLocal != null && (p.cheminLocal!.startsWith('data:') || p.cheminLocal!.startsWith('http'))) {
+      return Image.network(
+        p.cheminLocal!,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder: (_, _, _) => _buildRemoteOrFallback(),
+      );
+    }
+
+    return _buildRemoteOrFallback();
+  }
+
+  Widget _buildRemoteOrFallback() {
+    final distant = widget.photo.cheminDistant;
+    if (distant == null || distant.isEmpty) return _placeholder();
+
+    if (distant.startsWith('http') || distant.startsWith('data:')) {
+      return Image.network(
+        distant,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder: (_, _, _) => _placeholder(),
+      );
+    }
+
+    // Chemin Supabase Storage privé
+    if (_prestationPhotoBytesCache.containsKey(distant)) {
+      return Image.memory(
+        _prestationPhotoBytesCache[distant]!,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder: (_, _, _) => _placeholder(),
+      );
+    }
+
+    return FutureBuilder<Uint8List?>(
+      future: _remoteFuture,
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return Container(
+            width: widget.width,
+            height: widget.height,
+            color: AppColors.background,
+            child: const Center(
+              child: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+        final data = snap.data;
+        if (data != null && data.isNotEmpty) {
+          return Image.memory(
+            data,
+            fit: widget.fit,
+            width: widget.width,
+            height: widget.height,
+            errorBuilder: (_, _, _) => _placeholder(),
+          );
+        }
+        return _placeholder();
+      },
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      width: widget.width,
+      height: widget.height,
+      color: Colors.black12,
+      child: const Center(
+        child: Icon(Icons.image_outlined, size: 28, color: AppColors.muted),
+      ),
+    );
+  }
+}
+
+/// Visionneuse plein écran moderne avec parcours (swipe + flèches), zoom et suppression confirmée.
+class PhotoViewerDialog extends StatefulWidget {
+  const PhotoViewerDialog({
+    super.key,
+    required this.photos,
+    this.initialIndex = 0,
+    this.onSupprimer,
+  });
+
+  final List<PhotoPrestation> photos;
+  final int initialIndex;
+  final ValueChanged<PhotoPrestation>? onSupprimer;
+
+  static Future<void> show(
+    BuildContext context, {
+    required PhotoPrestation photo,
+    List<PhotoPrestation>? allPhotos,
+    VoidCallback? onSupprimer,
+    ValueChanged<PhotoPrestation>? onSupprimerPhoto,
+  }) {
+    final list = (allPhotos != null && allPhotos.isNotEmpty) ? allPhotos : [photo];
+    final idx = list.indexWhere((p) => p.id == photo.id).clamp(0, list.length - 1);
+
     return showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.92),
-      builder: (_) => PhotoViewerDialog(photo: photo, onSupprimer: onSupprimer),
+      useRootNavigator: true,
+      barrierColor: Colors.black.withValues(alpha: 0.94),
+      builder: (_) => PhotoViewerDialog(
+        photos: list,
+        initialIndex: idx,
+        onSupprimer: onSupprimerPhoto ??
+            (onSupprimer != null ? (_) => onSupprimer() : null),
+      ),
+    );
+  }
+
+  @override
+  State<PhotoViewerDialog> createState() => _PhotoViewerDialogState();
+}
+
+class _PhotoViewerDialogState extends State<PhotoViewerDialog> {
+  late final PageController _pageController;
+  late List<PhotoPrestation> _photos;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _photos = List<PhotoPrestation>.from(widget.photos);
+    _currentIndex = widget.initialIndex.clamp(0, _photos.length - 1);
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _confirmerSuppression() async {
+    if (widget.onSupprimer == null || _photos.isEmpty) return;
+    final photo = _photos[_currentIndex];
+
+    final confirme = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer cette photo ?'),
+        content: const Text('Cette photo sera définitivement retirée du dossier.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.negative),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirme != true || !mounted) return;
+    widget.onSupprimer!(photo);
+
+    if (_photos.length <= 1) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      _photos.removeAt(_currentIndex);
+      if (_currentIndex >= _photos.length) {
+        _currentIndex = _photos.length - 1;
+      }
+    });
+    _pageController.jumpToPage(_currentIndex);
+  }
+
+  void _allerA(int index) {
+    if (index < 0 || index >= _photos.length) return;
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget imageWidget;
-    if (photo.cheminLocal != null && !kIsWeb) {
-      final file = File(photo.cheminLocal!);
-      if (file.existsSync()) {
-        imageWidget = Image.file(file, fit: BoxFit.contain);
-      } else if (photo.cheminDistant != null) {
-        imageWidget = Image.network(photo.cheminDistant!, fit: BoxFit.contain);
-      } else {
-        imageWidget = _placeholderErreur();
-      }
-    } else if (photo.cheminLocal != null &&
-        (photo.cheminLocal!.startsWith('data:') || photo.cheminLocal!.startsWith('http'))) {
-      imageWidget = Image.network(photo.cheminLocal!, fit: BoxFit.contain);
-    } else if (photo.cheminDistant != null) {
-      imageWidget = Image.network(photo.cheminDistant!, fit: BoxFit.contain);
-    } else {
-      imageWidget = _placeholderErreur();
+    if (_photos.isEmpty) {
+      return const SizedBox.shrink();
     }
+    final photo = _photos[_currentIndex];
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -53,80 +298,77 @@ class PhotoViewerDialog extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(photo.categorie.emoji),
-                const SizedBox(width: 6),
-                Text(
-                  photo.categorie.libelle,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-                ),
-              ],
+            Text(
+              _photos.length > 1
+                  ? 'Photo ${_currentIndex + 1} / ${_photos.length}'
+                  : 'Photo du dossier',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
             ),
             Text(
-              'Ajoutée le ${DateFormat('dd/MM/yyyy à HH:mm').format(photo.createdAt)}${photo.auteurNom != null ? " par ${photo.auteurNom}" : ""}',
+              'Ajoutée le ${DateFormat('dd/MM/yyyy à HH:mm').format(photo.createdAt)}${photo.auteurNom != null ? " • ${photo.auteurNom}" : ""}',
               style: const TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ],
         ),
         actions: [
-          if (onSupprimer != null)
+          if (widget.onSupprimer != null)
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
               tooltip: 'Supprimer la photo',
-              onPressed: () {
-                Navigator.of(context).pop();
-                onSupprimer!();
-              },
+              onPressed: _confirmerSuppression,
             ),
           IconButton(
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close_rounded),
+            tooltip: 'Fermer',
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Expanded(
-              child: Center(
+            PageView.builder(
+              controller: _pageController,
+              itemCount: _photos.length,
+              onPageChanged: (i) => setState(() => _currentIndex = i),
+              itemBuilder: (_, idx) => Center(
                 child: InteractiveViewer(
-                  minScale: 0.5,
+                  minScale: 0.6,
                   maxScale: 4.0,
-                  child: imageWidget,
+                  child: PrestationPhotoImage(
+                    photo: _photos[idx],
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
-            if (photo.legende != null && photo.legende!.isNotEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                color: Colors.black87,
-                child: Text(
-                  photo.legende!,
-                  style: const TextStyle(color: Colors.white, fontSize: 13.5, height: 1.4),
-                  textAlign: TextAlign.center,
+            if (_photos.length > 1 && _currentIndex > 0)
+              Positioned(
+                left: 12,
+                child: Material(
+                  color: Colors.black54,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
+                    onPressed: () => _allerA(_currentIndex - 1),
+                  ),
+                ),
+              ),
+            if (_photos.length > 1 && _currentIndex < _photos.length - 1)
+              Positioned(
+                right: 12,
+                child: Material(
+                  color: Colors.black54,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 28),
+                    onPressed: () => _allerA(_currentIndex + 1),
+                  ),
                 ),
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _placeholderErreur() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.broken_image_outlined, size: 64, color: Colors.white54),
-          SizedBox(height: 12),
-          Text(
-            'Image non disponible hors-ligne',
-            style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
-          ),
-        ],
       ),
     );
   }

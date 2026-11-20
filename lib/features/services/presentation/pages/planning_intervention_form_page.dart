@@ -61,10 +61,8 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
   final _smartFormController = SmartFormController();
 
   // Champs de saisie
-  final _titreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _adresseLieuCtrl = TextEditingController();
-  final _consignesAccesCtrl = TextEditingController();
   final _montantCtrl = TextEditingController(text: '0');
 
   // État temporel
@@ -74,26 +72,14 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
 
   // Paramètres métier & finances
   String? _contactId;
-  String? _responsableId;
   _TypeLieuIntervention _typeLieu = _TypeLieuIntervention.surSite;
-  PrioritePrestation _priorite = PrioritePrestation.normale;
   ServiceCatalogue? _serviceCatalogueAssocie;
   bool _encaisserImmediat = false;
   fin.ModePaiement _modePaiement = fin.ModePaiement.especes;
   final List<PhotoPrestation> _photos = [];
 
-  int _etape = 1; // 1 = Créneau & Client, 2 = Détails & Intervenant
+  int _etape = 1; // 1 = Créneau & Client, 2 = Détails & Photos
   bool _envoi = false;
-
-  static const _motifsFrequents = [
-    '🔍 Diagnostic / Panne',
-    '⚡ Dépannage urgent',
-    '🛠️ Installation / Pose',
-    '🔧 Entretien / Révision',
-    '📏 Prise de mesures',
-    '📦 Livraison / Pose',
-    '✨ Nettoyage / Finition',
-  ];
 
   static const _dureesRapides = [
     (label: '30 min', minutes: 30),
@@ -112,7 +98,6 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
   void initState() {
     super.initState();
     _contactId = widget.initialContactId;
-    _titreCtrl.text = 'Intervention';
 
     if (widget.initialDate != null) {
       final parsed = DateTime.tryParse(widget.initialDate!);
@@ -132,10 +117,8 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
 
   @override
   void dispose() {
-    _titreCtrl.dispose();
     _descCtrl.dispose();
     _adresseLieuCtrl.dispose();
-    _consignesAccesCtrl.dispose();
     _montantCtrl.dispose();
     _smartFormController.dispose();
     super.dispose();
@@ -178,11 +161,9 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
   }
 
   bool get _aModifications =>
-      _titreCtrl.text.trim().isNotEmpty ||
       _descCtrl.text.trim().isNotEmpty ||
       _contactId != widget.initialContactId ||
       _adresseLieuCtrl.text.trim().isNotEmpty ||
-      _consignesAccesCtrl.text.trim().isNotEmpty ||
       _photos.isNotEmpty;
 
   // ---------------------------------------------------------------- Actions de sélection
@@ -401,8 +382,8 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
     FocusScope.of(context).unfocus();
     if (_envoi) return;
 
-    final titreSaisi = _titreCtrl.text.trim();
-    if (!_formKey.currentState!.validate() || titreSaisi.isEmpty) {
+    final descSaisie = _descCtrl.text.trim();
+    if (!_formKey.currentState!.validate() || descSaisie.isEmpty) {
       if (_etape != 2) {
         setState(() => _etape = 2);
       }
@@ -415,7 +396,7 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Veuillez renseigner un intitulé pour l\'intervention.'),
+          content: Text('Veuillez décrire l\'intervention à réaliser.'),
           backgroundColor: AppColors.negative,
           behavior: SnackBarBehavior.floating,
         ),
@@ -465,14 +446,11 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
             : 'Sur site client';
       }
 
-      // Notes & consignes d'accès
-      final List<String> notesParts = [];
-      if (_consignesAccesCtrl.text.trim().isNotEmpty) {
-        notesParts.add('🔑 Consignes d\'accès : ${_consignesAccesCtrl.text.trim()}');
-      }
-      final String? noteComplete = notesParts.isNotEmpty ? notesParts.join('\n\n') : null;
-
-      final titreFinal = titreSaisi.isNotEmpty ? titreSaisi : 'Intervention';
+      // Dérivation robuste du libellé pour la base de données et les listes
+      final premiereLigne = descSaisie.split('\n').first.trim();
+      final titreFinal = premiereLigne.length > 60
+          ? '${premiereLigne.substring(0, 57)}...'
+          : (premiereLigne.isNotEmpty ? premiereLigne : 'Intervention');
 
       final montantFacture = int.tryParse(_montantCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
       final prestationId = const Uuid().v4();
@@ -505,19 +483,19 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
         entrepriseId: entrepriseId,
         perimetreId: espace.perimetreId,
         contactId: _contactId,
-        responsableId: _responsableId,
+        responsableId: null,
         titre: titreFinal,
-        description: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
+        description: descSaisie,
         lignes: lignes,
         remise: 0,
-        priorite: _priorite,
+        priorite: PrioritePrestation.normale,
         debutPrevu: debutPrevu,
         echeanceJour: echeanceJourFinal,
         echeanceHeure: echeanceHeureStr,
         dureeMinutes: _dureeMinutes,
         livraisonRequise: false,
         lieu: lieuFinal,
-        note: noteComplete,
+        note: null,
         montantRegle: _encaisserImmediat && montantFacture > 0 ? montantFacture : 0,
         photos: photosAssociees,
         champsMetier: {
@@ -542,7 +520,7 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
           libelle: 'Intervention - $titreFinal',
           montantTotal: montantFacture,
           dateEngagement: DateTime(_dateIntervention.year, _dateIntervention.month, _dateIntervention.day),
-          origineType: 'INTERVENTION',
+          origineType: 'PRESTATION',
         );
         await finRepo.creerEngagement(engagement);
 
@@ -634,7 +612,6 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
   @override
   Widget build(BuildContext context) {
     final contacts = ref.watch(contactsProvider).value ?? const <Contact>[];
-    final membres = ref.watch(membresProvider).value ?? const <Membre>[];
     final catalogue = ref.watch(servicesCatalogueProvider).value ?? const <ServiceCatalogue>[];
 
     final Contact? contactSelectionne = _contactId == null
@@ -1062,272 +1039,42 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
                   onModifier: () => _changerEtape(1),
                 ),
 
-              // ─── SECTION 3 : OBJET & MOTIF D'INTERVENTION ───
+              // ─── SECTION 3 : DESCRIPTION DÉTAILLÉE DE L'INTERVENTION ───
               _buildSectionCard(
                 numero: 3,
-                titre: 'Objet de l\'intervention',
-                sousTitre: 'Motif du rendez-vous et description du besoin',
-                icone: Icons.handyman_outlined,
+                titre: 'Description détaillée de l\'intervention',
+                sousTitre: 'Travail demandé, problème rencontré et besoins du client',
+                icone: Icons.edit_note_rounded,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Suggestions rapides de motifs
-                    Text(
-                      'Motifs fréquents',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Row(
-                        children: [
-                          for (final motif in _motifsFrequents)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: ActionChip(
-                                label: Text(motif),
-                                backgroundColor: AppColors.surface,
-                                side: BorderSide(color: AppColors.border),
-                                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                onPressed: () {
-                                  // Retire l'émoji au début pour remplir le titre proprement
-                                  final titreNettoye = motif.replaceFirst(RegExp(r'^[^\w\s]+\s*'), '');
-                                  setState(() {
-                                    _titreCtrl.text = titreNettoye;
-                                  });
-                                },
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Champ Titre (Requis)
-                    TextFormField(
-                      controller: _titreCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Titre de l\'intervention *',
-                        hintText: 'Ex: Révision groupe électrogène / Dépannage clim',
-                        prefixIcon: Icon(Icons.edit_note_rounded),
-                      ),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Veuillez saisir un intitulé pour l\'intervention'
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Champ Description
                     TextFormField(
                       controller: _descCtrl,
-                      maxLines: 2,
+                      minLines: 4,
+                      maxLines: 7,
                       decoration: const InputDecoration(
-                        labelText: 'Détails ou problème signalé (optionnel)',
-                        hintText: 'Symptômes observés, remarques du client...',
-                        prefixIcon: Icon(Icons.notes_rounded),
+                        labelText: 'Description détaillée de l\'intervention *',
+                        hintText: 'Décrivez précisément le travail demandé, le problème rencontré, la nature de l\'intervention et les consignes particulières...',
                         alignLabelWithHint: true,
+                        prefixIcon: Padding(
+                          padding: EdgeInsets.only(bottom: 64),
+                          child: Icon(Icons.notes_rounded),
+                        ),
                       ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Veuillez saisir une description pour l\'intervention'
+                          : null,
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // ─── SECTION 4 : ATTRIBUTION & URGENCE ───
+              // ─── SECTION 4 : PHOTOS DU DOSSIER (FACULTATIF) ───
               _buildSectionCard(
                 numero: 4,
-                titre: 'Attribution & Urgence',
-                sousTitre: 'Technicien assigné et niveau de priorité',
-                icone: Icons.engineering_outlined,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Sélection du technicien assigné
-                    DropdownButtonFormField<String?>(
-                      initialValue: _responsableId,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Technicien / Intervenant assigné',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text(
-                            'Non assigné (à dispatcher plus tard)',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        for (final m in membres)
-                          DropdownMenuItem(
-                            value: m.userId,
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: AppColors.primarySoft,
-                                  child: Text(
-                                    m.nomAffiche.substring(0, 1).toUpperCase(),
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(m.nomAffiche, overflow: TextOverflow.ellipsis)),
-                              ],
-                            ),
-                          ),
-                      ],
-                      onChanged: (v) => setState(() => _responsableId = v),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Sélecteur de priorité (Normale vs Haute)
-                    Text(
-                      'Niveau de priorité',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _priorite = PrioritePrestation.normale),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: _priorite == PrioritePrestation.normale
-                                    ? AppColors.surface
-                                    : AppColors.background,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _priorite == PrioritePrestation.normale
-                                      ? AppColors.primary
-                                      : AppColors.border,
-                                  width: _priorite == PrioritePrestation.normale ? 1.8 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 18,
-                                    color: _priorite == PrioritePrestation.normale
-                                        ? AppColors.primary
-                                        : AppColors.muted,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      'Normale',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        color: _priorite == PrioritePrestation.normale
-                                            ? AppColors.primary
-                                            : AppColors.ink,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _priorite = PrioritePrestation.haute),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: _priorite == PrioritePrestation.haute
-                                    ? AppColors.negativeSoft
-                                    : AppColors.background,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _priorite == PrioritePrestation.haute
-                                      ? AppColors.negative
-                                      : AppColors.border,
-                                  width: _priorite == PrioritePrestation.haute ? 1.8 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.warning_amber_rounded,
-                                    size: 18,
-                                    color: _priorite == PrioritePrestation.haute
-                                        ? AppColors.negative
-                                        : AppColors.muted,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      'Urgente',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        color: _priorite == PrioritePrestation.haute
-                                            ? AppColors.negative
-                                            : AppColors.ink,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ─── SECTION 5 : CONSIGNES ACCÈS & NOTES ───
-              _buildSectionCard(
-                numero: 5,
-                titre: 'Consignes d\'accès & Notes terrain',
-                sousTitre: 'Digicode, étage, contact sur place, consignes spéciales',
-                icone: Icons.lock_open_rounded,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _consignesAccesCtrl,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Consignes pour le technicien sur place',
-                        hintText: 'Ex: Portail vert au fond, sonner chez M. Diallo, digicode 1234',
-                        prefixIcon: Icon(Icons.info_outline_rounded),
-                        alignLabelWithHint: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ─── SECTION 6 : PHOTOS & CONSTAT TERRAIN ───
-              _buildSectionCard(
-                numero: 6,
-                titre: 'Photos & Constat terrain (Facultatif)',
-                sousTitre: 'Capturer ou ajouter des photos du constat / équipement',
+                titre: 'Photos du dossier (Facultatif)',
+                sousTitre: 'Ajoutez des photos de l\'équipement ou du constat',
                 icone: Icons.camera_alt_outlined,
                 child: PrestationPhotosSection(
                   photos: _photos,
@@ -1343,9 +1090,9 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
               if (catalogue.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 _buildSectionCard(
-                  numero: 7,
+                  numero: 5,
                   titre: 'Associer un service du catalogue (Facultatif)',
-                  sousTitre: 'Pré-remplit les tarifs ou la nature de prestation',
+                  sousTitre: 'Pré-remplit les tarifs prédéfinis',
                   icone: Icons.category_outlined,
                   child: DropdownButtonFormField<ServiceCatalogue?>(
                     initialValue: _serviceCatalogueAssocie,
@@ -1374,8 +1121,8 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
                     onChanged: (s) {
                       setState(() {
                         _serviceCatalogueAssocie = s;
-                        if (s != null && _titreCtrl.text.trim().isEmpty) {
-                          _titreCtrl.text = s.nom;
+                        if (s != null && _descCtrl.text.trim().isEmpty) {
+                          _descCtrl.text = s.nom;
                         }
                         if (s != null) {
                           _montantCtrl.text = s.prix.toString();
@@ -1389,10 +1136,10 @@ class _PlanningInterventionFormPageState extends ConsumerState<PlanningIntervent
                 ),
               ],
 
-              // ─── SECTION 8 : CHIFFRAGE & ENCAISSEMENT CAISSE DIRECT ───
+              // ─── SECTION 5/6 : CHIFFRAGE & ENCAISSEMENT CAISSE DIRECT ───
               const SizedBox(height: 16),
               _buildSectionCard(
-                numero: 8,
+                numero: catalogue.isNotEmpty ? 6 : 5,
                 titre: 'Chiffrage & Encaissement Caisse',
                 sousTitre: 'Montant facturé et impact direct sur la trésorerie',
                 icone: Icons.payments_rounded,
@@ -1923,7 +1670,7 @@ class _PlanningStepIndicator extends StatelessWidget {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        '2. Détails & Assignation',
+                        '2. Détails & Photos',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,

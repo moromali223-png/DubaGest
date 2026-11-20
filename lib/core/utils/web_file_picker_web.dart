@@ -47,6 +47,15 @@ Future<Uint8List?> pickImageBytesWeb({
     } catch (_) {}
   }
 
+  // Écouteur d'annulation utilisateur (fermeture sans sélection)
+  input.addEventListener(
+    'cancel',
+    (web.Event event) {
+      cleanup();
+      if (!completer.isCompleted) completer.complete(null);
+    }.toJS,
+  );
+
   // Écouteur de sélection / prise de vue
   input.addEventListener(
     'change',
