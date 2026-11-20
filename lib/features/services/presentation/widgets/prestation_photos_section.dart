@@ -145,6 +145,9 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
       syncStatus: RecordSyncStatus.pendingSync,
     );
 
+    prestationPhotoBytesCache[nouvellePhoto.id] = octets;
+    prestationPhotoBytesCache[chemin] = octets;
+
     final miseAJour = List<PhotoPrestation>.from(widget.photos)..add(nouvellePhoto);
     await widget.onPhotosChanged(miseAJour);
   }

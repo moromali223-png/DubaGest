@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +10,8 @@ import '../../../fichiers/data/fichiers_repository_impl.dart' show bucketFichier
 import '../../domain/entities/prestation.dart';
 
 /// Cache mémoire partagé des octets de photos téléchargées depuis Supabase Storage
-/// afin d'assurer un affichage instantané et fluide sur mobile et Web.
-final Map<String, Uint8List> _prestationPhotoBytesCache = {};
+/// ou capturées localement afin d'assurer un affichage instantané et fluide sur mobile et Web.
+final Map<String, Uint8List> prestationPhotoBytesCache = {};
 
 /// Widget réutilisable qui affiche une [PhotoPrestation] qu'elle soit locale,
 /// en base64, via URL HTTP ou stockée dans le bucket privé Supabase Storage « fichiers ».
@@ -53,8 +54,9 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
   void _initRemoteLoader() {
     final distant = widget.photo.cheminDistant;
     if (distant != null && distant.isNotEmpty && !distant.startsWith('http') && !distant.startsWith('data:')) {
-      if (_prestationPhotoBytesCache.containsKey(distant)) {
-        _remoteFuture = Future.value(_prestationPhotoBytesCache[distant]);
+      if (prestationPhotoBytesCache.containsKey(distant) || prestationPhotoBytesCache.containsKey(widget.photo.id)) {
+        final cached = prestationPhotoBytesCache[distant] ?? prestationPhotoBytesCache[widget.photo.id];
+        _remoteFuture = Future.value(cached);
       } else {
         _remoteFuture = _telechargerDepuisStorage(distant);
       }
@@ -67,8 +69,19 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
     try {
       final bytes = await Supabase.instance.client.storage.from(bucketFichiers).download(path);
       if (bytes.isNotEmpty) {
-        _prestationPhotoBytesCache[path] = bytes;
+        prestationPhotoBytesCache[path] = bytes;
+        prestationPhotoBytesCache[widget.photo.id] = bytes;
         return bytes;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Uint8List? _extraireOctetsDataUri(String uri) {
+    try {
+      final idx = uri.indexOf(',');
+      if (idx != -1 && idx < uri.length - 1) {
+        return base64Decode(uri.substring(idx + 1));
       }
     } catch (_) {}
     return null;
@@ -77,6 +90,26 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
   @override
   Widget build(BuildContext context) {
     final p = widget.photo;
+
+    // 0. Cache mémoire direct par ID de photo ou chemin local
+    if (prestationPhotoBytesCache.containsKey(p.id)) {
+      return Image.memory(
+        prestationPhotoBytesCache[p.id]!,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder: (_, _, _) => _buildRemoteOrFallback(),
+      );
+    }
+    if (p.cheminLocal != null && prestationPhotoBytesCache.containsKey(p.cheminLocal)) {
+      return Image.memory(
+        prestationPhotoBytesCache[p.cheminLocal]!,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder: (_, _, _) => _buildRemoteOrFallback(),
+      );
+    }
 
     // 1. Fichier local sur appareil mobile (Android / iOS)
     if (p.cheminLocal != null && p.cheminLocal!.isNotEmpty && !kIsWeb && !p.cheminLocal!.startsWith('data:') && !p.cheminLocal!.startsWith('http')) {
@@ -92,8 +125,24 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
       }
     }
 
-    // 2. Data URI base64 ou URL directe dans cheminLocal
-    if (p.cheminLocal != null && (p.cheminLocal!.startsWith('data:') || p.cheminLocal!.startsWith('http'))) {
+    // 2. Data URI base64 décodée en mémoire pour rendu garanti universel
+    if (p.cheminLocal != null && p.cheminLocal!.startsWith('data:')) {
+      final octets = _extraireOctetsDataUri(p.cheminLocal!);
+      if (octets != null && octets.isNotEmpty) {
+        prestationPhotoBytesCache[p.id] = octets;
+        prestationPhotoBytesCache[p.cheminLocal!] = octets;
+        return Image.memory(
+          octets,
+          fit: widget.fit,
+          width: widget.width,
+          height: widget.height,
+          errorBuilder: (_, _, _) => _buildRemoteOrFallback(),
+        );
+      }
+    }
+
+    // 3. URL HTTP directe
+    if (p.cheminLocal != null && p.cheminLocal!.startsWith('http')) {
       return Image.network(
         p.cheminLocal!,
         fit: widget.fit,
@@ -110,7 +159,21 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
     final distant = widget.photo.cheminDistant;
     if (distant == null || distant.isEmpty) return _placeholder();
 
-    if (distant.startsWith('http') || distant.startsWith('data:')) {
+    if (distant.startsWith('data:')) {
+      final octets = _extraireOctetsDataUri(distant);
+      if (octets != null && octets.isNotEmpty) {
+        prestationPhotoBytesCache[widget.photo.id] = octets;
+        return Image.memory(
+          octets,
+          fit: widget.fit,
+          width: widget.width,
+          height: widget.height,
+          errorBuilder: (_, _, _) => _placeholder(),
+        );
+      }
+    }
+
+    if (distant.startsWith('http')) {
       return Image.network(
         distant,
         fit: widget.fit,
@@ -121,9 +184,9 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
     }
 
     // Chemin Supabase Storage privé
-    if (_prestationPhotoBytesCache.containsKey(distant)) {
+    if (prestationPhotoBytesCache.containsKey(distant)) {
       return Image.memory(
-        _prestationPhotoBytesCache[distant]!,
+        prestationPhotoBytesCache[distant]!,
         fit: widget.fit,
         width: widget.width,
         height: widget.height,
