@@ -77,18 +77,22 @@
     // Boutons APK Android
     const apkButtons = document.querySelectorAll('.action-apk');
     apkButtons.forEach((btn) => {
-      const targetUrl = config.android.apkUrl || '/downloads/DubaGest-Android.apk';
+      const targetUrl = config.android.apkUrl || 'https://github.com/moromali223-png/DubaGest/releases/download/v1.0.3/DubaGest-Android.apk';
       btn.href = targetUrl;
-      btn.setAttribute('download', config.android.nomFichier || 'DubaGest-Android.apk');
-      btn.removeAttribute('target');
-      btn.removeAttribute('rel');
+      btn.setAttribute('target', '_blank');
+      btn.setAttribute('rel', 'noopener noreferrer');
+      // Ne PAS imposer d'attribut download pour les URLs hébergées sur CDN :
+      // Sur les navigateurs mobiles (Chrome/Safari), l'attribut download couplé à une URL cross-origin
+      // ou avec redirection est silencieusement bloqué par mesure de sécurité du navigateur.
+      // Le serveur CDN envoie déjà Content-Disposition: attachment qui force le téléchargement direct.
+      btn.removeAttribute('download');
       btn.addEventListener('click', (e) => {
         if (!config.android.estDisponible) {
           e.preventDefault();
           showToast('Le fichier APK est temporairement en cours de mise à jour. Veuillez réessayer dans quelques instants.', 'warning');
           return;
         }
-        showToast(`Téléchargement de l'APK officiel DubaGest (${config.android.taille || '39 Mo'}) en cours...`, 'info');
+        showToast(`Téléchargement de l'APK officiel DubaGest (${config.android.taille || '109 Mo'}) en cours...`, 'info');
       });
     });
 
