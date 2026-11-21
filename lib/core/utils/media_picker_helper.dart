@@ -251,7 +251,7 @@ class MediaPickerHelper {
                       child: const Icon(Icons.photo_camera_outlined, color: AppColors.green),
                     ),
                     title: Text(l10n.comTakePhoto, style: const TextStyle(fontWeight: FontWeight.w700)),
-                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                    onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
                   ),
                   ListTile(
                     leading: Container(
@@ -260,7 +260,7 @@ class MediaPickerHelper {
                       child: const Icon(Icons.photo_library_outlined, color: Color(0xFF4F46E5)),
                     ),
                     title: Text(l10n.comChooseFromGallery, style: const TextStyle(fontWeight: FontWeight.w700)),
-                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                    onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
                   ),
                   const SizedBox(height: 16),
                 ],

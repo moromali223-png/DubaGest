@@ -333,6 +333,325 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
     }
   }
 
+  Future<void> _desactiverAbonnement(String nom, String? plan) async {
+    final motifCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.pause_circle_outline_rounded, color: Colors.amber, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Désactiver l\'abonnement',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'L\'abonnement actuel ${plan != null ? "($plan)" : ""} de "$nom" sera temporairement suspendu. Les fonctionnalités avancées seront verrouillées.',
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: motifCtrl,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: 'Motif de désactivation *',
+                  hintText: 'Ex: Attente de renouvellement, suspension administrative...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().length < 3) {
+                    return 'Veuillez saisir un motif (3 caractères min).';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber.shade800,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: const Text('Désactiver'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmer != true) return;
+
+    setState(() => _actionEnCours = true);
+    try {
+      final repo = ref.read(superAdminRepositoryProvider);
+      await repo.desactiverAbonnement(
+        entrepriseId: widget.entrepriseId,
+        motif: motifCtrl.text.trim(),
+      );
+      ref.invalidate(superAdminDetailEntrepriseProvider(widget.entrepriseId));
+      ref.invalidate(superAdminEntreprisesProvider);
+      ref.invalidate(superAdminDashboardProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Abonnement désactivé / suspendu avec succès.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e'), backgroundColor: Colors.red.shade900),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionEnCours = false);
+    }
+  }
+
+  Future<void> _reactiverAbonnement(String nom, String? plan) async {
+    final motifCtrl = TextEditingController();
+
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.play_circle_outline_rounded, color: Colors.green, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Réactiver l\'abonnement',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Confirmez-vous la réactivation de l\'abonnement ${plan != null ? "($plan)" : ""} pour "$nom" ?',
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: motifCtrl,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'Motif (optionnel)',
+                hintText: 'Ex: Régularisation effectuée...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Réactiver'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmer != true) return;
+
+    setState(() => _actionEnCours = true);
+    try {
+      final repo = ref.read(superAdminRepositoryProvider);
+      await repo.reactiverAbonnement(
+        entrepriseId: widget.entrepriseId,
+        motif: motifCtrl.text.trim().isEmpty ? null : motifCtrl.text.trim(),
+      );
+      ref.invalidate(superAdminDetailEntrepriseProvider(widget.entrepriseId));
+      ref.invalidate(superAdminEntreprisesProvider);
+      ref.invalidate(superAdminDashboardProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Abonnement réactivé avec succès.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e'), backgroundColor: Colors.red.shade900),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionEnCours = false);
+    }
+  }
+
+  Future<void> _annulerAbonnement(String nom, String? plan) async {
+    final motifCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Annuler l\'abonnement',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'L\'abonnement actuel de "$nom" sera définitivement résilié / clôturé. Cette action prend effet immédiatement.',
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: motifCtrl,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: 'Motif d\'annulation obligatoire *',
+                  hintText: 'Ex: Demande client, résiliation définitive...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().length < 3) {
+                    return 'Veuillez saisir un motif (3 caractères min).';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Retour'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: const Text('Confirmer l\'annulation'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmer != true) return;
+
+    setState(() => _actionEnCours = true);
+    try {
+      final repo = ref.read(superAdminRepositoryProvider);
+      await repo.annulerAbonnement(
+        entrepriseId: widget.entrepriseId,
+        motif: motifCtrl.text.trim(),
+      );
+      ref.invalidate(superAdminDetailEntrepriseProvider(widget.entrepriseId));
+      ref.invalidate(superAdminEntreprisesProvider);
+      ref.invalidate(superAdminDashboardProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Abonnement annulé avec succès.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e'), backgroundColor: Colors.red.shade900),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionEnCours = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(superAdminDetailEntrepriseProvider(widget.entrepriseId));
@@ -394,8 +713,12 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
                 (a) => a != null && (a['statut'] == 'ACTIF' || a['statut'] == 'ESSAI'),
                 orElse: () => null,
               );
+          final aboSuspendu = abonnements.cast<Map<String, dynamic>?>().firstWhere(
+                (a) => a != null && a['statut'] == 'SUSPENDU',
+                orElse: () => null,
+              );
           final estSponsorise = aboActif?['type_facturation'] == 'SPONSORISE';
-          final planActuel = aboActif?['plan_code'] as String?;
+          final planActuel = (aboActif ?? aboSuspendu)?['plan_code'] as String?;
 
           return Stack(
             children: [
@@ -427,6 +750,8 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
                       estSuspendue: estSuspendue,
                       estSponsorise: estSponsorise,
                       planActuel: planActuel,
+                      aAbonnementActif: aboActif != null,
+                      aAbonnementSuspendu: aboSuspendu != null,
                     ),
 
                     const SizedBox(height: 24),
@@ -443,7 +768,7 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
                                 flex: 6,
                                 child: Column(
                                   children: [
-                                    _buildAbonnementsCard(abonnements, devise),
+                                    _buildAbonnementsCard(abonnements, devise, nom),
                                     const SizedBox(height: 20),
                                     _buildPerimetresCard(perimetres),
                                   ],
@@ -459,7 +784,7 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
                         } else {
                           return Column(
                             children: [
-                              _buildAbonnementsCard(abonnements, devise),
+                              _buildAbonnementsCard(abonnements, devise, nom),
                               const SizedBox(height: 20),
                               _buildMembresCard(membres),
                               const SizedBox(height: 20),
@@ -650,6 +975,8 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
     required bool estSuspendue,
     required bool estSponsorise,
     required String? planActuel,
+    required bool aAbonnementActif,
+    required bool aAbonnementSuspendu,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -668,7 +995,7 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF475569)),
           ),
 
-          // Suspendre / Réactiver
+          // Suspendre / Réactiver l'entreprise
           if (estSuspendue)
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
@@ -713,8 +1040,47 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
               }
             },
             icon: const Icon(Icons.verified_user_rounded, size: 18),
-            label: const Text('Activer / Changer abonnement'),
+            label: const Text('Activer / Renouveler abonnement'),
           ),
+
+          // Désactiver l'abonnement
+          if (aAbonnementActif)
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD97706),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () => _desactiverAbonnement(nom, planActuel),
+              icon: const Icon(Icons.pause_circle_outline_rounded, size: 18),
+              label: const Text('Désactiver abonnement'),
+            ),
+
+          // Réactiver l'abonnement
+          if (aAbonnementSuspendu)
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () => _reactiverAbonnement(nom, planActuel),
+              icon: const Icon(Icons.play_circle_outline_rounded, size: 18),
+              label: const Text('Réactiver abonnement'),
+            ),
+
+          // Annuler l'abonnement
+          if (aAbonnementActif || aAbonnementSuspendu)
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFDC2626),
+                side: const BorderSide(color: Color(0xFFDC2626)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () => _annulerAbonnement(nom, planActuel),
+              icon: const Icon(Icons.cancel_outlined, size: 18),
+              label: const Text('Annuler abonnement'),
+            ),
 
           // Révoquer l'accès sponsorisé si actif
           if (estSponsorise)
@@ -733,7 +1099,7 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
     );
   }
 
-  Widget _buildAbonnementsCard(List<dynamic> abonnements, String devise) {
+  Widget _buildAbonnementsCard(List<dynamic> abonnements, String devise, String nom) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -868,6 +1234,71 @@ class _SuperAdminDetailEntreprisePageState extends ConsumerState<SuperAdminDetai
                                 ),
                             ],
                           ),
+                        ),
+                      ],
+                      if (statut == 'ACTIF' || statut == 'ESSAI') ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFD97706),
+                                side: const BorderSide(color: Color(0xFFD97706)),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                visualDensity: VisualDensity.compact,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => _desactiverAbonnement(nom, planCode),
+                              icon: const Icon(Icons.pause_rounded, size: 14),
+                              label: const Text('Désactiver', style: TextStyle(fontSize: 11)),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFDC2626),
+                                side: const BorderSide(color: Color(0xFFDC2626)),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                visualDensity: VisualDensity.compact,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => _annulerAbonnement(nom, planCode),
+                              icon: const Icon(Icons.cancel_outlined, size: 14),
+                              label: const Text('Annuler', style: TextStyle(fontSize: 11)),
+                            ),
+                          ],
+                        ),
+                      ] else if (statut == 'SUSPENDU') ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF059669),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                visualDensity: VisualDensity.compact,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => _reactiverAbonnement(nom, planCode),
+                              icon: const Icon(Icons.play_arrow_rounded, size: 14),
+                              label: const Text('Réactiver', style: TextStyle(fontSize: 11)),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFDC2626),
+                                side: const BorderSide(color: Color(0xFFDC2626)),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                visualDensity: VisualDensity.compact,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => _annulerAbonnement(nom, planCode),
+                              icon: const Icon(Icons.cancel_outlined, size: 14),
+                              label: const Text('Annuler', style: TextStyle(fontSize: 11)),
+                            ),
+                          ],
                         ),
                       ],
                     ],

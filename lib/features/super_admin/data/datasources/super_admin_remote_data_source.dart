@@ -127,6 +127,45 @@ class SuperAdminRemoteDataSource {
     );
   }
 
+  Future<void> desactiverAbonnement({
+    required String entrepriseId,
+    required String motif,
+  }) async {
+    await _client.rpc(
+      'admin_desactiver_abonnement',
+      params: {
+        'p_entreprise_id': entrepriseId,
+        'p_motif': motif,
+      },
+    );
+  }
+
+  Future<void> reactiverAbonnement({
+    required String entrepriseId,
+    String? motif,
+  }) async {
+    await _client.rpc(
+      'admin_reactiver_abonnement',
+      params: {
+        'p_entreprise_id': entrepriseId,
+        'p_motif': motif,
+      },
+    );
+  }
+
+  Future<void> annulerAbonnement({
+    required String entrepriseId,
+    required String motif,
+  }) async {
+    await _client.rpc(
+      'admin_annuler_abonnement',
+      params: {
+        'p_entreprise_id': entrepriseId,
+        'p_motif': motif,
+      },
+    );
+  }
+
   Future<List<AdminAuditLog>> listerAuditLogs({int limit = 50, int offset = 0}) async {
     final res = await _client.rpc(
       'admin_lister_audit_logs',

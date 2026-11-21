@@ -32,6 +32,21 @@ abstract class SuperAdminRepository {
     required String motif,
   });
 
+  Future<void> desactiverAbonnement({
+    required String entrepriseId,
+    required String motif,
+  });
+
+  Future<void> reactiverAbonnement({
+    required String entrepriseId,
+    String? motif,
+  });
+
+  Future<void> annulerAbonnement({
+    required String entrepriseId,
+    required String motif,
+  });
+
   Future<List<AdminAuditLog>> listerAuditLogs({int limit = 50, int offset = 0});
 
   Future<void> bootstrapSuperAdmin({required String email, required String motif});

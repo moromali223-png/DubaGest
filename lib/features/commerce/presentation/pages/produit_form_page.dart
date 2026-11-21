@@ -353,15 +353,92 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
 
   // --- Photos -------------------------------------------------------------------
 
-  Future<void> _choisirSourcePhoto() async {
+  Future<ImageSource?> _ouvrirDialogueSourcePhoto() {
+    return showDialog<ImageSource>(
+      context: context,
+      useRootNavigator: true,
+      builder: (dlgCtx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.surface,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Ajouter une photo',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink),
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.of(dlgCtx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  leading: Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: const BoxDecoration(color: AppColors.greenSoft, shape: BoxShape.circle),
+                    child: const Icon(Icons.photo_camera_outlined, color: AppColors.green, size: 20),
+                  ),
+                  title: const Text('Prendre une photo', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  subtitle: const Text('Ouvrir l\'appareil photo', style: TextStyle(fontSize: 12)),
+                  onTap: () => Navigator.of(dlgCtx).pop(ImageSource.camera),
+                ),
+                const SizedBox(height: 4),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  leading: Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
+                    child: const Icon(Icons.photo_library_outlined, color: Color(0xFF4F46E5), size: 20),
+                  ),
+                  title: const Text('Choisir dans la galerie', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                  subtitle: const Text('Importer depuis la galerie', style: TextStyle(fontSize: 12)),
+                  onTap: () => Navigator.of(dlgCtx).pop(ImageSource.gallery),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _choisirSourcePhoto([ImageSource? sourceImposee]) async {
     final ctx = ref.read(contexteActifProvider);
     if (ctx == null) return;
     final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
     if (eid == null || eid.isEmpty) return;
 
+    ImageSource? source = sourceImposee;
+    if (source == null && !kIsWeb) {
+      source = await _ouvrirDialogueSourcePhoto();
+      if (source == null || !mounted) return;
+    }
+
     try {
-      final octets = await MediaPickerHelper.choisirPhoto(context);
-      if (octets == null) return;
+      final octets = await MediaPickerHelper.choisirPhoto(
+        context,
+        forceSource: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+      if (octets == null || octets.isEmpty || !mounted) return;
       final chemin = await ref
           .read(photosProduitsProvider)
           .ajouter(entrepriseId: eid, produitId: _id, octets: octets);
@@ -378,9 +455,21 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
     final eid = ctx.entreprise?.id ?? widget.etat.produits.firstOrNull?.entrepriseId;
     if (eid == null || eid.isEmpty) return;
 
+    ImageSource? source;
+    if (!kIsWeb) {
+      source = await _ouvrirDialogueSourcePhoto();
+      if (source == null || !mounted) return;
+    }
+
     try {
-      final octets = await MediaPickerHelper.choisirPhoto(context);
-      if (octets == null) return;
+      final octets = await MediaPickerHelper.choisirPhoto(
+        context,
+        forceSource: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+      if (octets == null || octets.isEmpty || !mounted) return;
       final chemin = await ref
           .read(photosProduitsProvider)
           .ajouter(entrepriseId: eid, produitId: _id, octets: octets);
@@ -509,6 +598,8 @@ class _FormulaireState extends ConsumerState<_Formulaire> {
             photos: _photos,
             produit: _produit(),
             onAjouter: _photos.length < 5 ? _choisirSourcePhoto : null,
+            onPrendrePhoto: _photos.length < 5 ? () => _choisirSourcePhoto(ImageSource.camera) : null,
+            onChoisirGalerie: _photos.length < 5 ? () => _choisirSourcePhoto(ImageSource.gallery) : null,
             onRetirer: (i) => setState(() => _photos.removeAt(i)),
             onRemplacer: _choisirSourceRemplacement,
             onDefinirPrincipale: (i) {
@@ -1388,6 +1479,8 @@ class _BoxUploadMedias extends StatelessWidget {
     required this.onAjouter,
     required this.onRetirer,
     required this.onDefinirPrincipale,
+    this.onPrendrePhoto,
+    this.onChoisirGalerie,
     this.onRemplacer,
     this.onDeplacer,
   });
@@ -1395,6 +1488,8 @@ class _BoxUploadMedias extends StatelessWidget {
   final List<String> photos;
   final Produit produit;
   final VoidCallback? onAjouter;
+  final VoidCallback? onPrendrePhoto;
+  final VoidCallback? onChoisirGalerie;
   final ValueChanged<int> onRetirer;
   final ValueChanged<int> onDefinirPrincipale;
   final ValueChanged<int>? onRemplacer;
@@ -1410,7 +1505,7 @@ class _BoxUploadMedias extends StatelessWidget {
         onTap: onAjouter,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
@@ -1421,7 +1516,7 @@ class _BoxUploadMedias extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.greenSoft,
                   shape: BoxShape.circle,
                 ),
@@ -1436,6 +1531,35 @@ class _BoxUploadMedias extends StatelessWidget {
               Text(
                 'Prenez une photo ou choisissez depuis la galerie',
                 style: TextStyle(fontSize: 12.5, color: AppColors.muted.withValues(alpha: 0.9)),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.green,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                    label: const Text('Prendre une photo', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    onPressed: onPrendrePhoto ?? onAjouter,
+                  ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF4F46E5),
+                      side: const BorderSide(color: Color(0xFFC7D2FE)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    icon: const Icon(Icons.photo_library_outlined, size: 18),
+                    label: const Text('Galerie', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    onPressed: onChoisirGalerie ?? onAjouter,
+                  ),
+                ],
               ),
             ],
           ),

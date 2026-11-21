@@ -68,6 +68,36 @@ class SuperAdminRepositoryImpl implements SuperAdminRepository {
       );
 
   @override
+  Future<void> desactiverAbonnement({
+    required String entrepriseId,
+    required String motif,
+  }) =>
+      _remote.desactiverAbonnement(
+        entrepriseId: entrepriseId,
+        motif: motif,
+      );
+
+  @override
+  Future<void> reactiverAbonnement({
+    required String entrepriseId,
+    String? motif,
+  }) =>
+      _remote.reactiverAbonnement(
+        entrepriseId: entrepriseId,
+        motif: motif,
+      );
+
+  @override
+  Future<void> annulerAbonnement({
+    required String entrepriseId,
+    required String motif,
+  }) =>
+      _remote.annulerAbonnement(
+        entrepriseId: entrepriseId,
+        motif: motif,
+      );
+
+  @override
   Future<List<AdminAuditLog>> listerAuditLogs({int limit = 50, int offset = 0}) =>
       _remote.listerAuditLogs(limit: limit, offset: offset);
 
