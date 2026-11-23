@@ -7,8 +7,11 @@ import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
+import '../../../contacts/domain/entities/contact.dart';
+import '../../../contacts/presentation/providers/contacts_providers.dart';
 import '../../domain/entities/prestation.dart';
 import '../services_providers.dart';
+import '../widgets/filtre_services_sheet.dart';
 import '../widgets/prestation_rappel_dialog.dart';
 
 /// Planning opérationnel multi-vues des prestations.
@@ -23,6 +26,11 @@ class ServicesPlanningPage extends ConsumerStatefulWidget {
 class _ServicesPlanningPageState extends ConsumerState<ServicesPlanningPage> {
   late String _vue = widget.vueInitiale ?? 'aujourdhui';
   DateTime _dateSelectionnee = DateTime.now();
+  String _recherche = '';
+  String? _clientFiltreId;
+  String? _clientFiltreNom;
+  DateTimeRange? _filtrePlageDates;
+  String _libelleDateFiltre = 'Toutes les dates';
 
   void _changerDate(int deltaJours) {
     setState(() {
@@ -64,6 +72,9 @@ class _ServicesPlanningPageState extends ConsumerState<ServicesPlanningPage> {
   @override
   Widget build(BuildContext context) {
     final prestationsAsync = ref.watch(prestationsProvider);
+    final contactsAsync = ref.watch(contactsProvider);
+    final contacts = contactsAsync.value ?? <Contact>[];
+    final contactsMap = {for (final c in contacts) c.id: c};
     final moteur = ref.watch(moteurEcheancesProvider);
     final now = DateTime.now();
 
@@ -133,29 +144,53 @@ class _ServicesPlanningPageState extends ConsumerState<ServicesPlanningPage> {
           // Filtrage
           final filtrees = interventions.where((p) {
             if (p.statut == StatutPrestation.annulee) return false;
-            final echeance = p.dateEcheanceComplete;
 
-            if (_vue == 'retard') {
-              return moteur.calculerPriorite(p, now) == PrioriteEcheance.enRetard;
+            // Filtre par client spécifique
+            if (_clientFiltreId != null && p.contactId != _clientFiltreId) {
+              return false;
             }
-            if (_vue == 'date') {
-              if (echeance == null) return false;
-              final debutCible = DateTime(_dateSelectionnee.year, _dateSelectionnee.month, _dateSelectionnee.day);
-              final finCible = debutCible.add(const Duration(days: 1));
-              return echeance.isAfter(debutCible) && echeance.isBefore(finCible);
-            }
-            if (echeance == null) return _vue == 'toutes';
 
-            if (_vue == 'aujourdhui') {
-              return (echeance.isAfter(debutJour) && echeance.isBefore(finJour)) ||
-                  (moteur.calculerPriorite(p, now) == PrioriteEcheance.aujourdhui);
-            } else if (_vue == 'demain') {
-              return echeance.isAfter(demainDebut) && echeance.isBefore(demainFin);
-            } else if (_vue == 'semaine') {
-              return echeance.isAfter(debutJour) && echeance.isBefore(finSemaine);
-            } else if (_vue == 'mois') {
-              return echeance.isAfter(debutJour) && echeance.isBefore(finMois);
+            // Filtre par période / date personnalisée
+            if (_vue == 'plage' && _filtrePlageDates != null) {
+              if (!prestationCorrespondDate(p, _filtrePlageDates!)) return false;
+            } else {
+              final echeance = p.dateEcheanceComplete;
+
+              if (_vue == 'retard') {
+                if (moteur.calculerPriorite(p, now) != PrioriteEcheance.enRetard) return false;
+              } else if (_vue == 'date') {
+                if (echeance == null) return false;
+                final debutCible = DateTime(_dateSelectionnee.year, _dateSelectionnee.month, _dateSelectionnee.day);
+                final finCible = debutCible.add(const Duration(days: 1));
+                if (!echeance.isAfter(debutCible) || !echeance.isBefore(finCible)) return false;
+              } else if (_vue == 'aujourdhui') {
+                final matchAuj = (echeance != null && echeance.isAfter(debutJour) && echeance.isBefore(finJour)) ||
+                    (moteur.calculerPriorite(p, now) == PrioriteEcheance.aujourdhui);
+                if (!matchAuj) return false;
+              } else if (_vue == 'demain') {
+                if (echeance == null || !echeance.isAfter(demainDebut) || !echeance.isBefore(demainFin)) return false;
+              } else if (_vue == 'semaine') {
+                if (echeance == null || !echeance.isAfter(debutJour) || !echeance.isBefore(finSemaine)) return false;
+              } else if (_vue == 'mois') {
+                if (echeance == null || !echeance.isAfter(debutJour) || !echeance.isBefore(finMois)) return false;
+              }
             }
+
+            // Recherche texte (client nom, téléphone, titre, lieu, description, responsable)
+            if (_recherche.isNotEmpty) {
+              final query = _recherche.toLowerCase();
+              final matchTitre = p.titre.toLowerCase().contains(query);
+              final matchDesc = p.description?.toLowerCase().contains(query) ?? false;
+              final matchLieu = p.lieu?.toLowerCase().contains(query) ?? false;
+              final matchResp = p.responsableNom?.toLowerCase().contains(query) ?? false;
+              final contact = p.contactId != null ? contactsMap[p.contactId] : null;
+              final matchClient = contact != null && (
+                contact.nomAffiche.toLowerCase().contains(query) ||
+                (contact.telephone?.contains(query) ?? false)
+              );
+              return matchTitre || matchDesc || matchLieu || matchResp || matchClient;
+            }
+
             return true;
           }).toList();
 
@@ -251,6 +286,207 @@ class _ServicesPlanningPageState extends ConsumerState<ServicesPlanningPage> {
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 14),
+
+                    // Barre de recherche client / intervention et filtres
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Rechercher un client, une intervention...',
+                              prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.green),
+                              fillColor: AppColors.background,
+                              filled: true,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              suffixIcon: _recherche.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, size: 18),
+                                      onPressed: () => setState(() => _recherche = ''),
+                                    )
+                                  : null,
+                            ),
+                            onChanged: (val) => setState(() => _recherche = val.trim()),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Bouton Filtre Client
+                        Material(
+                          color: _clientFiltreId != null ? AppColors.greenSoft : AppColors.background,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              final c = await showModalFiltreClient(
+                                context,
+                                contacts: contacts,
+                                clientActuelId: _clientFiltreId,
+                              );
+                              setState(() {
+                                _clientFiltreId = c?.id;
+                                _clientFiltreNom = c?.nomAffiche;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _clientFiltreId != null ? AppColors.green : AppColors.border,
+                                  width: _clientFiltreId != null ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.person_outline_rounded,
+                                    size: 20,
+                                    color: _clientFiltreId != null ? AppColors.green : AppColors.ink,
+                                  ),
+                                  if (_clientFiltreNom != null) ...[
+                                    const SizedBox(width: 4),
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(maxWidth: 80),
+                                      child: Text(
+                                        _clientFiltreNom!,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.green,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Bouton Filtre Date
+                        Material(
+                          color: _filtrePlageDates != null ? const Color(0xFFEEF2FF) : AppColors.background,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => showDialogueFiltreDate(
+                              context,
+                              plageActuelle: _filtrePlageDates,
+                              onChoisi: (range, libelle) {
+                                setState(() {
+                                  _filtrePlageDates = range;
+                                  _libelleDateFiltre = libelle;
+                                  if (range != null) {
+                                    _vue = 'plage';
+                                  } else if (_vue == 'plage') {
+                                    _vue = 'aujourdhui';
+                                  }
+                                });
+                              },
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _filtrePlageDates != null ? const Color(0xFF4F46E5) : AppColors.border,
+                                  width: _filtrePlageDates != null ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_month_outlined,
+                                    size: 20,
+                                    color: _filtrePlageDates != null ? const Color(0xFF4F46E5) : AppColors.ink,
+                                  ),
+                                  if (_filtrePlageDates != null) ...[
+                                    const SizedBox(width: 4),
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(maxWidth: 80),
+                                      child: Text(
+                                        _libelleDateFiltre,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF4F46E5),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Badges filtres actifs (Client / Date)
+                    if (_clientFiltreId != null || _filtrePlageDates != null) ...[
+                      const SizedBox(height: 10),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            if (_clientFiltreNom != null) ...[
+                              InputChip(
+                                avatar: const Icon(Icons.person, size: 16, color: AppColors.green),
+                                label: Text('Client : $_clientFiltreNom'),
+                                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.green),
+                                backgroundColor: AppColors.greenSoft,
+                                onDeleted: () => setState(() {
+                                  _clientFiltreId = null;
+                                  _clientFiltreNom = null;
+                                }),
+                                deleteIconColor: AppColors.green,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            if (_filtrePlageDates != null) ...[
+                              InputChip(
+                                avatar: const Icon(Icons.calendar_today_rounded, size: 15, color: Color(0xFF4F46E5)),
+                                label: Text('Date : $_libelleDateFiltre'),
+                                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF4F46E5)),
+                                backgroundColor: const Color(0xFFEEF2FF),
+                                onDeleted: () => setState(() {
+                                  _filtrePlageDates = null;
+                                  _libelleDateFiltre = 'Toutes les dates';
+                                  if (_vue == 'plage') _vue = 'aujourdhui';
+                                }),
+                                deleteIconColor: const Color(0xFF4F46E5),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            TextButton(
+                              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                              onPressed: () => setState(() {
+                                _clientFiltreId = null;
+                                _clientFiltreNom = null;
+                                _filtrePlageDates = null;
+                                _libelleDateFiltre = 'Toutes les dates';
+                                if (_vue == 'plage') _vue = 'aujourdhui';
+                              }),
+                              child: const Text('Tout effacer', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -283,6 +519,14 @@ class _ServicesPlanningPageState extends ConsumerState<ServicesPlanningPage> {
                           onTap: () {},
                         ),
                       ],
+                      if (_vue == 'plage') ...[
+                        const SizedBox(width: 8),
+                        _SecondaryFilter(
+                          label: 'Période : $_libelleDateFiltre',
+                          selected: true,
+                          onTap: () {},
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -294,6 +538,15 @@ class _ServicesPlanningPageState extends ConsumerState<ServicesPlanningPage> {
               Expanded(
                 child: filtrees.isEmpty
                     ? _EmptyPlanningState(
+                        isFiltered: _recherche.isNotEmpty || _clientFiltreId != null || _filtrePlageDates != null,
+                        onClearFilters: () => setState(() {
+                          _recherche = '';
+                          _clientFiltreId = null;
+                          _clientFiltreNom = null;
+                          _filtrePlageDates = null;
+                          _libelleDateFiltre = 'Toutes les dates';
+                          if (_vue == 'plage') _vue = 'aujourdhui';
+                        }),
                         onCreate: () {
                           final d = _vue == 'date'
                               ? _dateSelectionnee
@@ -692,8 +945,14 @@ class _PlanningItem extends StatelessWidget {
 }
 
 class _EmptyPlanningState extends StatelessWidget {
-  const _EmptyPlanningState({required this.onCreate});
+  const _EmptyPlanningState({
+    required this.onCreate,
+    this.isFiltered = false,
+    this.onClearFilters,
+  });
   final VoidCallback onCreate;
+  final bool isFiltered;
+  final VoidCallback? onClearFilters;
 
   @override
   Widget build(BuildContext context) {
@@ -707,23 +966,37 @@ class _EmptyPlanningState extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: (isFiltered ? AppColors.gold : AppColors.primary).withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.event_available_rounded, size: 36, color: AppColors.primary),
+              child: Icon(
+                isFiltered ? Icons.search_off_rounded : Icons.event_available_rounded,
+                size: 36,
+                color: isFiltered ? AppColors.gold : AppColors.primary,
+              ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Aucune intervention planifiée',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            Text(
+              isFiltered ? 'Aucune intervention trouvée' : 'Aucune intervention planifiée',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
             ),
             const SizedBox(height: 6),
             Text(
-              'Ce créneau est libre. Planifiez une nouvelle intervention ou consultez une autre vue.',
+              isFiltered
+                  ? 'Aucune intervention ne correspond à votre recherche ou aux filtres actifs.'
+                  : 'Ce créneau est libre. Planifiez une nouvelle intervention ou consultez une autre vue.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 13.5, height: 1.4),
+              style: const TextStyle(color: AppColors.muted, fontSize: 13.5, height: 1.4),
             ),
             const SizedBox(height: 20),
+            if (isFiltered && onClearFilters != null) ...[
+              OutlinedButton.icon(
+                onPressed: onClearFilters,
+                icon: const Icon(Icons.clear_all_rounded, size: 18),
+                label: const Text('Réinitialiser les filtres'),
+              ),
+              const SizedBox(height: 10),
+            ],
             FilledButton.icon(
               onPressed: onCreate,
               icon: const Icon(Icons.add_rounded, size: 18),

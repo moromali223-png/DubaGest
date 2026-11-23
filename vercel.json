@@ -4,29 +4,79 @@
     {
       "source": "/downloads/(.*)\\.apk",
       "headers": [
-        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
-        { "key": "Content-Disposition", "value": "attachment; filename=\"DubaGest-Android.apk\"" },
-        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"DubaGest-Android.apk\""
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, must-revalidate"
+        }
       ]
     },
     {
       "source": "/vitrine/downloads/(.*)\\.apk",
       "headers": [
-        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
-        { "key": "Content-Disposition", "value": "attachment; filename=\"DubaGest-Android.apk\"" },
-        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"DubaGest-Android.apk\""
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, must-revalidate"
+        }
       ]
     }
   ],
   "redirects": [
-    { "source": "/downloads/DubaGest-Android.apk", "destination": "https://github.com/moromali223-png/DubaGest/releases/download/v1.0.3/DubaGest-Android.apk", "permanent": false },
-    { "source": "/downloads/(.*)", "destination": "https://github.com/moromali223-png/DubaGest/releases/download/v1.0.3/DubaGest-Android.apk", "permanent": false },
-    { "source": "/app", "destination": "https://app.dubagest.com", "permanent": false },
-    { "source": "/pwa", "destination": "https://app.dubagest.com", "permanent": false },
-    { "source": "/login", "destination": "https://app.dubagest.com/login", "permanent": false },
-    { "source": "/register", "destination": "https://app.dubagest.com/register", "permanent": false },
-    { "source": "/connexion", "destination": "https://app.dubagest.com/login", "permanent": false },
-    { "source": "/inscription", "destination": "https://app.dubagest.com/register", "permanent": false }
+    {
+      "source": "/downloads/DubaGest-Android.apk",
+      "destination": "https://github.com/moromali223-png/DubaGest/releases/download/v1.0.3/DubaGest-Android.apk",
+      "permanent": false
+    },
+    {
+      "source": "/downloads/(.*)",
+      "destination": "https://github.com/moromali223-png/DubaGest/releases/download/v1.0.3/DubaGest-Android.apk",
+      "permanent": false
+    },
+    {
+      "source": "/app",
+      "destination": "https://app.dubagest.com",
+      "permanent": false
+    },
+    {
+      "source": "/pwa",
+      "destination": "https://app.dubagest.com",
+      "permanent": false
+    },
+    {
+      "source": "/login",
+      "destination": "https://app.dubagest.com/login",
+      "permanent": false
+    },
+    {
+      "source": "/register",
+      "destination": "https://app.dubagest.com/register",
+      "permanent": false
+    },
+    {
+      "source": "/connexion",
+      "destination": "https://app.dubagest.com/login",
+      "permanent": false
+    },
+    {
+      "source": "/inscription",
+      "destination": "https://app.dubagest.com/register",
+      "permanent": false
+    }
   ],
   "rewrites": [
     {

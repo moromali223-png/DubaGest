@@ -7,8 +7,11 @@ import '../../../../shared/widgets/responsive_body.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
 import '../../../commerce/presentation/widgets/commerce_widgets.dart' show montant;
+import '../../../contacts/domain/entities/contact.dart';
+import '../../../contacts/presentation/providers/contacts_providers.dart';
 import '../../domain/entities/prestation.dart';
 import '../services_providers.dart';
+import '../widgets/filtre_services_sheet.dart';
 import '../widgets/services_widgets.dart';
 
 /// Écran principal de liste des prestations et ordres de travail.
@@ -23,6 +26,10 @@ class PrestationsPage extends ConsumerStatefulWidget {
 class _PrestationsPageState extends ConsumerState<PrestationsPage> {
   String _filtreStatut = 'TOUTES';
   String _recherche = '';
+  String? _clientFiltreId;
+  String? _clientFiltreNom;
+  DateTimeRange? _filtrePlageDates;
+  String _libelleDateFiltre = 'Toutes les dates';
 
   @override
   void initState() {
@@ -36,6 +43,9 @@ class _PrestationsPageState extends ConsumerState<PrestationsPage> {
   Widget build(BuildContext context) {
     final droits = ref.watch(droitsServicesProvider);
     final prestationsAsync = ref.watch(prestationsProvider);
+    final contactsAsync = ref.watch(contactsProvider);
+    final contacts = contactsAsync.value ?? <Contact>[];
+    final contactsMap = {for (final c in contacts) c.id: c};
     final moteur = ref.watch(moteurEcheancesProvider);
     final now = DateTime.now();
 
@@ -74,13 +84,28 @@ class _PrestationsPageState extends ConsumerState<PrestationsPage> {
               return false;
             }
 
-            // Recherche texte
+            // Filtre client spécifique
+            if (_clientFiltreId != null && p.contactId != _clientFiltreId) {
+              return false;
+            }
+
+            // Filtre date (plage ou date précise)
+            if (_filtrePlageDates != null && !prestationCorrespondDate(p, _filtrePlageDates!)) {
+              return false;
+            }
+
+            // Recherche texte (titre, description, responsable, nom et téléphone du client)
             if (_recherche.isNotEmpty) {
               final query = _recherche.toLowerCase();
               final matchTitre = p.titre.toLowerCase().contains(query);
               final matchDesc = p.description?.toLowerCase().contains(query) ?? false;
               final matchResp = p.responsableNom?.toLowerCase().contains(query) ?? false;
-              return matchTitre || matchDesc || matchResp;
+              final contact = p.contactId != null ? contactsMap[p.contactId] : null;
+              final matchClient = contact != null && (
+                contact.nomAffiche.toLowerCase().contains(query) ||
+                (contact.telephone?.contains(query) ?? false)
+              );
+              return matchTitre || matchDesc || matchResp || matchClient;
             }
 
             return true;
@@ -127,21 +152,195 @@ class _PrestationsPageState extends ConsumerState<PrestationsPage> {
                   ),
                 ),
 
-                // Barre de recherche
+                // Barre de recherche et filtres Client / Date
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher un client, une référence...',
-                      prefixIcon: const Icon(Icons.search, color: AppColors.green),
-                      fillColor: AppColors.surface,
-                      suffixIcon: _recherche.isNotEmpty
-                          ? IconButton(icon: const Icon(Icons.clear), onPressed: () => setState(() => _recherche = ''))
-                          : null,
-                    ),
-                    onChanged: (val) => setState(() => _recherche = val.trim()),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Rechercher un client, une référence...',
+                            prefixIcon: const Icon(Icons.search, color: AppColors.green),
+                            fillColor: AppColors.surface,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            suffixIcon: _recherche.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    onPressed: () => setState(() => _recherche = ''),
+                                  )
+                                : null,
+                          ),
+                          onChanged: (val) => setState(() => _recherche = val.trim()),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Bouton Filtre Client
+                      Material(
+                        color: _clientFiltreId != null ? AppColors.greenSoft : AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () async {
+                            final c = await showModalFiltreClient(
+                              context,
+                              contacts: contacts,
+                              clientActuelId: _clientFiltreId,
+                            );
+                            setState(() {
+                              _clientFiltreId = c?.id;
+                              _clientFiltreNom = c?.nomAffiche;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _clientFiltreId != null ? AppColors.green : AppColors.border,
+                                width: _clientFiltreId != null ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 20,
+                                  color: _clientFiltreId != null ? AppColors.green : AppColors.ink,
+                                ),
+                                if (_clientFiltreNom != null) ...[
+                                  const SizedBox(width: 4),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: 90),
+                                    child: Text(
+                                      _clientFiltreNom!,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.green,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Bouton Filtre Date
+                      Material(
+                        color: _filtrePlageDates != null ? const Color(0xFFEEF2FF) : AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => showDialogueFiltreDate(
+                            context,
+                            plageActuelle: _filtrePlageDates,
+                            onChoisi: (range, libelle) {
+                              setState(() {
+                                _filtrePlageDates = range;
+                                _libelleDateFiltre = libelle;
+                              });
+                            },
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _filtrePlageDates != null ? const Color(0xFF4F46E5) : AppColors.border,
+                                width: _filtrePlageDates != null ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_month_outlined,
+                                  size: 20,
+                                  color: _filtrePlageDates != null ? const Color(0xFF4F46E5) : AppColors.ink,
+                                ),
+                                if (_filtrePlageDates != null) ...[
+                                  const SizedBox(width: 4),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: 90),
+                                    child: Text(
+                                      _libelleDateFiltre,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF4F46E5),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+
+                // Badges des filtres actifs (Client / Date)
+                if (_clientFiltreId != null || _filtrePlageDates != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          if (_clientFiltreNom != null) ...[
+                            InputChip(
+                              avatar: const Icon(Icons.person, size: 16, color: AppColors.green),
+                              label: Text('Client : $_clientFiltreNom'),
+                              labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.green),
+                              backgroundColor: AppColors.greenSoft,
+                              onDeleted: () => setState(() {
+                                _clientFiltreId = null;
+                                _clientFiltreNom = null;
+                              }),
+                              deleteIconColor: AppColors.green,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          if (_filtrePlageDates != null) ...[
+                            InputChip(
+                              avatar: const Icon(Icons.calendar_today_rounded, size: 15, color: Color(0xFF4F46E5)),
+                              label: Text('Date : $_libelleDateFiltre'),
+                              labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF4F46E5)),
+                              backgroundColor: const Color(0xFFEEF2FF),
+                              onDeleted: () => setState(() {
+                                _filtrePlageDates = null;
+                                _libelleDateFiltre = 'Toutes les dates';
+                              }),
+                              deleteIconColor: const Color(0xFF4F46E5),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          TextButton(
+                            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                            onPressed: () => setState(() {
+                              _clientFiltreId = null;
+                              _clientFiltreNom = null;
+                              _filtrePlageDates = null;
+                              _libelleDateFiltre = 'Toutes les dates';
+                            }),
+                            child: const Text('Tout effacer', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 // Onglets de filtre
                 SingleChildScrollView(
@@ -201,7 +400,7 @@ class _PrestationsPageState extends ConsumerState<PrestationsPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  _recherche.isNotEmpty
+                                  (_recherche.isNotEmpty || _clientFiltreId != null || _filtrePlageDates != null || _filtreStatut != 'TOUTES')
                                       ? 'Modifiez votre recherche ou réinitialisez les filtres.'
                                       : 'Les contrats de service créés (locations, suivis, couvaisons) apparaîtront ici.',
                                   textAlign: TextAlign.center,
