@@ -12,13 +12,13 @@ class SignUp {
   Future<SignUpResult> call({
     required String prenom,
     required String nom,
-    required String email,
+    required String identifier,
     required String password,
   }) =>
       _repository.signUp(
         prenom: prenom.trim(),
         nom: nom.trim(),
-        email: email.trim().toLowerCase(),
+        identifier: identifier.trim(),
         password: password,
       );
 }

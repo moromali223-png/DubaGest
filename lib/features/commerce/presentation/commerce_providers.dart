@@ -155,7 +155,7 @@ class DroitsCommerce {
       peutModifierPrixAchat: estAdmin,
       peutModifierPrixGros: estAdminOuSuperviseur,
       peutModifierConversions: estAdminOuSuperviseur,
-      peutArchiverProduits: estAdminOuSuperviseur,
+      peutArchiverProduits: estAdminOuSuperviseur || peut(ModuleCodes.commerceProduits, PermissionCodes.productsUpdate),
       peutDefinirPerimetreMultiBoutiques: estAdmin,
       peutSaisirStockInitial: !estSuperviseur && peut(ModuleCodes.commerceStock, PermissionCodes.stockCreate),
       voirStock: peut(ModuleCodes.commerceStock, PermissionCodes.stockView),

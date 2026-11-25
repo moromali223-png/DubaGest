@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/authentication/presentation/providers/auth_providers.dart';
 import 'di/app_composition.dart';
 import 'localization/l10n.dart';
 import 'localization/locale_controller.dart';
@@ -8,11 +9,34 @@ import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_controller.dart';
 
-class DubaGestApp extends ConsumerWidget {
+class DubaGestApp extends ConsumerStatefulWidget {
   const DubaGestApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DubaGestApp> createState() => _DubaGestAppState();
+}
+
+class _DubaGestAppState extends ConsumerState<DubaGestApp> {
+  late final AppLifecycleListener _lifecycleListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onResume: () {
+        ref.read(authRepositoryProvider).handleAppResume();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.watch(sessionSyncCoordinatorProvider);
     ref.watch(reserveNumerosProvider);
     ref.watch(photosEnAttenteProvider);

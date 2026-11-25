@@ -107,7 +107,13 @@ abstract final class Routes {
   static String achat(String id) => '/commerce/achats/$id';
   static String achatModifier(String id) => '/commerce/achats/$id/edit';
   static const ventes = '/commerce/ventes';
-  static String venteAvec(String produitId) => Uri(path: ventes, queryParameters: {'produit': produitId}).toString();
+  static String venteAvec(String produitId, {String? lotId}) => Uri(
+        path: ventes,
+        queryParameters: {
+          'produit': produitId,
+          if (lotId != null && lotId.isNotEmpty) 'lot': lotId,
+        },
+      ).toString();
   static const historiqueVentes = '/commerce/ventes/historique';
   static String vente(String id) => '/commerce/ventes/$id';
   static const fournisseurs = '/commerce/fournisseurs';

@@ -117,8 +117,8 @@ async function main() {
 
   const token = getGitHubToken();
   const repo = 'moromali223-png/DubaGest';
-  const tag = 'v1.0.3';
-  const releaseName = 'DubaGest v1.0.3';
+  const tag = 'v1.0.4';
+  const releaseName = 'DubaGest v1.0.4';
 
   // 1. Get or create release
   console.log('\nChecking existing releases...');
@@ -151,7 +151,7 @@ async function main() {
       tag_name: tag,
       target_commitish: 'main',
       name: releaseName,
-      body: 'Release officielle DubaGest Android v1.0.3 (versionCode 4)\n\n- Téléchargement APK officiel\n- Mises à jour in-app transparentes sans désinstallation\n- Vérification d\'intégrité SHA-256',
+      body: 'Release officielle DubaGest Android v1.0.4 (versionCode 5)\n\n- Téléchargement APK officiel\n- Mises à jour in-app transparentes sans désinstallation\n- Vérification d\'intégrité SHA-256\n- Correctifs archivage produit, réactivité des boutons de confirmation\n- Enregistrement instantané des interventions & contrats de service\n- Traçabilité des lots et sélection de lot lors des ventes',
       draft: false,
       prerelease: false
     });
@@ -202,8 +202,8 @@ async function main() {
     const manifest = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     manifest.updated_at = nowIso;
     manifest.android = {
-      latest_version: '1.0.3',
-      version_code: 4,
+      latest_version: '1.0.4',
+      version_code: 5,
       minimum_supported_version: '1.0.0',
       minimum_supported_code: 1,
       apk_url: 'https://dubagest.com/downloads/DubaGest-Android.apk',
@@ -212,9 +212,24 @@ async function main() {
       force_update: false,
       release_date: nowIso.split('T')[0],
       release_notes: [
-        'Mise à jour Android officielle DubaGest v1.0.3',
-        'Mise à jour transparente par-dessus l\'application existante sans perte de données',
+        'Mise à jour Android officielle DubaGest v1.0.4',
+        'Correction réactivité des dialogues et de l\'archivage',
+        'Sélection et affichage des lots de stock',
+        'Enregistrement ultra-rapide des interventions et contrats de service',
         'Vérification cryptographique intégrale SHA-256'
+      ]
+    };
+    manifest.pwa = {
+      latest_version: '1.0.4',
+      minimum_supported_version: '1.0.0',
+      force_update: false,
+      release_date: nowIso.split('T')[0],
+      release_notes: [
+        'Mise à jour PWA officielle DubaGest v1.0.4',
+        'Correction réactivité des dialogues et de l\'archivage',
+        'Sélection et affichage des lots de stock',
+        'Enregistrement ultra-rapide des interventions et contrats de service',
+        'Téléversement photos en tâche de fond fluide'
       ]
     };
     fs.writeFileSync(filePath, JSON.stringify(manifest, null, 4), 'utf-8');

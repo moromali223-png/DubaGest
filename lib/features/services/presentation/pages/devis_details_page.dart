@@ -11,6 +11,7 @@ import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
 import '../../../commerce/presentation/widgets/commerce_widgets.dart' show montant;
 import '../../../contacts/presentation/providers/contacts_providers.dart';
+import '../../../documents/presentation/services/document_export_service.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../domain/entities/prestation.dart';
 import '../pdf/devis_services_pdf.dart';
@@ -29,7 +30,7 @@ class DevisDetailsPage extends ConsumerStatefulWidget {
 class _DevisDetailsPageState extends ConsumerState<DevisDetailsPage> {
   bool _enConversion = false;
 
-  void _partagerDevisWhatsApp(DevisPrestation devis) {
+  String _construireMessageDevis(DevisPrestation devis) {
     final ctx = ref.read(contexteActifProvider);
     final entrepriseNom = ctx?.entreprise?.nom ?? 'DUBAGEST';
     final contact = devis.contactId != null ? ref.read(contactProvider(devis.contactId!)).value : null;
@@ -42,7 +43,7 @@ class _DevisDetailsPageState extends ConsumerState<DevisDetailsPage> {
         ? DateFormat('dd/MM/yyyy').format(devis.dateValidite!)
         : '30 jours';
 
-    final message = '''
+    return '''
 📄 *PROPOSITION TARIFAIRE / DEVIS — $entrepriseNom*
 ━━━━━━━━━━━━━━━━━━━━━
 🔖 *Devis N° :* ${devis.numero}
@@ -60,15 +61,38 @@ ${devis.conditions != null && devis.conditions!.isNotEmpty ? "📌 *Conditions :
 _Pour valider cette proposition, merci de nous confirmer votre accord._
 _${entrepriseNom}_
 ''';
+  }
 
+  void _partagerDevisWhatsApp(DevisPrestation devis) {
+    final contact = devis.contactId != null ? ref.read(contactProvider(devis.contactId!)).value : null;
+    final message = _construireMessageDevis(devis);
     final tel = contact?.whatsapp ?? contact?.telephone ?? '';
-    final cleanTel = tel.replaceAll(RegExp(r'\D'), '');
 
-    final uri = cleanTel.length >= 6
-        ? Uri.parse('https://wa.me/$cleanTel?text=${Uri.encodeComponent(message)}')
-        : Uri.parse('https://wa.me/?text=${Uri.encodeComponent(message)}');
+    DocumentExportService.partagerWhatsApp(
+      numero: tel,
+      message: message,
+    );
+  }
 
-    launchUrl(uri, mode: LaunchMode.externalApplication);
+  void _ouvrirOptionsPartageDevis(DevisPrestation devis) {
+    final ctx = ref.read(contexteActifProvider);
+    final contact = devis.contactId != null ? ref.read(contactProvider(devis.contactId!)).value : null;
+    final logo = ref.read(logoEntrepriseProvider).value;
+    final tel = contact?.whatsapp ?? contact?.telephone ?? '';
+
+    DocumentExportService.afficherOptionsExport(
+      context,
+      titre: 'Devis N° ${devis.numero}',
+      nomFichier: '${devis.numero}.pdf',
+      genererPdf: () => genererDevisPdf(
+        devis,
+        entreprise: ctx?.entreprise,
+        client: contact,
+        logo: logo,
+      ),
+      contactTelephone: tel,
+      messageWhatsApp: _construireMessageDevis(devis),
+    );
   }
 
   void _ouvrirApercuPdf(DevisPrestation devis) {
@@ -83,6 +107,27 @@ _${entrepriseNom}_
           appBar: AppBar(
             title: Text('Devis ${devis.numero} — Aperçu & Impression'),
             actions: [
+              IconButton(
+                tooltip: 'Télécharger le PDF',
+                icon: const Icon(Icons.download),
+                onPressed: () async {
+                  final b = await genererDevisPdf(
+                    devis,
+                    entreprise: ctx?.entreprise,
+                    client: contact,
+                    logo: logo,
+                  );
+                  await DocumentExportService.telechargerPdf(
+                    bytes: b,
+                    nomFichier: '${devis.numero}.pdf',
+                  );
+                },
+              ),
+              IconButton(
+                tooltip: 'Partager (WhatsApp, Téléphone...)',
+                icon: const Icon(Icons.share_rounded),
+                onPressed: () => _ouvrirOptionsPartageDevis(devis),
+              ),
               IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(context).pop(),
@@ -256,6 +301,12 @@ _${entrepriseNom}_
                             icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
                             label: const Text('Aperçu & Impression PDF'),
                             onPressed: () => _ouvrirApercuPdf(devis),
+                          ),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
+                            icon: const Icon(Icons.ios_share_rounded, size: 18),
+                            label: const Text('Partager & Exporter'),
+                            onPressed: () => _ouvrirOptionsPartageDevis(devis),
                           ),
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),

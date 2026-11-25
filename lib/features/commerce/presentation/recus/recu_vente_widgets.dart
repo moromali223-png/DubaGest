@@ -7,6 +7,7 @@ import 'package:printing/printing.dart';
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../documents/presentation/providers/documents_providers.dart';
+import '../../../documents/presentation/services/document_export_service.dart';
 import '../widgets/commerce_widgets.dart';
 import 'recu_vente.dart';
 import 'recu_vente_pdf.dart';
@@ -248,13 +249,18 @@ class _Pointille extends StatelessWidget {
 Future<void> partagerRecu(BuildContext context, DonneesRecu d) async {
   final l10n = context.l10n;
   final langue = Localizations.localeOf(context).languageCode;
-  try {
-    final octets = await genererRecuVentePdf(d, l: l10n, langue: langue);
-    // Partage standard du téléphone : WhatsApp, Messenger, e-mail…
-    await Printing.sharePdf(bytes: octets, filename: d.nomFichier);
-  } catch (e) {
-    if (context.mounted) signalerErreur(context, e);
-  }
+  final message = 'Bonjour,\nVoici votre reçu de vente N° ${d.numero} émis par ${d.entreprise} '
+      'd\'un montant total de ${d.total} ${d.devise}.\nMerci de votre confiance.\n-- ${d.entreprise}';
+
+  await DocumentExportService.afficherOptionsExport(
+    context,
+    titre: 'Reçu N° ${d.numero}',
+    nomFichier: d.nomFichier,
+    genererPdf: () => genererRecuVentePdf(d, l: l10n, langue: langue, format: PdfPageFormat.a5),
+    contactTelephone: d.clientTelephone,
+    messageWhatsApp: message,
+    format: PdfPageFormat.a5,
+  );
 }
 
 Future<void> imprimerRecu(BuildContext context, DonneesRecu d) async {
@@ -262,11 +268,22 @@ Future<void> imprimerRecu(BuildContext context, DonneesRecu d) async {
   final langue = Localizations.localeOf(context).languageCode;
   try {
     // Le format vient de l'imprimante choisie (A4, A5, ticket 80 mm…).
-    await Printing.layoutPdf(
-      name: d.nomFichier,
+    await DocumentExportService.imprimerPdf(
+      nomDocument: d.nomFichier,
       format: PdfPageFormat.a5,
       onLayout: (format) => genererRecuVentePdf(d, l: l10n, langue: langue, format: format),
     );
+  } catch (e) {
+    if (context.mounted) signalerErreur(context, e);
+  }
+}
+
+Future<void> telechargerPdfRecu(BuildContext context, DonneesRecu d) async {
+  final l10n = context.l10n;
+  final langue = Localizations.localeOf(context).languageCode;
+  try {
+    final octets = await genererRecuVentePdf(d, l: l10n, langue: langue, format: PdfPageFormat.a5);
+    await DocumentExportService.telechargerPdf(bytes: octets, nomFichier: d.nomFichier);
   } catch (e) {
     if (context.mounted) signalerErreur(context, e);
   }

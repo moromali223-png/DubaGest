@@ -832,6 +832,9 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
           debutPrevu: _debutPrevu,
           echeanceJour: _echeanceJour,
           echeanceHeure: null,
+          dureeEstimee: dureeEstimee,
+          uniteDuree: _uniteDuree,
+          dateRemisePrevue: _dateRemisePrevue,
           livraisonRequise: _livraisonRequise,
           lieu: _lieuCtrl.text.trim(),
           note: _noteCtrl.text.trim(),
@@ -839,14 +842,6 @@ class _PrestationFormPageState extends ConsumerState<PrestationFormPage> {
           champsMetier: _champsMetier,
           metierCode: _metierSelectionne,
         );
-
-        if (dureeEstimee != null || _uniteDuree != UniteDuree.jours) {
-          final pMaj = nouv.copyWith(
-            dureeEstimee: dureeEstimee,
-            uniteDuree: _uniteDuree,
-          );
-          await gerer.modifierPrestation(pMaj);
-        }
 
         // Création de l'engagement financier local associé (origine PRESTATION conforme au schéma)
         if (_total > 0) {

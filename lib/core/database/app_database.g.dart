@@ -20651,6 +20651,1152 @@ class StocksCompanion extends UpdateCompanion<StockRow> {
   }
 }
 
+class $LotsStockTable extends LotsStock
+    with TableInfo<$LotsStockTable, LotStockRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LotsStockTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entrepriseIdMeta = const VerificationMeta(
+    'entrepriseId',
+  );
+  @override
+  late final GeneratedColumn<String> entrepriseId = GeneratedColumn<String>(
+    'entreprise_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _perimetreIdMeta = const VerificationMeta(
+    'perimetreId',
+  );
+  @override
+  late final GeneratedColumn<String> perimetreId = GeneratedColumn<String>(
+    'perimetre_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _produitIdMeta = const VerificationMeta(
+    'produitId',
+  );
+  @override
+  late final GeneratedColumn<String> produitId = GeneratedColumn<String>(
+    'produit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _referenceMeta = const VerificationMeta(
+    'reference',
+  );
+  @override
+  late final GeneratedColumn<String> reference = GeneratedColumn<String>(
+    'reference',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateAchatMeta = const VerificationMeta(
+    'dateAchat',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateAchat = GeneratedColumn<DateTime>(
+    'date_achat',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateReceptionMeta = const VerificationMeta(
+    'dateReception',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateReception =
+      GeneratedColumn<DateTime>(
+        'date_reception',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _quantiteInitialeMeta = const VerificationMeta(
+    'quantiteInitiale',
+  );
+  @override
+  late final GeneratedColumn<int> quantiteInitiale = GeneratedColumn<int>(
+    'quantite_initiale',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quantiteRestanteMeta = const VerificationMeta(
+    'quantiteRestante',
+  );
+  @override
+  late final GeneratedColumn<int> quantiteRestante = GeneratedColumn<int>(
+    'quantite_restante',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _prixAchatUnitaireMeta = const VerificationMeta(
+    'prixAchatUnitaire',
+  );
+  @override
+  late final GeneratedColumn<int> prixAchatUnitaire = GeneratedColumn<int>(
+    'prix_achat_unitaire',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _prixVenteUnitaireMeta = const VerificationMeta(
+    'prixVenteUnitaire',
+  );
+  @override
+  late final GeneratedColumn<int> prixVenteUnitaire = GeneratedColumn<int>(
+    'prix_vente_unitaire',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fournisseurIdMeta = const VerificationMeta(
+    'fournisseurId',
+  );
+  @override
+  late final GeneratedColumn<String> fournisseurId = GeneratedColumn<String>(
+    'fournisseur_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _achatIdMeta = const VerificationMeta(
+    'achatId',
+  );
+  @override
+  late final GeneratedColumn<String> achatId = GeneratedColumn<String>(
+    'achat_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _receptionIdMeta = const VerificationMeta(
+    'receptionId',
+  );
+  @override
+  late final GeneratedColumn<String> receptionId = GeneratedColumn<String>(
+    'reception_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lotOrigineIdMeta = const VerificationMeta(
+    'lotOrigineId',
+  );
+  @override
+  late final GeneratedColumn<String> lotOrigineId = GeneratedColumn<String>(
+    'lot_origine_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statutMeta = const VerificationMeta('statut');
+  @override
+  late final GeneratedColumn<String> statut = GeneratedColumn<String>(
+    'statut',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('ACTIF'),
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    entrepriseId,
+    perimetreId,
+    produitId,
+    reference,
+    dateAchat,
+    dateReception,
+    quantiteInitiale,
+    quantiteRestante,
+    prixAchatUnitaire,
+    prixVenteUnitaire,
+    fournisseurId,
+    achatId,
+    receptionId,
+    lotOrigineId,
+    statut,
+    version,
+    updatedAt,
+    deletedAt,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'lots_stock';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LotStockRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('entreprise_id')) {
+      context.handle(
+        _entrepriseIdMeta,
+        entrepriseId.isAcceptableOrUnknown(
+          data['entreprise_id']!,
+          _entrepriseIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_entrepriseIdMeta);
+    }
+    if (data.containsKey('perimetre_id')) {
+      context.handle(
+        _perimetreIdMeta,
+        perimetreId.isAcceptableOrUnknown(
+          data['perimetre_id']!,
+          _perimetreIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_perimetreIdMeta);
+    }
+    if (data.containsKey('produit_id')) {
+      context.handle(
+        _produitIdMeta,
+        produitId.isAcceptableOrUnknown(data['produit_id']!, _produitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_produitIdMeta);
+    }
+    if (data.containsKey('reference')) {
+      context.handle(
+        _referenceMeta,
+        reference.isAcceptableOrUnknown(data['reference']!, _referenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_referenceMeta);
+    }
+    if (data.containsKey('date_achat')) {
+      context.handle(
+        _dateAchatMeta,
+        dateAchat.isAcceptableOrUnknown(data['date_achat']!, _dateAchatMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateAchatMeta);
+    }
+    if (data.containsKey('date_reception')) {
+      context.handle(
+        _dateReceptionMeta,
+        dateReception.isAcceptableOrUnknown(
+          data['date_reception']!,
+          _dateReceptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dateReceptionMeta);
+    }
+    if (data.containsKey('quantite_initiale')) {
+      context.handle(
+        _quantiteInitialeMeta,
+        quantiteInitiale.isAcceptableOrUnknown(
+          data['quantite_initiale']!,
+          _quantiteInitialeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_quantiteInitialeMeta);
+    }
+    if (data.containsKey('quantite_restante')) {
+      context.handle(
+        _quantiteRestanteMeta,
+        quantiteRestante.isAcceptableOrUnknown(
+          data['quantite_restante']!,
+          _quantiteRestanteMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_quantiteRestanteMeta);
+    }
+    if (data.containsKey('prix_achat_unitaire')) {
+      context.handle(
+        _prixAchatUnitaireMeta,
+        prixAchatUnitaire.isAcceptableOrUnknown(
+          data['prix_achat_unitaire']!,
+          _prixAchatUnitaireMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_prixAchatUnitaireMeta);
+    }
+    if (data.containsKey('prix_vente_unitaire')) {
+      context.handle(
+        _prixVenteUnitaireMeta,
+        prixVenteUnitaire.isAcceptableOrUnknown(
+          data['prix_vente_unitaire']!,
+          _prixVenteUnitaireMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_prixVenteUnitaireMeta);
+    }
+    if (data.containsKey('fournisseur_id')) {
+      context.handle(
+        _fournisseurIdMeta,
+        fournisseurId.isAcceptableOrUnknown(
+          data['fournisseur_id']!,
+          _fournisseurIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('achat_id')) {
+      context.handle(
+        _achatIdMeta,
+        achatId.isAcceptableOrUnknown(data['achat_id']!, _achatIdMeta),
+      );
+    }
+    if (data.containsKey('reception_id')) {
+      context.handle(
+        _receptionIdMeta,
+        receptionId.isAcceptableOrUnknown(
+          data['reception_id']!,
+          _receptionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('lot_origine_id')) {
+      context.handle(
+        _lotOrigineIdMeta,
+        lotOrigineId.isAcceptableOrUnknown(
+          data['lot_origine_id']!,
+          _lotOrigineIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('statut')) {
+      context.handle(
+        _statutMeta,
+        statut.isAcceptableOrUnknown(data['statut']!, _statutMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_syncStatusMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LotStockRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LotStockRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      entrepriseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entreprise_id'],
+      )!,
+      perimetreId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}perimetre_id'],
+      )!,
+      produitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}produit_id'],
+      )!,
+      reference: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference'],
+      )!,
+      dateAchat: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_achat'],
+      )!,
+      dateReception: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_reception'],
+      )!,
+      quantiteInitiale: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantite_initiale'],
+      )!,
+      quantiteRestante: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantite_restante'],
+      )!,
+      prixAchatUnitaire: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prix_achat_unitaire'],
+      )!,
+      prixVenteUnitaire: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prix_vente_unitaire'],
+      )!,
+      fournisseurId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fournisseur_id'],
+      ),
+      achatId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}achat_id'],
+      ),
+      receptionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reception_id'],
+      ),
+      lotOrigineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_origine_id'],
+      ),
+      statut: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}statut'],
+      )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+    );
+  }
+
+  @override
+  $LotsStockTable createAlias(String alias) {
+    return $LotsStockTable(attachedDatabase, alias);
+  }
+}
+
+class LotStockRow extends DataClass implements Insertable<LotStockRow> {
+  final String id;
+  final String entrepriseId;
+  final String perimetreId;
+  final String produitId;
+  final String reference;
+  final DateTime dateAchat;
+  final DateTime dateReception;
+  final int quantiteInitiale;
+  final int quantiteRestante;
+  final int prixAchatUnitaire;
+  final int prixVenteUnitaire;
+  final String? fournisseurId;
+  final String? achatId;
+  final String? receptionId;
+  final String? lotOrigineId;
+  final String statut;
+  final int? version;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final String syncStatus;
+  const LotStockRow({
+    required this.id,
+    required this.entrepriseId,
+    required this.perimetreId,
+    required this.produitId,
+    required this.reference,
+    required this.dateAchat,
+    required this.dateReception,
+    required this.quantiteInitiale,
+    required this.quantiteRestante,
+    required this.prixAchatUnitaire,
+    required this.prixVenteUnitaire,
+    this.fournisseurId,
+    this.achatId,
+    this.receptionId,
+    this.lotOrigineId,
+    required this.statut,
+    this.version,
+    this.updatedAt,
+    this.deletedAt,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['entreprise_id'] = Variable<String>(entrepriseId);
+    map['perimetre_id'] = Variable<String>(perimetreId);
+    map['produit_id'] = Variable<String>(produitId);
+    map['reference'] = Variable<String>(reference);
+    map['date_achat'] = Variable<DateTime>(dateAchat);
+    map['date_reception'] = Variable<DateTime>(dateReception);
+    map['quantite_initiale'] = Variable<int>(quantiteInitiale);
+    map['quantite_restante'] = Variable<int>(quantiteRestante);
+    map['prix_achat_unitaire'] = Variable<int>(prixAchatUnitaire);
+    map['prix_vente_unitaire'] = Variable<int>(prixVenteUnitaire);
+    if (!nullToAbsent || fournisseurId != null) {
+      map['fournisseur_id'] = Variable<String>(fournisseurId);
+    }
+    if (!nullToAbsent || achatId != null) {
+      map['achat_id'] = Variable<String>(achatId);
+    }
+    if (!nullToAbsent || receptionId != null) {
+      map['reception_id'] = Variable<String>(receptionId);
+    }
+    if (!nullToAbsent || lotOrigineId != null) {
+      map['lot_origine_id'] = Variable<String>(lotOrigineId);
+    }
+    map['statut'] = Variable<String>(statut);
+    if (!nullToAbsent || version != null) {
+      map['version'] = Variable<int>(version);
+    }
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['sync_status'] = Variable<String>(syncStatus);
+    return map;
+  }
+
+  LotsStockCompanion toCompanion(bool nullToAbsent) {
+    return LotsStockCompanion(
+      id: Value(id),
+      entrepriseId: Value(entrepriseId),
+      perimetreId: Value(perimetreId),
+      produitId: Value(produitId),
+      reference: Value(reference),
+      dateAchat: Value(dateAchat),
+      dateReception: Value(dateReception),
+      quantiteInitiale: Value(quantiteInitiale),
+      quantiteRestante: Value(quantiteRestante),
+      prixAchatUnitaire: Value(prixAchatUnitaire),
+      prixVenteUnitaire: Value(prixVenteUnitaire),
+      fournisseurId: fournisseurId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fournisseurId),
+      achatId: achatId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(achatId),
+      receptionId: receptionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(receptionId),
+      lotOrigineId: lotOrigineId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotOrigineId),
+      statut: Value(statut),
+      version: version == null && nullToAbsent
+          ? const Value.absent()
+          : Value(version),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory LotStockRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LotStockRow(
+      id: serializer.fromJson<String>(json['id']),
+      entrepriseId: serializer.fromJson<String>(json['entrepriseId']),
+      perimetreId: serializer.fromJson<String>(json['perimetreId']),
+      produitId: serializer.fromJson<String>(json['produitId']),
+      reference: serializer.fromJson<String>(json['reference']),
+      dateAchat: serializer.fromJson<DateTime>(json['dateAchat']),
+      dateReception: serializer.fromJson<DateTime>(json['dateReception']),
+      quantiteInitiale: serializer.fromJson<int>(json['quantiteInitiale']),
+      quantiteRestante: serializer.fromJson<int>(json['quantiteRestante']),
+      prixAchatUnitaire: serializer.fromJson<int>(json['prixAchatUnitaire']),
+      prixVenteUnitaire: serializer.fromJson<int>(json['prixVenteUnitaire']),
+      fournisseurId: serializer.fromJson<String?>(json['fournisseurId']),
+      achatId: serializer.fromJson<String?>(json['achatId']),
+      receptionId: serializer.fromJson<String?>(json['receptionId']),
+      lotOrigineId: serializer.fromJson<String?>(json['lotOrigineId']),
+      statut: serializer.fromJson<String>(json['statut']),
+      version: serializer.fromJson<int?>(json['version']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'entrepriseId': serializer.toJson<String>(entrepriseId),
+      'perimetreId': serializer.toJson<String>(perimetreId),
+      'produitId': serializer.toJson<String>(produitId),
+      'reference': serializer.toJson<String>(reference),
+      'dateAchat': serializer.toJson<DateTime>(dateAchat),
+      'dateReception': serializer.toJson<DateTime>(dateReception),
+      'quantiteInitiale': serializer.toJson<int>(quantiteInitiale),
+      'quantiteRestante': serializer.toJson<int>(quantiteRestante),
+      'prixAchatUnitaire': serializer.toJson<int>(prixAchatUnitaire),
+      'prixVenteUnitaire': serializer.toJson<int>(prixVenteUnitaire),
+      'fournisseurId': serializer.toJson<String?>(fournisseurId),
+      'achatId': serializer.toJson<String?>(achatId),
+      'receptionId': serializer.toJson<String?>(receptionId),
+      'lotOrigineId': serializer.toJson<String?>(lotOrigineId),
+      'statut': serializer.toJson<String>(statut),
+      'version': serializer.toJson<int?>(version),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+    };
+  }
+
+  LotStockRow copyWith({
+    String? id,
+    String? entrepriseId,
+    String? perimetreId,
+    String? produitId,
+    String? reference,
+    DateTime? dateAchat,
+    DateTime? dateReception,
+    int? quantiteInitiale,
+    int? quantiteRestante,
+    int? prixAchatUnitaire,
+    int? prixVenteUnitaire,
+    Value<String?> fournisseurId = const Value.absent(),
+    Value<String?> achatId = const Value.absent(),
+    Value<String?> receptionId = const Value.absent(),
+    Value<String?> lotOrigineId = const Value.absent(),
+    String? statut,
+    Value<int?> version = const Value.absent(),
+    Value<DateTime?> updatedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? syncStatus,
+  }) => LotStockRow(
+    id: id ?? this.id,
+    entrepriseId: entrepriseId ?? this.entrepriseId,
+    perimetreId: perimetreId ?? this.perimetreId,
+    produitId: produitId ?? this.produitId,
+    reference: reference ?? this.reference,
+    dateAchat: dateAchat ?? this.dateAchat,
+    dateReception: dateReception ?? this.dateReception,
+    quantiteInitiale: quantiteInitiale ?? this.quantiteInitiale,
+    quantiteRestante: quantiteRestante ?? this.quantiteRestante,
+    prixAchatUnitaire: prixAchatUnitaire ?? this.prixAchatUnitaire,
+    prixVenteUnitaire: prixVenteUnitaire ?? this.prixVenteUnitaire,
+    fournisseurId: fournisseurId.present
+        ? fournisseurId.value
+        : this.fournisseurId,
+    achatId: achatId.present ? achatId.value : this.achatId,
+    receptionId: receptionId.present ? receptionId.value : this.receptionId,
+    lotOrigineId: lotOrigineId.present ? lotOrigineId.value : this.lotOrigineId,
+    statut: statut ?? this.statut,
+    version: version.present ? version.value : this.version,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  LotStockRow copyWithCompanion(LotsStockCompanion data) {
+    return LotStockRow(
+      id: data.id.present ? data.id.value : this.id,
+      entrepriseId: data.entrepriseId.present
+          ? data.entrepriseId.value
+          : this.entrepriseId,
+      perimetreId: data.perimetreId.present
+          ? data.perimetreId.value
+          : this.perimetreId,
+      produitId: data.produitId.present ? data.produitId.value : this.produitId,
+      reference: data.reference.present ? data.reference.value : this.reference,
+      dateAchat: data.dateAchat.present ? data.dateAchat.value : this.dateAchat,
+      dateReception: data.dateReception.present
+          ? data.dateReception.value
+          : this.dateReception,
+      quantiteInitiale: data.quantiteInitiale.present
+          ? data.quantiteInitiale.value
+          : this.quantiteInitiale,
+      quantiteRestante: data.quantiteRestante.present
+          ? data.quantiteRestante.value
+          : this.quantiteRestante,
+      prixAchatUnitaire: data.prixAchatUnitaire.present
+          ? data.prixAchatUnitaire.value
+          : this.prixAchatUnitaire,
+      prixVenteUnitaire: data.prixVenteUnitaire.present
+          ? data.prixVenteUnitaire.value
+          : this.prixVenteUnitaire,
+      fournisseurId: data.fournisseurId.present
+          ? data.fournisseurId.value
+          : this.fournisseurId,
+      achatId: data.achatId.present ? data.achatId.value : this.achatId,
+      receptionId: data.receptionId.present
+          ? data.receptionId.value
+          : this.receptionId,
+      lotOrigineId: data.lotOrigineId.present
+          ? data.lotOrigineId.value
+          : this.lotOrigineId,
+      statut: data.statut.present ? data.statut.value : this.statut,
+      version: data.version.present ? data.version.value : this.version,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LotStockRow(')
+          ..write('id: $id, ')
+          ..write('entrepriseId: $entrepriseId, ')
+          ..write('perimetreId: $perimetreId, ')
+          ..write('produitId: $produitId, ')
+          ..write('reference: $reference, ')
+          ..write('dateAchat: $dateAchat, ')
+          ..write('dateReception: $dateReception, ')
+          ..write('quantiteInitiale: $quantiteInitiale, ')
+          ..write('quantiteRestante: $quantiteRestante, ')
+          ..write('prixAchatUnitaire: $prixAchatUnitaire, ')
+          ..write('prixVenteUnitaire: $prixVenteUnitaire, ')
+          ..write('fournisseurId: $fournisseurId, ')
+          ..write('achatId: $achatId, ')
+          ..write('receptionId: $receptionId, ')
+          ..write('lotOrigineId: $lotOrigineId, ')
+          ..write('statut: $statut, ')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    entrepriseId,
+    perimetreId,
+    produitId,
+    reference,
+    dateAchat,
+    dateReception,
+    quantiteInitiale,
+    quantiteRestante,
+    prixAchatUnitaire,
+    prixVenteUnitaire,
+    fournisseurId,
+    achatId,
+    receptionId,
+    lotOrigineId,
+    statut,
+    version,
+    updatedAt,
+    deletedAt,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LotStockRow &&
+          other.id == this.id &&
+          other.entrepriseId == this.entrepriseId &&
+          other.perimetreId == this.perimetreId &&
+          other.produitId == this.produitId &&
+          other.reference == this.reference &&
+          other.dateAchat == this.dateAchat &&
+          other.dateReception == this.dateReception &&
+          other.quantiteInitiale == this.quantiteInitiale &&
+          other.quantiteRestante == this.quantiteRestante &&
+          other.prixAchatUnitaire == this.prixAchatUnitaire &&
+          other.prixVenteUnitaire == this.prixVenteUnitaire &&
+          other.fournisseurId == this.fournisseurId &&
+          other.achatId == this.achatId &&
+          other.receptionId == this.receptionId &&
+          other.lotOrigineId == this.lotOrigineId &&
+          other.statut == this.statut &&
+          other.version == this.version &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.syncStatus == this.syncStatus);
+}
+
+class LotsStockCompanion extends UpdateCompanion<LotStockRow> {
+  final Value<String> id;
+  final Value<String> entrepriseId;
+  final Value<String> perimetreId;
+  final Value<String> produitId;
+  final Value<String> reference;
+  final Value<DateTime> dateAchat;
+  final Value<DateTime> dateReception;
+  final Value<int> quantiteInitiale;
+  final Value<int> quantiteRestante;
+  final Value<int> prixAchatUnitaire;
+  final Value<int> prixVenteUnitaire;
+  final Value<String?> fournisseurId;
+  final Value<String?> achatId;
+  final Value<String?> receptionId;
+  final Value<String?> lotOrigineId;
+  final Value<String> statut;
+  final Value<int?> version;
+  final Value<DateTime?> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> syncStatus;
+  final Value<int> rowid;
+  const LotsStockCompanion({
+    this.id = const Value.absent(),
+    this.entrepriseId = const Value.absent(),
+    this.perimetreId = const Value.absent(),
+    this.produitId = const Value.absent(),
+    this.reference = const Value.absent(),
+    this.dateAchat = const Value.absent(),
+    this.dateReception = const Value.absent(),
+    this.quantiteInitiale = const Value.absent(),
+    this.quantiteRestante = const Value.absent(),
+    this.prixAchatUnitaire = const Value.absent(),
+    this.prixVenteUnitaire = const Value.absent(),
+    this.fournisseurId = const Value.absent(),
+    this.achatId = const Value.absent(),
+    this.receptionId = const Value.absent(),
+    this.lotOrigineId = const Value.absent(),
+    this.statut = const Value.absent(),
+    this.version = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LotsStockCompanion.insert({
+    required String id,
+    required String entrepriseId,
+    required String perimetreId,
+    required String produitId,
+    required String reference,
+    required DateTime dateAchat,
+    required DateTime dateReception,
+    required int quantiteInitiale,
+    required int quantiteRestante,
+    required int prixAchatUnitaire,
+    required int prixVenteUnitaire,
+    this.fournisseurId = const Value.absent(),
+    this.achatId = const Value.absent(),
+    this.receptionId = const Value.absent(),
+    this.lotOrigineId = const Value.absent(),
+    this.statut = const Value.absent(),
+    this.version = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String syncStatus,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       entrepriseId = Value(entrepriseId),
+       perimetreId = Value(perimetreId),
+       produitId = Value(produitId),
+       reference = Value(reference),
+       dateAchat = Value(dateAchat),
+       dateReception = Value(dateReception),
+       quantiteInitiale = Value(quantiteInitiale),
+       quantiteRestante = Value(quantiteRestante),
+       prixAchatUnitaire = Value(prixAchatUnitaire),
+       prixVenteUnitaire = Value(prixVenteUnitaire),
+       syncStatus = Value(syncStatus);
+  static Insertable<LotStockRow> custom({
+    Expression<String>? id,
+    Expression<String>? entrepriseId,
+    Expression<String>? perimetreId,
+    Expression<String>? produitId,
+    Expression<String>? reference,
+    Expression<DateTime>? dateAchat,
+    Expression<DateTime>? dateReception,
+    Expression<int>? quantiteInitiale,
+    Expression<int>? quantiteRestante,
+    Expression<int>? prixAchatUnitaire,
+    Expression<int>? prixVenteUnitaire,
+    Expression<String>? fournisseurId,
+    Expression<String>? achatId,
+    Expression<String>? receptionId,
+    Expression<String>? lotOrigineId,
+    Expression<String>? statut,
+    Expression<int>? version,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? syncStatus,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (entrepriseId != null) 'entreprise_id': entrepriseId,
+      if (perimetreId != null) 'perimetre_id': perimetreId,
+      if (produitId != null) 'produit_id': produitId,
+      if (reference != null) 'reference': reference,
+      if (dateAchat != null) 'date_achat': dateAchat,
+      if (dateReception != null) 'date_reception': dateReception,
+      if (quantiteInitiale != null) 'quantite_initiale': quantiteInitiale,
+      if (quantiteRestante != null) 'quantite_restante': quantiteRestante,
+      if (prixAchatUnitaire != null) 'prix_achat_unitaire': prixAchatUnitaire,
+      if (prixVenteUnitaire != null) 'prix_vente_unitaire': prixVenteUnitaire,
+      if (fournisseurId != null) 'fournisseur_id': fournisseurId,
+      if (achatId != null) 'achat_id': achatId,
+      if (receptionId != null) 'reception_id': receptionId,
+      if (lotOrigineId != null) 'lot_origine_id': lotOrigineId,
+      if (statut != null) 'statut': statut,
+      if (version != null) 'version': version,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LotsStockCompanion copyWith({
+    Value<String>? id,
+    Value<String>? entrepriseId,
+    Value<String>? perimetreId,
+    Value<String>? produitId,
+    Value<String>? reference,
+    Value<DateTime>? dateAchat,
+    Value<DateTime>? dateReception,
+    Value<int>? quantiteInitiale,
+    Value<int>? quantiteRestante,
+    Value<int>? prixAchatUnitaire,
+    Value<int>? prixVenteUnitaire,
+    Value<String?>? fournisseurId,
+    Value<String?>? achatId,
+    Value<String?>? receptionId,
+    Value<String?>? lotOrigineId,
+    Value<String>? statut,
+    Value<int?>? version,
+    Value<DateTime?>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String>? syncStatus,
+    Value<int>? rowid,
+  }) {
+    return LotsStockCompanion(
+      id: id ?? this.id,
+      entrepriseId: entrepriseId ?? this.entrepriseId,
+      perimetreId: perimetreId ?? this.perimetreId,
+      produitId: produitId ?? this.produitId,
+      reference: reference ?? this.reference,
+      dateAchat: dateAchat ?? this.dateAchat,
+      dateReception: dateReception ?? this.dateReception,
+      quantiteInitiale: quantiteInitiale ?? this.quantiteInitiale,
+      quantiteRestante: quantiteRestante ?? this.quantiteRestante,
+      prixAchatUnitaire: prixAchatUnitaire ?? this.prixAchatUnitaire,
+      prixVenteUnitaire: prixVenteUnitaire ?? this.prixVenteUnitaire,
+      fournisseurId: fournisseurId ?? this.fournisseurId,
+      achatId: achatId ?? this.achatId,
+      receptionId: receptionId ?? this.receptionId,
+      lotOrigineId: lotOrigineId ?? this.lotOrigineId,
+      statut: statut ?? this.statut,
+      version: version ?? this.version,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (entrepriseId.present) {
+      map['entreprise_id'] = Variable<String>(entrepriseId.value);
+    }
+    if (perimetreId.present) {
+      map['perimetre_id'] = Variable<String>(perimetreId.value);
+    }
+    if (produitId.present) {
+      map['produit_id'] = Variable<String>(produitId.value);
+    }
+    if (reference.present) {
+      map['reference'] = Variable<String>(reference.value);
+    }
+    if (dateAchat.present) {
+      map['date_achat'] = Variable<DateTime>(dateAchat.value);
+    }
+    if (dateReception.present) {
+      map['date_reception'] = Variable<DateTime>(dateReception.value);
+    }
+    if (quantiteInitiale.present) {
+      map['quantite_initiale'] = Variable<int>(quantiteInitiale.value);
+    }
+    if (quantiteRestante.present) {
+      map['quantite_restante'] = Variable<int>(quantiteRestante.value);
+    }
+    if (prixAchatUnitaire.present) {
+      map['prix_achat_unitaire'] = Variable<int>(prixAchatUnitaire.value);
+    }
+    if (prixVenteUnitaire.present) {
+      map['prix_vente_unitaire'] = Variable<int>(prixVenteUnitaire.value);
+    }
+    if (fournisseurId.present) {
+      map['fournisseur_id'] = Variable<String>(fournisseurId.value);
+    }
+    if (achatId.present) {
+      map['achat_id'] = Variable<String>(achatId.value);
+    }
+    if (receptionId.present) {
+      map['reception_id'] = Variable<String>(receptionId.value);
+    }
+    if (lotOrigineId.present) {
+      map['lot_origine_id'] = Variable<String>(lotOrigineId.value);
+    }
+    if (statut.present) {
+      map['statut'] = Variable<String>(statut.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LotsStockCompanion(')
+          ..write('id: $id, ')
+          ..write('entrepriseId: $entrepriseId, ')
+          ..write('perimetreId: $perimetreId, ')
+          ..write('produitId: $produitId, ')
+          ..write('reference: $reference, ')
+          ..write('dateAchat: $dateAchat, ')
+          ..write('dateReception: $dateReception, ')
+          ..write('quantiteInitiale: $quantiteInitiale, ')
+          ..write('quantiteRestante: $quantiteRestante, ')
+          ..write('prixAchatUnitaire: $prixAchatUnitaire, ')
+          ..write('prixVenteUnitaire: $prixVenteUnitaire, ')
+          ..write('fournisseurId: $fournisseurId, ')
+          ..write('achatId: $achatId, ')
+          ..write('receptionId: $receptionId, ')
+          ..write('lotOrigineId: $lotOrigineId, ')
+          ..write('statut: $statut, ')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $MouvementsStockTable extends MouvementsStock
     with TableInfo<$MouvementsStockTable, MouvementStockRow> {
   @override
@@ -20849,6 +21995,15 @@ class $MouvementsStockTable extends MouvementsStock
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _lotIdMeta = const VerificationMeta('lotId');
+  @override
+  late final GeneratedColumn<String> lotId = GeneratedColumn<String>(
+    'lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _versionMeta = const VerificationMeta(
     'version',
   );
@@ -20913,6 +22068,7 @@ class $MouvementsStockTable extends MouvementsStock
     note,
     dateMouvement,
     auteurNom,
+    lotId,
     version,
     updatedAt,
     deletedAt,
@@ -21073,6 +22229,12 @@ class $MouvementsStockTable extends MouvementsStock
         auteurNom.isAcceptableOrUnknown(data['auteur_nom']!, _auteurNomMeta),
       );
     }
+    if (data.containsKey('lot_id')) {
+      context.handle(
+        _lotIdMeta,
+        lotId.isAcceptableOrUnknown(data['lot_id']!, _lotIdMeta),
+      );
+    }
     if (data.containsKey('version')) {
       context.handle(
         _versionMeta,
@@ -21180,6 +22342,10 @@ class $MouvementsStockTable extends MouvementsStock
         DriftSqlType.string,
         data['${effectivePrefix}auteur_nom'],
       ),
+      lotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_id'],
+      ),
       version: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}version'],
@@ -21227,6 +22393,7 @@ class MouvementStockRow extends DataClass
   final String? note;
   final DateTime dateMouvement;
   final String? auteurNom;
+  final String? lotId;
   final int? version;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -21250,6 +22417,7 @@ class MouvementStockRow extends DataClass
     this.note,
     required this.dateMouvement,
     this.auteurNom,
+    this.lotId,
     this.version,
     this.updatedAt,
     this.deletedAt,
@@ -21285,6 +22453,9 @@ class MouvementStockRow extends DataClass
     map['date_mouvement'] = Variable<DateTime>(dateMouvement);
     if (!nullToAbsent || auteurNom != null) {
       map['auteur_nom'] = Variable<String>(auteurNom);
+    }
+    if (!nullToAbsent || lotId != null) {
+      map['lot_id'] = Variable<String>(lotId);
     }
     if (!nullToAbsent || version != null) {
       map['version'] = Variable<int>(version);
@@ -21327,6 +22498,9 @@ class MouvementStockRow extends DataClass
       auteurNom: auteurNom == null && nullToAbsent
           ? const Value.absent()
           : Value(auteurNom),
+      lotId: lotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotId),
       version: version == null && nullToAbsent
           ? const Value.absent()
           : Value(version),
@@ -21364,6 +22538,7 @@ class MouvementStockRow extends DataClass
       note: serializer.fromJson<String?>(json['note']),
       dateMouvement: serializer.fromJson<DateTime>(json['dateMouvement']),
       auteurNom: serializer.fromJson<String?>(json['auteurNom']),
+      lotId: serializer.fromJson<String?>(json['lotId']),
       version: serializer.fromJson<int?>(json['version']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -21392,6 +22567,7 @@ class MouvementStockRow extends DataClass
       'note': serializer.toJson<String?>(note),
       'dateMouvement': serializer.toJson<DateTime>(dateMouvement),
       'auteurNom': serializer.toJson<String?>(auteurNom),
+      'lotId': serializer.toJson<String?>(lotId),
       'version': serializer.toJson<int?>(version),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -21418,6 +22594,7 @@ class MouvementStockRow extends DataClass
     Value<String?> note = const Value.absent(),
     DateTime? dateMouvement,
     Value<String?> auteurNom = const Value.absent(),
+    Value<String?> lotId = const Value.absent(),
     Value<int?> version = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -21441,6 +22618,7 @@ class MouvementStockRow extends DataClass
     note: note.present ? note.value : this.note,
     dateMouvement: dateMouvement ?? this.dateMouvement,
     auteurNom: auteurNom.present ? auteurNom.value : this.auteurNom,
+    lotId: lotId.present ? lotId.value : this.lotId,
     version: version.present ? version.value : this.version,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -21482,6 +22660,7 @@ class MouvementStockRow extends DataClass
           ? data.dateMouvement.value
           : this.dateMouvement,
       auteurNom: data.auteurNom.present ? data.auteurNom.value : this.auteurNom,
+      lotId: data.lotId.present ? data.lotId.value : this.lotId,
       version: data.version.present ? data.version.value : this.version,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -21512,6 +22691,7 @@ class MouvementStockRow extends DataClass
           ..write('note: $note, ')
           ..write('dateMouvement: $dateMouvement, ')
           ..write('auteurNom: $auteurNom, ')
+          ..write('lotId: $lotId, ')
           ..write('version: $version, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -21540,6 +22720,7 @@ class MouvementStockRow extends DataClass
     note,
     dateMouvement,
     auteurNom,
+    lotId,
     version,
     updatedAt,
     deletedAt,
@@ -21567,6 +22748,7 @@ class MouvementStockRow extends DataClass
           other.note == this.note &&
           other.dateMouvement == this.dateMouvement &&
           other.auteurNom == this.auteurNom &&
+          other.lotId == this.lotId &&
           other.version == this.version &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
@@ -21592,6 +22774,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
   final Value<String?> note;
   final Value<DateTime> dateMouvement;
   final Value<String?> auteurNom;
+  final Value<String?> lotId;
   final Value<int?> version;
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -21616,6 +22799,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
     this.note = const Value.absent(),
     this.dateMouvement = const Value.absent(),
     this.auteurNom = const Value.absent(),
+    this.lotId = const Value.absent(),
     this.version = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -21641,6 +22825,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
     this.note = const Value.absent(),
     required DateTime dateMouvement,
     this.auteurNom = const Value.absent(),
+    this.lotId = const Value.absent(),
     this.version = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -21676,6 +22861,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
     Expression<String>? note,
     Expression<DateTime>? dateMouvement,
     Expression<String>? auteurNom,
+    Expression<String>? lotId,
     Expression<int>? version,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -21701,6 +22887,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
       if (note != null) 'note': note,
       if (dateMouvement != null) 'date_mouvement': dateMouvement,
       if (auteurNom != null) 'auteur_nom': auteurNom,
+      if (lotId != null) 'lot_id': lotId,
       if (version != null) 'version': version,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -21728,6 +22915,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
     Value<String?>? note,
     Value<DateTime>? dateMouvement,
     Value<String?>? auteurNom,
+    Value<String?>? lotId,
     Value<int?>? version,
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -21753,6 +22941,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
       note: note ?? this.note,
       dateMouvement: dateMouvement ?? this.dateMouvement,
       auteurNom: auteurNom ?? this.auteurNom,
+      lotId: lotId ?? this.lotId,
       version: version ?? this.version,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -21818,6 +23007,9 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
     if (auteurNom.present) {
       map['auteur_nom'] = Variable<String>(auteurNom.value);
     }
+    if (lotId.present) {
+      map['lot_id'] = Variable<String>(lotId.value);
+    }
     if (version.present) {
       map['version'] = Variable<int>(version.value);
     }
@@ -21857,6 +23049,7 @@ class MouvementsStockCompanion extends UpdateCompanion<MouvementStockRow> {
           ..write('note: $note, ')
           ..write('dateMouvement: $dateMouvement, ')
           ..write('auteurNom: $auteurNom, ')
+          ..write('lotId: $lotId, ')
           ..write('version: $version, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -24757,6 +25950,18 @@ class $VentesTable extends Ventes with TableInfo<$VentesTable, VenteRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _coutTotalMeta = const VerificationMeta(
+    'coutTotal',
+  );
+  @override
+  late final GeneratedColumn<int> coutTotal = GeneratedColumn<int>(
+    'cout_total',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _annuleeLeMeta = const VerificationMeta(
     'annuleeLe',
   );
@@ -24807,6 +26012,7 @@ class $VentesTable extends Ventes with TableInfo<$VentesTable, VenteRow> {
     poste,
     sequence,
     montantPaye,
+    coutTotal,
     annuleeLe,
     annuleeParNom,
   ];
@@ -25008,6 +26214,12 @@ class $VentesTable extends Ventes with TableInfo<$VentesTable, VenteRow> {
         ),
       );
     }
+    if (data.containsKey('cout_total')) {
+      context.handle(
+        _coutTotalMeta,
+        coutTotal.isAcceptableOrUnknown(data['cout_total']!, _coutTotalMeta),
+      );
+    }
     if (data.containsKey('annulee_le')) {
       context.handle(
         _annuleeLeMeta,
@@ -25136,6 +26348,10 @@ class $VentesTable extends Ventes with TableInfo<$VentesTable, VenteRow> {
         DriftSqlType.int,
         data['${effectivePrefix}montant_paye'],
       )!,
+      coutTotal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cout_total'],
+      )!,
       annuleeLe: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}annulee_le'],
@@ -25180,6 +26396,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
   final String? poste;
   final int? sequence;
   final int montantPaye;
+  final int coutTotal;
   final DateTime? annuleeLe;
   final String? annuleeParNom;
   const VenteRow({
@@ -25209,6 +26426,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
     this.poste,
     this.sequence,
     required this.montantPaye,
+    required this.coutTotal,
     this.annuleeLe,
     this.annuleeParNom,
   });
@@ -25269,6 +26487,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
       map['sequence'] = Variable<int>(sequence);
     }
     map['montant_paye'] = Variable<int>(montantPaye);
+    map['cout_total'] = Variable<int>(coutTotal);
     if (!nullToAbsent || annuleeLe != null) {
       map['annulee_le'] = Variable<DateTime>(annuleeLe);
     }
@@ -25332,6 +26551,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
           ? const Value.absent()
           : Value(sequence),
       montantPaye: Value(montantPaye),
+      coutTotal: Value(coutTotal),
       annuleeLe: annuleeLe == null && nullToAbsent
           ? const Value.absent()
           : Value(annuleeLe),
@@ -25373,6 +26593,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
       poste: serializer.fromJson<String?>(json['poste']),
       sequence: serializer.fromJson<int?>(json['sequence']),
       montantPaye: serializer.fromJson<int>(json['montantPaye']),
+      coutTotal: serializer.fromJson<int>(json['coutTotal']),
       annuleeLe: serializer.fromJson<DateTime?>(json['annuleeLe']),
       annuleeParNom: serializer.fromJson<String?>(json['annuleeParNom']),
     );
@@ -25407,6 +26628,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
       'poste': serializer.toJson<String?>(poste),
       'sequence': serializer.toJson<int?>(sequence),
       'montantPaye': serializer.toJson<int>(montantPaye),
+      'coutTotal': serializer.toJson<int>(coutTotal),
       'annuleeLe': serializer.toJson<DateTime?>(annuleeLe),
       'annuleeParNom': serializer.toJson<String?>(annuleeParNom),
     };
@@ -25439,6 +26661,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
     Value<String?> poste = const Value.absent(),
     Value<int?> sequence = const Value.absent(),
     int? montantPaye,
+    int? coutTotal,
     Value<DateTime?> annuleeLe = const Value.absent(),
     Value<String?> annuleeParNom = const Value.absent(),
   }) => VenteRow(
@@ -25472,6 +26695,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
     poste: poste.present ? poste.value : this.poste,
     sequence: sequence.present ? sequence.value : this.sequence,
     montantPaye: montantPaye ?? this.montantPaye,
+    coutTotal: coutTotal ?? this.coutTotal,
     annuleeLe: annuleeLe.present ? annuleeLe.value : this.annuleeLe,
     annuleeParNom: annuleeParNom.present
         ? annuleeParNom.value
@@ -25519,6 +26743,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
       montantPaye: data.montantPaye.present
           ? data.montantPaye.value
           : this.montantPaye,
+      coutTotal: data.coutTotal.present ? data.coutTotal.value : this.coutTotal,
       annuleeLe: data.annuleeLe.present ? data.annuleeLe.value : this.annuleeLe,
       annuleeParNom: data.annuleeParNom.present
           ? data.annuleeParNom.value
@@ -25555,6 +26780,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
           ..write('poste: $poste, ')
           ..write('sequence: $sequence, ')
           ..write('montantPaye: $montantPaye, ')
+          ..write('coutTotal: $coutTotal, ')
           ..write('annuleeLe: $annuleeLe, ')
           ..write('annuleeParNom: $annuleeParNom')
           ..write(')'))
@@ -25589,6 +26815,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
     poste,
     sequence,
     montantPaye,
+    coutTotal,
     annuleeLe,
     annuleeParNom,
   ]);
@@ -25622,6 +26849,7 @@ class VenteRow extends DataClass implements Insertable<VenteRow> {
           other.poste == this.poste &&
           other.sequence == this.sequence &&
           other.montantPaye == this.montantPaye &&
+          other.coutTotal == this.coutTotal &&
           other.annuleeLe == this.annuleeLe &&
           other.annuleeParNom == this.annuleeParNom);
 }
@@ -25653,6 +26881,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
   final Value<String?> poste;
   final Value<int?> sequence;
   final Value<int> montantPaye;
+  final Value<int> coutTotal;
   final Value<DateTime?> annuleeLe;
   final Value<String?> annuleeParNom;
   final Value<int> rowid;
@@ -25683,6 +26912,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
     this.poste = const Value.absent(),
     this.sequence = const Value.absent(),
     this.montantPaye = const Value.absent(),
+    this.coutTotal = const Value.absent(),
     this.annuleeLe = const Value.absent(),
     this.annuleeParNom = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -25714,6 +26944,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
     this.poste = const Value.absent(),
     this.sequence = const Value.absent(),
     this.montantPaye = const Value.absent(),
+    this.coutTotal = const Value.absent(),
     this.annuleeLe = const Value.absent(),
     this.annuleeParNom = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -25753,6 +26984,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
     Expression<String>? poste,
     Expression<int>? sequence,
     Expression<int>? montantPaye,
+    Expression<int>? coutTotal,
     Expression<DateTime>? annuleeLe,
     Expression<String>? annuleeParNom,
     Expression<int>? rowid,
@@ -25784,6 +27016,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
       if (poste != null) 'poste': poste,
       if (sequence != null) 'sequence': sequence,
       if (montantPaye != null) 'montant_paye': montantPaye,
+      if (coutTotal != null) 'cout_total': coutTotal,
       if (annuleeLe != null) 'annulee_le': annuleeLe,
       if (annuleeParNom != null) 'annulee_par_nom': annuleeParNom,
       if (rowid != null) 'rowid': rowid,
@@ -25817,6 +27050,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
     Value<String?>? poste,
     Value<int?>? sequence,
     Value<int>? montantPaye,
+    Value<int>? coutTotal,
     Value<DateTime?>? annuleeLe,
     Value<String?>? annuleeParNom,
     Value<int>? rowid,
@@ -25848,6 +27082,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
       poste: poste ?? this.poste,
       sequence: sequence ?? this.sequence,
       montantPaye: montantPaye ?? this.montantPaye,
+      coutTotal: coutTotal ?? this.coutTotal,
       annuleeLe: annuleeLe ?? this.annuleeLe,
       annuleeParNom: annuleeParNom ?? this.annuleeParNom,
       rowid: rowid ?? this.rowid,
@@ -25935,6 +27170,9 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
     if (montantPaye.present) {
       map['montant_paye'] = Variable<int>(montantPaye.value);
     }
+    if (coutTotal.present) {
+      map['cout_total'] = Variable<int>(coutTotal.value);
+    }
     if (annuleeLe.present) {
       map['annulee_le'] = Variable<DateTime>(annuleeLe.value);
     }
@@ -25976,6 +27214,7 @@ class VentesCompanion extends UpdateCompanion<VenteRow> {
           ..write('poste: $poste, ')
           ..write('sequence: $sequence, ')
           ..write('montantPaye: $montantPaye, ')
+          ..write('coutTotal: $coutTotal, ')
           ..write('annuleeLe: $annuleeLe, ')
           ..write('annuleeParNom: $annuleeParNom, ')
           ..write('rowid: $rowid')
@@ -26704,6 +27943,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CategoriesProduitsTable(this);
   late final $ProduitsTable produits = $ProduitsTable(this);
   late final $StocksTable stocks = $StocksTable(this);
+  late final $LotsStockTable lotsStock = $LotsStockTable(this);
   late final $MouvementsStockTable mouvementsStock = $MouvementsStockTable(
     this,
   );
@@ -26745,6 +27985,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categoriesProduits,
     produits,
     stocks,
+    lotsStock,
     mouvementsStock,
     transfertsStock,
     achats,
@@ -36379,6 +37620,513 @@ typedef $$StocksTableProcessedTableManager =
       StockRow,
       PrefetchHooks Function()
     >;
+typedef $$LotsStockTableCreateCompanionBuilder =
+    LotsStockCompanion Function({
+      required String id,
+      required String entrepriseId,
+      required String perimetreId,
+      required String produitId,
+      required String reference,
+      required DateTime dateAchat,
+      required DateTime dateReception,
+      required int quantiteInitiale,
+      required int quantiteRestante,
+      required int prixAchatUnitaire,
+      required int prixVenteUnitaire,
+      Value<String?> fournisseurId,
+      Value<String?> achatId,
+      Value<String?> receptionId,
+      Value<String?> lotOrigineId,
+      Value<String> statut,
+      Value<int?> version,
+      Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
+      required String syncStatus,
+      Value<int> rowid,
+    });
+typedef $$LotsStockTableUpdateCompanionBuilder =
+    LotsStockCompanion Function({
+      Value<String> id,
+      Value<String> entrepriseId,
+      Value<String> perimetreId,
+      Value<String> produitId,
+      Value<String> reference,
+      Value<DateTime> dateAchat,
+      Value<DateTime> dateReception,
+      Value<int> quantiteInitiale,
+      Value<int> quantiteRestante,
+      Value<int> prixAchatUnitaire,
+      Value<int> prixVenteUnitaire,
+      Value<String?> fournisseurId,
+      Value<String?> achatId,
+      Value<String?> receptionId,
+      Value<String?> lotOrigineId,
+      Value<String> statut,
+      Value<int?> version,
+      Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<String> syncStatus,
+      Value<int> rowid,
+    });
+
+class $$LotsStockTableFilterComposer
+    extends Composer<_$AppDatabase, $LotsStockTable> {
+  $$LotsStockTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entrepriseId => $composableBuilder(
+    column: $table.entrepriseId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get perimetreId => $composableBuilder(
+    column: $table.perimetreId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get produitId => $composableBuilder(
+    column: $table.produitId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reference => $composableBuilder(
+    column: $table.reference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateAchat => $composableBuilder(
+    column: $table.dateAchat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateReception => $composableBuilder(
+    column: $table.dateReception,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantiteInitiale => $composableBuilder(
+    column: $table.quantiteInitiale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantiteRestante => $composableBuilder(
+    column: $table.quantiteRestante,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prixAchatUnitaire => $composableBuilder(
+    column: $table.prixAchatUnitaire,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get prixVenteUnitaire => $composableBuilder(
+    column: $table.prixVenteUnitaire,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fournisseurId => $composableBuilder(
+    column: $table.fournisseurId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get achatId => $composableBuilder(
+    column: $table.achatId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get receptionId => $composableBuilder(
+    column: $table.receptionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotOrigineId => $composableBuilder(
+    column: $table.lotOrigineId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get statut => $composableBuilder(
+    column: $table.statut,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LotsStockTableOrderingComposer
+    extends Composer<_$AppDatabase, $LotsStockTable> {
+  $$LotsStockTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entrepriseId => $composableBuilder(
+    column: $table.entrepriseId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get perimetreId => $composableBuilder(
+    column: $table.perimetreId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get produitId => $composableBuilder(
+    column: $table.produitId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reference => $composableBuilder(
+    column: $table.reference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateAchat => $composableBuilder(
+    column: $table.dateAchat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateReception => $composableBuilder(
+    column: $table.dateReception,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quantiteInitiale => $composableBuilder(
+    column: $table.quantiteInitiale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quantiteRestante => $composableBuilder(
+    column: $table.quantiteRestante,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prixAchatUnitaire => $composableBuilder(
+    column: $table.prixAchatUnitaire,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get prixVenteUnitaire => $composableBuilder(
+    column: $table.prixVenteUnitaire,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fournisseurId => $composableBuilder(
+    column: $table.fournisseurId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get achatId => $composableBuilder(
+    column: $table.achatId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get receptionId => $composableBuilder(
+    column: $table.receptionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lotOrigineId => $composableBuilder(
+    column: $table.lotOrigineId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get statut => $composableBuilder(
+    column: $table.statut,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LotsStockTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LotsStockTable> {
+  $$LotsStockTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entrepriseId => $composableBuilder(
+    column: $table.entrepriseId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get perimetreId => $composableBuilder(
+    column: $table.perimetreId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get produitId =>
+      $composableBuilder(column: $table.produitId, builder: (column) => column);
+
+  GeneratedColumn<String> get reference =>
+      $composableBuilder(column: $table.reference, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateAchat =>
+      $composableBuilder(column: $table.dateAchat, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateReception => $composableBuilder(
+    column: $table.dateReception,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get quantiteInitiale => $composableBuilder(
+    column: $table.quantiteInitiale,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get quantiteRestante => $composableBuilder(
+    column: $table.quantiteRestante,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get prixAchatUnitaire => $composableBuilder(
+    column: $table.prixAchatUnitaire,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get prixVenteUnitaire => $composableBuilder(
+    column: $table.prixVenteUnitaire,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fournisseurId => $composableBuilder(
+    column: $table.fournisseurId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get achatId =>
+      $composableBuilder(column: $table.achatId, builder: (column) => column);
+
+  GeneratedColumn<String> get receptionId => $composableBuilder(
+    column: $table.receptionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lotOrigineId => $composableBuilder(
+    column: $table.lotOrigineId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get statut =>
+      $composableBuilder(column: $table.statut, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+}
+
+class $$LotsStockTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LotsStockTable,
+          LotStockRow,
+          $$LotsStockTableFilterComposer,
+          $$LotsStockTableOrderingComposer,
+          $$LotsStockTableAnnotationComposer,
+          $$LotsStockTableCreateCompanionBuilder,
+          $$LotsStockTableUpdateCompanionBuilder,
+          (
+            LotStockRow,
+            BaseReferences<_$AppDatabase, $LotsStockTable, LotStockRow>,
+          ),
+          LotStockRow,
+          PrefetchHooks Function()
+        > {
+  $$LotsStockTableTableManager(_$AppDatabase db, $LotsStockTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LotsStockTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LotsStockTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LotsStockTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> entrepriseId = const Value.absent(),
+                Value<String> perimetreId = const Value.absent(),
+                Value<String> produitId = const Value.absent(),
+                Value<String> reference = const Value.absent(),
+                Value<DateTime> dateAchat = const Value.absent(),
+                Value<DateTime> dateReception = const Value.absent(),
+                Value<int> quantiteInitiale = const Value.absent(),
+                Value<int> quantiteRestante = const Value.absent(),
+                Value<int> prixAchatUnitaire = const Value.absent(),
+                Value<int> prixVenteUnitaire = const Value.absent(),
+                Value<String?> fournisseurId = const Value.absent(),
+                Value<String?> achatId = const Value.absent(),
+                Value<String?> receptionId = const Value.absent(),
+                Value<String?> lotOrigineId = const Value.absent(),
+                Value<String> statut = const Value.absent(),
+                Value<int?> version = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LotsStockCompanion(
+                id: id,
+                entrepriseId: entrepriseId,
+                perimetreId: perimetreId,
+                produitId: produitId,
+                reference: reference,
+                dateAchat: dateAchat,
+                dateReception: dateReception,
+                quantiteInitiale: quantiteInitiale,
+                quantiteRestante: quantiteRestante,
+                prixAchatUnitaire: prixAchatUnitaire,
+                prixVenteUnitaire: prixVenteUnitaire,
+                fournisseurId: fournisseurId,
+                achatId: achatId,
+                receptionId: receptionId,
+                lotOrigineId: lotOrigineId,
+                statut: statut,
+                version: version,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                syncStatus: syncStatus,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String entrepriseId,
+                required String perimetreId,
+                required String produitId,
+                required String reference,
+                required DateTime dateAchat,
+                required DateTime dateReception,
+                required int quantiteInitiale,
+                required int quantiteRestante,
+                required int prixAchatUnitaire,
+                required int prixVenteUnitaire,
+                Value<String?> fournisseurId = const Value.absent(),
+                Value<String?> achatId = const Value.absent(),
+                Value<String?> receptionId = const Value.absent(),
+                Value<String?> lotOrigineId = const Value.absent(),
+                Value<String> statut = const Value.absent(),
+                Value<int?> version = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String syncStatus,
+                Value<int> rowid = const Value.absent(),
+              }) => LotsStockCompanion.insert(
+                id: id,
+                entrepriseId: entrepriseId,
+                perimetreId: perimetreId,
+                produitId: produitId,
+                reference: reference,
+                dateAchat: dateAchat,
+                dateReception: dateReception,
+                quantiteInitiale: quantiteInitiale,
+                quantiteRestante: quantiteRestante,
+                prixAchatUnitaire: prixAchatUnitaire,
+                prixVenteUnitaire: prixVenteUnitaire,
+                fournisseurId: fournisseurId,
+                achatId: achatId,
+                receptionId: receptionId,
+                lotOrigineId: lotOrigineId,
+                statut: statut,
+                version: version,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                syncStatus: syncStatus,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LotsStockTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LotsStockTable,
+      LotStockRow,
+      $$LotsStockTableFilterComposer,
+      $$LotsStockTableOrderingComposer,
+      $$LotsStockTableAnnotationComposer,
+      $$LotsStockTableCreateCompanionBuilder,
+      $$LotsStockTableUpdateCompanionBuilder,
+      (
+        LotStockRow,
+        BaseReferences<_$AppDatabase, $LotsStockTable, LotStockRow>,
+      ),
+      LotStockRow,
+      PrefetchHooks Function()
+    >;
 typedef $$MouvementsStockTableCreateCompanionBuilder =
     MouvementsStockCompanion Function({
       required String id,
@@ -36399,6 +38147,7 @@ typedef $$MouvementsStockTableCreateCompanionBuilder =
       Value<String?> note,
       required DateTime dateMouvement,
       Value<String?> auteurNom,
+      Value<String?> lotId,
       Value<int?> version,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -36425,6 +38174,7 @@ typedef $$MouvementsStockTableUpdateCompanionBuilder =
       Value<String?> note,
       Value<DateTime> dateMouvement,
       Value<String?> auteurNom,
+      Value<String?> lotId,
       Value<int?> version,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -36528,6 +38278,11 @@ class $$MouvementsStockTableFilterComposer
 
   ColumnFilters<String> get auteurNom => $composableBuilder(
     column: $table.auteurNom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotId => $composableBuilder(
+    column: $table.lotId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -36651,6 +38406,11 @@ class $$MouvementsStockTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get lotId => $composableBuilder(
+    column: $table.lotId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get version => $composableBuilder(
     column: $table.version,
     builder: (column) => ColumnOrderings(column),
@@ -36751,6 +38511,9 @@ class $$MouvementsStockTableAnnotationComposer
   GeneratedColumn<String> get auteurNom =>
       $composableBuilder(column: $table.auteurNom, builder: (column) => column);
 
+  GeneratedColumn<String> get lotId =>
+      $composableBuilder(column: $table.lotId, builder: (column) => column);
+
   GeneratedColumn<int> get version =>
       $composableBuilder(column: $table.version, builder: (column) => column);
 
@@ -36821,6 +38584,7 @@ class $$MouvementsStockTableTableManager
                 Value<String?> note = const Value.absent(),
                 Value<DateTime> dateMouvement = const Value.absent(),
                 Value<String?> auteurNom = const Value.absent(),
+                Value<String?> lotId = const Value.absent(),
                 Value<int?> version = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -36845,6 +38609,7 @@ class $$MouvementsStockTableTableManager
                 note: note,
                 dateMouvement: dateMouvement,
                 auteurNom: auteurNom,
+                lotId: lotId,
                 version: version,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -36871,6 +38636,7 @@ class $$MouvementsStockTableTableManager
                 Value<String?> note = const Value.absent(),
                 required DateTime dateMouvement,
                 Value<String?> auteurNom = const Value.absent(),
+                Value<String?> lotId = const Value.absent(),
                 Value<int?> version = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -36895,6 +38661,7 @@ class $$MouvementsStockTableTableManager
                 note: note,
                 dateMouvement: dateMouvement,
                 auteurNom: auteurNom,
+                lotId: lotId,
                 version: version,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -38156,6 +39923,7 @@ typedef $$VentesTableCreateCompanionBuilder =
       Value<String?> poste,
       Value<int?> sequence,
       Value<int> montantPaye,
+      Value<int> coutTotal,
       Value<DateTime?> annuleeLe,
       Value<String?> annuleeParNom,
       Value<int> rowid,
@@ -38188,6 +39956,7 @@ typedef $$VentesTableUpdateCompanionBuilder =
       Value<String?> poste,
       Value<int?> sequence,
       Value<int> montantPaye,
+      Value<int> coutTotal,
       Value<DateTime?> annuleeLe,
       Value<String?> annuleeParNom,
       Value<int> rowid,
@@ -38329,6 +40098,11 @@ class $$VentesTableFilterComposer
 
   ColumnFilters<int> get montantPaye => $composableBuilder(
     column: $table.montantPaye,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get coutTotal => $composableBuilder(
+    column: $table.coutTotal,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -38482,6 +40256,11 @@ class $$VentesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get coutTotal => $composableBuilder(
+    column: $table.coutTotal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get annuleeLe => $composableBuilder(
     column: $table.annuleeLe,
     builder: (column) => ColumnOrderings(column),
@@ -38594,6 +40373,9 @@ class $$VentesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get coutTotal =>
+      $composableBuilder(column: $table.coutTotal, builder: (column) => column);
+
   GeneratedColumn<DateTime> get annuleeLe =>
       $composableBuilder(column: $table.annuleeLe, builder: (column) => column);
 
@@ -38657,6 +40439,7 @@ class $$VentesTableTableManager
                 Value<String?> poste = const Value.absent(),
                 Value<int?> sequence = const Value.absent(),
                 Value<int> montantPaye = const Value.absent(),
+                Value<int> coutTotal = const Value.absent(),
                 Value<DateTime?> annuleeLe = const Value.absent(),
                 Value<String?> annuleeParNom = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -38687,6 +40470,7 @@ class $$VentesTableTableManager
                 poste: poste,
                 sequence: sequence,
                 montantPaye: montantPaye,
+                coutTotal: coutTotal,
                 annuleeLe: annuleeLe,
                 annuleeParNom: annuleeParNom,
                 rowid: rowid,
@@ -38719,6 +40503,7 @@ class $$VentesTableTableManager
                 Value<String?> poste = const Value.absent(),
                 Value<int?> sequence = const Value.absent(),
                 Value<int> montantPaye = const Value.absent(),
+                Value<int> coutTotal = const Value.absent(),
                 Value<DateTime?> annuleeLe = const Value.absent(),
                 Value<String?> annuleeParNom = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -38749,6 +40534,7 @@ class $$VentesTableTableManager
                 poste: poste,
                 sequence: sequence,
                 montantPaye: montantPaye,
+                coutTotal: coutTotal,
                 annuleeLe: annuleeLe,
                 annuleeParNom: annuleeParNom,
                 rowid: rowid,
@@ -39214,6 +41000,8 @@ class $AppDatabaseManager {
       $$ProduitsTableTableManager(_db, _db.produits);
   $$StocksTableTableManager get stocks =>
       $$StocksTableTableManager(_db, _db.stocks);
+  $$LotsStockTableTableManager get lotsStock =>
+      $$LotsStockTableTableManager(_db, _db.lotsStock);
   $$MouvementsStockTableTableManager get mouvementsStock =>
       $$MouvementsStockTableTableManager(_db, _db.mouvementsStock);
   $$TransfertsStockTableTableManager get transfertsStock =>

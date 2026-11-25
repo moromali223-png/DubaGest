@@ -47,24 +47,167 @@ class _Fiche extends ConsumerWidget {
     final ctx = ref.read(contexteActifProvider);
     if (ctx == null) return;
     if (produit.estActif) {
+      final stockRestant = etat.quantite(produit.id);
+      if (stockRestant.estPositif) {
+        final boutiquesVisibles = ref.read(boutiquesVisiblesProvider);
+        final repartition = etat.repartition(produit.id, boutiquesVisibles);
+        final details = [
+          for (final MapEntry(key: b, value: qb) in repartition.entries)
+            if (qb.estPositif) '• ${nomBoutique(ref, b)} : ${quantiteLisible(context, produit, qb)}',
+        ];
+        final courante = ref.read(boutiqueCouranteProvider);
+        final choix = await showDialog<String>(
+          context: context,
+          builder: (dialogCtx) => AlertDialog(
+            icon: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 40),
+            title: const Text('Archivage du produit'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Le produit « ${produit.nom} » possède encore du stock disponible (${quantiteLisible(context, produit, stockRestant)}).\n\n'
+                  'Conformément aux règles de gestion (règle 7.D), le stock restant doit être soldé ou régularisé avant l\'archivage.',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                if (details.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  const Text('Détail du stock restant :', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text(details.join('\n'), style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(null),
+                child: Text(l10n.commonCancel),
+              ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(dialogCtx).pop('ajuster'),
+                child: const Text('Ajuster manuellement'),
+              ),
+              FilledButton.icon(
+                icon: const Icon(Icons.archive_outlined, size: 18),
+                label: const Text('Solder le stock & Archiver'),
+                onPressed: () => Navigator.of(dialogCtx).pop('solder'),
+              ),
+            ],
+          ),
+        );
+        if (choix == null) return;
+        if (choix == 'ajuster') {
+          ouvrirOperationStock(
+            context,
+            produit: produit,
+            operation: OperationStock.sortie,
+            perimetreId: courante,
+          );
+          return;
+        }
+        if (choix == 'solder') {
+          try {
+            await ref.read(gererCommerceProvider).archiverProduit(ctx, etat, produit, solderStockSiNecessaire: true);
+            if (context.mounted) {
+              confirmer(context, 'Produit « ${produit.nom} » archivé avec succès (stock soldé)');
+              context.pop();
+            }
+          } catch (e) {
+            if (context.mounted) signalerErreur(context, e);
+          }
+          return;
+        }
+      }
+
       final ok = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: Text(l10n.comArchive),
-          content: Text(l10n.comArchiveConfirm),
+          content: Text(
+            'Voulez-vous archiver le produit « ${produit.nom} » ? Il ne sera plus proposé lors des nouveaux achats et ventes, mais restera consultable dans l\'historique.',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.commonCancel)),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.comArchive)),
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              child: Text(l10n.comArchive),
+            ),
           ],
         ),
       );
       if (ok != true) return;
+      try {
+        await ref.read(gererCommerceProvider).archiverProduit(ctx, etat, produit);
+        if (context.mounted) {
+          confirmer(context, 'Produit « ${produit.nom} » archivé avec succès');
+          context.pop();
+        }
+      } catch (e) {
+        if (context.mounted) signalerErreur(context, e);
+      }
+    } else {
+      // Restauration d'un produit archivé
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: Text(l10n.comRestore),
+          content: Text('Voulez-vous restaurer le produit « ${produit.nom} » dans le catalogue actif ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+              child: Text(l10n.comRestore),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      try {
+        await ref.read(gererCommerceProvider).restaurerProduit(ctx, etat, produit);
+        if (context.mounted) {
+          confirmer(context, 'Produit « ${produit.nom} » restauré dans le catalogue');
+        }
+      } catch (e) {
+        if (context.mounted) signalerErreur(context, e);
+      }
     }
+  }
+
+  Future<void> _supprimer(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+    final ctx = ref.read(contexteActifProvider);
+    if (ctx == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n.commonDelete),
+        content: Text(l10n.comConfirmDeleteProduct(produit.nom)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.negative),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
     try {
-      await ref
-          .read(gererCommerceProvider)
-          .modifierProduit(ctx, etat, produit, produit.copyWith(estActif: !produit.estActif));
-      if (context.mounted) confirmer(context, l10n.comProductSaved);
+      await ref.read(gererCommerceProvider).supprimerProduit(ctx, etat, produit);
+      if (context.mounted) {
+        confirmer(context, l10n.comProductDeleted);
+        context.pop();
+      }
     } catch (e) {
       if (context.mounted) signalerErreur(context, e);
     }
@@ -102,11 +245,38 @@ class _Fiche extends ConsumerWidget {
                   icon: const Icon(Icons.edit_outlined),
                 ),
               if (droits.peutArchiverProduits)
-                PopupMenuButton<String>(
-                  onSelected: (_) => _archiver(context, ref),
-                  itemBuilder: (_) => [
-                    PopupMenuItem(value: 'archiver', child: Text(p.estActif ? l10n.comArchive : l10n.comRestore)),
-                  ],
+                Builder(
+                  builder: (context) {
+                    final aDesMouvements = etat.mouvements.any((m) => m.produitId == p.id);
+                    final aDesVentes = etat.ventes.any((v) => v.lignes.any((l) => l.produitId == p.id));
+                    final aDesAchats = etat.achats.any((a) => a.lignes.any((l) => l.produitId == p.id));
+                    final aDesLots = etat.lotsDe(p.id).isNotEmpty;
+                    final aHistorique = aDesMouvements || aDesVentes || aDesAchats || aDesLots;
+
+                    return PopupMenuButton<String>(
+                      onSelected: (action) {
+                        if (action == 'supprimer') {
+                          _supprimer(context, ref);
+                        } else if (action == 'archiver') {
+                          _archiver(context, ref);
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        PopupMenuItem(
+                          value: 'archiver',
+                          child: Text(p.estActif ? l10n.comArchive : l10n.comRestore),
+                        ),
+                        if (!aHistorique)
+                          PopupMenuItem(
+                            value: 'supprimer',
+                            child: Text(
+                              l10n.commonDelete,
+                              style: const TextStyle(color: AppColors.negative),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
             ],
             flexibleSpace: FlexibleSpaceBar(background: _Galerie(produit: p)),
@@ -186,6 +356,8 @@ class _Fiche extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _CarteStock(etat: etat, produit: p, visibles: visibles),
+                      const SizedBox(height: AppSpacing.md),
+                      _SectionLotsStock(etat: etat, produit: p, visibles: visibles),
                       const SizedBox(height: AppSpacing.md),
                       if (p.estActif) _Actions(produit: p),
                       const SizedBox(height: AppSpacing.md),
@@ -486,6 +658,174 @@ class _CartePrix extends ConsumerWidget {
             ]),
         ],
       ),
+    );
+  }
+}
+
+class _SectionLotsStock extends ConsumerWidget {
+  const _SectionLotsStock({required this.etat, required this.produit, required this.visibles});
+  final EtatCommerce etat;
+  final Produit produit;
+  final List<String> visibles;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    var lots = etat.lotsDe(produit.id, visibles);
+    if (lots.isEmpty) {
+      // Si la boutique courante filtrée ne contient aucun lot mais que d'autres boutiques en ont,
+      // on affiche l'ensemble des lots du produit pour ne pas masquer la traçabilité.
+      lots = etat.lotsDe(produit.id);
+    }
+    if (lots.isEmpty) return const SizedBox.shrink();
+
+    final cmp = etat.coutMoyenPondere(produit.id);
+
+    return SectionCarte(
+      titre: 'Approvisionnements et lots (${lots.length})',
+      icone: Icons.batch_prediction_outlined,
+      action: cmp != null
+          ? Text('CMP : ${montant(context, ref, cmp)}',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.muted))
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < lots.length; i++) ...[
+            if (i > 0) const Divider(height: 16),
+            _TuileLot(lot: lots[i], produit: produit),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TuileLot extends ConsumerWidget {
+  const _TuileLot({required this.lot, required this.produit});
+  final LotStock lot;
+  final Produit produit;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final estActif = lot.estDisponible;
+    final date =
+        '${lot.dateReception.day.toString().padLeft(2, '0')}/${lot.dateReception.month.toString().padLeft(2, '0')}/${lot.dateReception.year}';
+    final nomBout = nomBoutique(ref, lot.perimetreId);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                lot.reference,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: estActif ? AppColors.green.withValues(alpha: 0.12) : AppColors.muted.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                estActif ? 'Disponible' : 'Épuisé',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: estActif ? AppColors.green : AppColors.muted,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            const Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.muted),
+            const SizedBox(width: 4),
+            Text(date, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            const Text(' · ', style: TextStyle(color: AppColors.muted)),
+            const Icon(Icons.storefront_outlined, size: 13, color: AppColors.muted),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(nomBout,
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted), overflow: TextOverflow.ellipsis),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            Text.rich(
+              TextSpan(
+                text: 'Reste : ',
+                style: const TextStyle(fontSize: 12.5, color: AppColors.muted),
+                children: [
+                  TextSpan(
+                    text: '${lot.quantiteRestante.valeur} / ${lot.quantiteInitiale.valeur} ${produit.uniteBase}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: estActif ? AppColors.ink : AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text.rich(
+              TextSpan(
+                text: 'Achat : ',
+                style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                children: [
+                  TextSpan(
+                    text: montant(context, ref, lot.prixAchatUnitaire),
+                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                  ),
+                  const TextSpan(text: '  ·  Vente : '),
+                  TextSpan(
+                    text: montant(context, ref, lot.prixVenteUnitaire),
+                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.green),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (estActif) ...[
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () => context.push(Routes.venteAvec(produit.id, lotId: lot.id)),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.greenSoft,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.point_of_sale_rounded, size: 14, color: AppColors.green),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Vendre ce lot (${montant(context, ref, lot.prixVenteUnitaire)})',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.green),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

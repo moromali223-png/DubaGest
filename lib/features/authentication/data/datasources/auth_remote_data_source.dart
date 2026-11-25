@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:url_launcher/url_launcher.dart' as ul;
 
 import '../../../../app/config/app_config.dart';
+import '../../../../core/auth/auth_identifier_helper.dart';
+import '../../../../core/auth/resilient_auth_storage.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/app_logger.dart';
 import '../../domain/entities/auth_state.dart';
@@ -14,13 +16,18 @@ import '../../domain/repositories/auth_repository.dart';
 /// persistée et rafraîchie par supabase_flutter ; aucun mot de passe n'est
 /// conservé par l'application.
 class SupabaseAuthDataSource {
-  SupabaseAuthDataSource(this._auth, {this.redirectUrl});
+  SupabaseAuthDataSource(this._auth, {this.redirectUrl}) {
+    if (_auth.currentSession != null) {
+      _lastKnownUser = _user(_auth.currentSession!.user);
+    }
+  }
 
   final sb.GoTrueClient _auth;
 
   /// Retour après Google, confirmation d'e-mail ou réinitialisation.
   final String? redirectUrl;
   bool _signOutRequested = false;
+  AuthUser? _lastKnownUser;
 
   AuthState get current => _fromSession(_auth.currentSession);
 
@@ -32,32 +39,103 @@ class SupabaseAuthDataSource {
       })
       .map((event) => switch (event.event) {
             sb.AuthChangeEvent.passwordRecovery when event.session != null =>
-              Authenticated(_user(event.session!.user), passwordRecovery: true),
+              Authenticated(_recordUser(event.session!.user), passwordRecovery: true),
             sb.AuthChangeEvent.signedOut => _signedOut(),
+            sb.AuthChangeEvent.tokenRefreshed when event.session != null =>
+              Authenticated(_recordUser(event.session!.user)),
+            sb.AuthChangeEvent.signedIn when event.session != null =>
+              Authenticated(_recordUser(event.session!.user)),
+            sb.AuthChangeEvent.userUpdated when event.session != null =>
+              Authenticated(_recordUser(event.session!.user)),
             _ => _fromSession(event.session),
           });
 
-  Future<void> signIn(String email, String password) async {
+  /// Gère la reprise d'activité de l'application (sortie de veille / retour sur le PWA iOS).
+  ///
+  /// Évite l'expiration intempestive de session : Safari iOS suspend le moteur JS en veille,
+  /// ce qui retarde les timers d'actualisation de jeton. Au réveil, un rafraîchissement contrôlé
+  /// est déclenché après rétablissement de la couche réseau, sans déconnecter si le réseau est lent/absent.
+  Future<void> handleAppResume() async {
+    try {
+      final session = _auth.currentSession;
+      if (session == null) {
+        // Tentative de récupération depuis le coffre-fort résilient
+        final storage = ResilientAuthStorage();
+        await storage.initialize();
+        final rawSession = await storage.accessToken();
+        if (rawSession != null && rawSession.isNotEmpty) {
+          AppLogger.info('Restauration de session après veille (PWA iOS)...', tag: 'auth');
+          await _auth.recoverSession(rawSession);
+        }
+        return;
+      }
+
+      if (session.isExpired) {
+        AppLogger.info('Session expirée détectée au réveil, rafraîchissement contrôlé...', tag: 'auth');
+        // Délai pour laisser le socket réseau se reconnecter après déverrouillage de l'écran
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+        await _auth.refreshSession();
+        AppLogger.info('Session rafraîchie avec succès au réveil.', tag: 'auth');
+      }
+    } catch (e) {
+      // DubaGest est Offline-First : un échec temporaire au retour de veille
+      // ne doit jamais détruire la session locale de l'utilisateur.
+      AppLogger.warning('Rafraîchissement différé au réveil (mode hors-ligne ou réseau lent): $e', tag: 'auth');
+    }
+  }
+
+  Future<void> signIn(String identifierInput, String password) async {
     _signOutRequested = false;
-    await _auth.signInWithPassword(email: email, password: password);
+    final parsed = AuthIdentifier.parse(identifierInput);
+    if (!parsed.isValid) {
+      throw const Failure(FailureKind.invalidIdentifier);
+    }
+
+    if (parsed.isPhone) {
+      await _auth.signInWithPassword(phone: parsed.normalized, password: password);
+    } else {
+      await _auth.signInWithPassword(email: parsed.normalized, password: password);
+    }
   }
 
   Future<SignUpResult> signUp({
     required String prenom,
     required String nom,
-    required String email,
+    required String identifierInput,
     required String password,
   }) async {
     _signOutRequested = false;
-    final response = await _auth.signUp(
-      email: email,
-      password: password,
-      emailRedirectTo: redirectUrl,
-      // Métadonnées d'identité uniquement : jamais de rôle ici.
-      data: {'prenom': prenom, 'nom': nom, 'nom_complet': '$prenom $nom'.trim()},
-    );
-    // Avec confirmation active, Supabase masque un compte existant en renvoyant
-    // un utilisateur sans identité (anti-énumération).
+    final parsed = AuthIdentifier.parse(identifierInput);
+    if (!parsed.isValid) {
+      throw const Failure(FailureKind.invalidIdentifier);
+    }
+
+    final metadata = {
+      'prenom': prenom,
+      'nom': nom,
+      'nom_complet': '$prenom $nom'.trim(),
+    };
+
+    sb.AuthResponse response;
+    if (parsed.isPhone) {
+      metadata['telephone'] = parsed.normalized;
+      response = await _auth.signUp(
+        phone: parsed.normalized,
+        password: password,
+        data: metadata,
+      );
+    } else {
+      metadata['email'] = parsed.normalized;
+      response = await _auth.signUp(
+        email: parsed.normalized,
+        password: password,
+        emailRedirectTo: redirectUrl,
+        data: metadata,
+      );
+    }
+
+    // Avec confirmation active ou duplication, Supabase masque un compte existant
+    // en renvoyant un utilisateur sans identité (anti-énumération).
     if (response.session == null && (response.user?.identities?.isEmpty ?? false)) {
       throw const Failure(FailureKind.accountExists);
     }
@@ -112,8 +190,19 @@ class SupabaseAuthDataSource {
     }
   }
 
-  Future<void> requestPasswordReset(String email) =>
-      _auth.resetPasswordForEmail(email, redirectTo: redirectUrl);
+  Future<void> requestPasswordReset(String identifierInput) async {
+    final parsed = AuthIdentifier.parse(identifierInput);
+    if (!parsed.isValid) {
+      throw const Failure(FailureKind.invalidIdentifier);
+    }
+
+    if (parsed.isPhone) {
+      // Pour le téléphone sans passerelle OTP SMS active : informer clairement l'utilisateur
+      throw const Failure(FailureKind.phoneResetUnsupported);
+    } else {
+      await _auth.resetPasswordForEmail(parsed.normalized, redirectTo: redirectUrl);
+    }
+  }
 
   Future<void> changePassword(String newPassword) =>
       _auth.updateUser(sb.UserAttributes(password: newPassword));
@@ -121,11 +210,28 @@ class SupabaseAuthDataSource {
   AuthState _signedOut() {
     final expired = !_signOutRequested;
     _signOutRequested = false;
+    _lastKnownUser = null;
     return Unauthenticated(sessionExpired: expired);
   }
 
-  static AuthState _fromSession(sb.Session? session) =>
-      session == null ? const Unauthenticated() : Authenticated(_user(session.user));
+  AuthUser _recordUser(sb.User user) {
+    final u = _user(user);
+    _lastKnownUser = u;
+    return u;
+  }
+
+  AuthState _fromSession(sb.Session? session) {
+    if (session != null) {
+      return Authenticated(_recordUser(session.user));
+    }
+    // Si la session Supabase est temporairement absente mais qu'aucun signOut
+    // n'a été demandé et qu'un utilisateur était déjà authentifié, on maintient
+    // l'état authentifié en local (conformité avec l'architecture Offline-First).
+    if (!_signOutRequested && _lastKnownUser != null) {
+      return Authenticated(_lastKnownUser!);
+    }
+    return const Unauthenticated();
+  }
 
   static AuthUser _user(sb.User user) => AuthUser(id: user.id, email: user.email);
 }

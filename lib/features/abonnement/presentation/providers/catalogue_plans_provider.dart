@@ -329,11 +329,13 @@ final cataloguePlansProvider = FutureProvider.autoDispose<List<PlanCatalogueItem
     final res = await client.rpc('lister_catalogue_plans').timeout(const Duration(seconds: 4));
     final listRaw = res as List? ?? [];
     if (listRaw.isNotEmpty) {
-      // Met en cache persistant local pour le mode hors-ligne
-      await prefs.setString(cacheKey, jsonEncode(listRaw));
-      return listRaw
+      final plansFiltres = listRaw
+          .where((e) => (e as Map)['code']?.toString().toUpperCase() != 'CATALOGUE_SEUL')
           .map((e) => PlanCatalogueItem.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
+      // Met en cache persistant local pour le mode hors-ligne
+      await prefs.setString(cacheKey, jsonEncode(listRaw));
+      return plansFiltres;
     }
   } catch (_) {
     // Mode hors-ligne ou serveur inaccessible : bascule immédiate sur le cache local ou le repli par défaut
@@ -346,6 +348,7 @@ final cataloguePlansProvider = FutureProvider.autoDispose<List<PlanCatalogueItem
       final listRaw = jsonDecode(cached) as List;
       if (listRaw.isNotEmpty) {
         return listRaw
+            .where((e) => (e as Map)['code']?.toString().toUpperCase() != 'CATALOGUE_SEUL')
             .map((e) => PlanCatalogueItem.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
       }

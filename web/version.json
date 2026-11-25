@@ -1,32 +1,35 @@
 {
     "version": 1,
-    "updated_at": "2026-11-19T23:33:00Z",
+    "updated_at": "2026-11-25T15:04:28.050Z",
     "android": {
-        "latest_version": "1.0.3",
-        "version_code": 4,
+        "latest_version": "1.0.4",
+        "version_code": 5,
         "minimum_supported_version": "1.0.0",
         "minimum_supported_code": 1,
         "apk_url": "https://dubagest.com/downloads/DubaGest-Android.apk",
-        "sha256": "ce1e468a8ab1d37fa71d253ad434782d58877f9664eaca7a1d1a8d4e3b5d5693",
-        "file_size": 115179455,
+        "sha256": "e409f537af3e625b5ea62989cd02d503f43d8d14c4d4c7d102fec0bdb6453320",
+        "file_size": 54640085,
         "force_update": false,
-        "release_date": "2026-11-19",
+        "release_date": "2026-11-25",
         "release_notes": [
-            "Mise à jour Android native officielle DubaGest v1.0.3",
-            "Installation directe par-dessus l'application existante sans désinstallation",
-            "Préservation intégrale des données locales et paramètres",
-            "Vérification cryptographique stricte d'intégrité SHA-256"
+            "Mise à jour Android officielle DubaGest v1.0.4",
+            "Correction réactivité des dialogues et de l'archivage",
+            "Sélection et affichage des lots de stock",
+            "Enregistrement ultra-rapide des interventions et contrats de service",
+            "Vérification cryptographique intégrale SHA-256"
         ]
     },
     "pwa": {
-        "latest_version": "1.0.2",
+        "latest_version": "1.0.4",
         "minimum_supported_version": "1.0.0",
         "force_update": false,
-        "release_date": "2026-11-15",
+        "release_date": "2026-11-25",
         "release_notes": [
-            "Microfinance Pro",
-            "Activation Super Admin",
-            "Correctif synchronisation"
+            "Mise à jour PWA officielle DubaGest v1.0.4",
+            "Correction réactivité des dialogues et de l'archivage",
+            "Sélection et affichage des lots de stock",
+            "Enregistrement ultra-rapide des interventions et contrats de service",
+            "Téléversement photos en tâche de fond fluide"
         ]
     }
 }

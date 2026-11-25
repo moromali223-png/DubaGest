@@ -13,6 +13,7 @@ import '../../../../core/sync/sync_models.dart';
 import '../../../../core/utils/media_picker_helper.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../domain/entities/prestation.dart';
+import '../services_providers.dart';
 import 'photo_viewer_dialog.dart';
 
 /// Section compacte, moderne et fiable de gestion des photographies du dossier.
@@ -119,21 +120,22 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
     required String nomFichier,
     String? cheminExistant,
   }) async {
+    final storage = ref.read(prestationPhotosStorageProvider);
+    final photoId = const Uuid().v4();
+
     String chemin;
     if (cheminExistant != null && cheminExistant.isNotEmpty) {
       chemin = cheminExistant;
     } else if (kIsWeb) {
       chemin = 'data:image/jpeg;base64,${base64Encode(octets)}';
     } else {
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/$nomFichier');
-      await file.writeAsBytes(octets);
-      chemin = file.path;
+      // Sauvegarder dans le répertoire permanent (Application Documents) pour éviter la purge après 24h
+      chemin = await storage.enregistrerFichierPermanent(nomFichier, octets);
     }
 
     final user = ref.read(contexteActifProvider);
     final nouvellePhoto = PhotoPrestation(
-      id: const Uuid().v4(),
+      id: photoId,
       prestationId: widget.prestationId ?? '',
       categorie: CategoriePhoto.reception,
       cheminLocal: chemin,
@@ -145,8 +147,12 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
       syncStatus: RecordSyncStatus.pendingSync,
     );
 
-    prestationPhotoBytesCache[nouvellePhoto.id] = octets;
-    prestationPhotoBytesCache[chemin] = octets;
+    // Sauvegarde immédiate et inaltérable dans SQLite et cache mémoire
+    await storage.sauvegarderOctets(
+      photoId: nouvellePhoto.id,
+      octets: octets,
+      cheminLocal: chemin,
+    );
 
     final miseAJour = List<PhotoPrestation>.from(widget.photos)..add(nouvellePhoto);
     await widget.onPhotosChanged(miseAJour);
@@ -348,6 +354,8 @@ class _PrestationPhotosSectionState extends ConsumerState<PrestationPhotosSectio
     if (_enChargement) return;
     setState(() => _enChargement = true);
     try {
+      final storage = ref.read(prestationPhotosStorageProvider);
+      await storage.supprimerPhoto(photo);
       final miseAJour = widget.photos.where((p) => p.id != photo.id).toList();
       await widget.onPhotosChanged(miseAJour);
     } finally {

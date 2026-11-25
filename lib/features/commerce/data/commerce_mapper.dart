@@ -261,6 +261,7 @@ abstract final class CommerceMapper {
         auteurNom: r.auteurNom,
         version: r.version,
         syncStatus: RecordSyncStatus.fromWire(r.syncStatus),
+        lotId: r.lotId,
       );
 
   static MouvementsStockCompanion mouvementLocal(MouvementStock m, RecordSyncStatus statut) =>
@@ -283,6 +284,7 @@ abstract final class CommerceMapper {
         note: Value(m.note),
         dateMouvement: m.date,
         auteurNom: Value(m.auteurNom),
+        lotId: Value(m.lotId),
         version: Value(m.version),
         syncStatus: statut.wire,
       );
@@ -307,6 +309,7 @@ abstract final class CommerceMapper {
         note: Value(j['note'] as String?),
         dateMouvement: DateTime.parse(j['date_mouvement'] as String),
         auteurNom: Value(j['auteur_nom'] as String?),
+        lotId: Value(j['lot_id'] as String?),
         version: Value(_i(j['version'])),
         updatedAt: Value(_dt(j['updated_at'])),
         syncStatus: statut.wire,
@@ -324,7 +327,97 @@ abstract final class CommerceMapper {
         'facteur': m.facteur.json,
         'note': m.note,
         'date_mouvement': m.date.toUtc().toIso8601String(),
+        if (m.lotId != null) 'lot_id': m.lotId,
       };
+
+  // --- Lots de stock ---------------------------------------------------------
+
+  static LotStock lot(LotStockRow r) => LotStock(
+        id: r.id,
+        entrepriseId: r.entrepriseId,
+        perimetreId: r.perimetreId,
+        produitId: r.produitId,
+        reference: r.reference,
+        dateAchat: r.dateAchat,
+        dateReception: r.dateReception,
+        quantiteInitiale: Qte(r.quantiteInitiale),
+        quantiteRestante: Qte(r.quantiteRestante),
+        prixAchatUnitaire: r.prixAchatUnitaire,
+        prixVenteUnitaire: r.prixVenteUnitaire,
+        fournisseurId: r.fournisseurId,
+        achatId: r.achatId,
+        receptionId: r.receptionId,
+        lotOrigineId: r.lotOrigineId,
+        statut: StatutLotStock.parse(r.statut),
+        version: r.version,
+        syncStatus: RecordSyncStatus.fromWire(r.syncStatus),
+      );
+
+  static LotsStockCompanion lotLocal(LotStock l, RecordSyncStatus statut) => LotsStockCompanion.insert(
+        id: l.id,
+        entrepriseId: l.entrepriseId,
+        perimetreId: l.perimetreId,
+        produitId: l.produitId,
+        reference: l.reference,
+        dateAchat: l.dateAchat,
+        dateReception: l.dateReception,
+        quantiteInitiale: l.quantiteInitiale.brut,
+        quantiteRestante: l.quantiteRestante.brut,
+        prixAchatUnitaire: l.prixAchatUnitaire,
+        prixVenteUnitaire: l.prixVenteUnitaire,
+        fournisseurId: Value(l.fournisseurId),
+        achatId: Value(l.achatId),
+        receptionId: Value(l.receptionId),
+        lotOrigineId: Value(l.lotOrigineId),
+        statut: Value(l.statut.code),
+        version: Value(l.version),
+        syncStatus: statut.wire,
+      );
+
+  static LotsStockCompanion lotServeur(Map<String, dynamic> j, RecordSyncStatus statut) => LotsStockCompanion.insert(
+        id: j['id'] as String,
+        entrepriseId: j['entreprise_id'] as String,
+        perimetreId: j['perimetre_id'] as String,
+        produitId: j['produit_id'] as String,
+        reference: j['reference'] as String,
+        dateAchat: DateTime.parse(j['date_achat'] as String),
+        dateReception: DateTime.parse(j['date_reception'] as String),
+        quantiteInitiale: _q(j['quantite_initiale']).brut,
+        quantiteRestante: _q(j['quantite_restante']).brut,
+        prixAchatUnitaire: _i(j['prix_achat_unitaire']) ?? 0,
+        prixVenteUnitaire: _i(j['prix_vente_unitaire']) ?? 0,
+        fournisseurId: Value(j['fournisseur_id'] as String?),
+        achatId: Value(j['achat_id'] as String?),
+        receptionId: Value(j['reception_id'] as String?),
+        lotOrigineId: Value(j['lot_origine_id'] as String?),
+        statut: Value((j['statut'] as String?) ?? 'ACTIF'),
+        version: Value(_i(j['version'])),
+        updatedAt: Value(_dt(j['updated_at'])),
+        syncStatus: statut.wire,
+      );
+
+  static Map<String, dynamic> lotPayload(LotStock l, {bool creation = false}) => {
+        if (creation) 'entreprise_id': l.entrepriseId,
+        'perimetre_id': l.perimetreId,
+        'produit_id': l.produitId,
+        'reference': l.reference,
+        'date_achat': l.dateAchat.toUtc().toIso8601String(),
+        'date_reception': l.dateReception.toUtc().toIso8601String(),
+        'quantite_initiale': l.quantiteInitiale.json,
+        'quantite_restante': l.quantiteRestante.json,
+        'prix_achat_unitaire': l.prixAchatUnitaire,
+        'prix_vente_unitaire': l.prixVenteUnitaire,
+        'fournisseur_id': l.fournisseurId,
+        'achat_id': l.achatId,
+        'reception_id': l.receptionId,
+        'lot_origine_id': l.lotOrigineId,
+        'statut': l.statut.code,
+      };
+
+  static bool lotIdentique(LotStockRow l, Map<String, dynamic> s) =>
+      l.reference == s['reference'] &&
+      l.quantiteRestante == _q(s['quantite_restante']).brut &&
+      l.statut == s['statut'];
 
   // --- Transferts -------------------------------------------------------------
 
@@ -560,6 +653,7 @@ abstract final class CommerceMapper {
       poste: r.poste,
       sequence: r.sequence,
       montantPaye: r.montantPaye,
+      coutTotal: r.coutTotal,
       annuleeLe: r.annuleeLe,
       annuleeParNom: r.annuleeParNom,
     );
@@ -590,6 +684,7 @@ abstract final class CommerceMapper {
         poste: Value(v.poste),
         sequence: Value(v.sequence),
         montantPaye: Value(v.montantPaye),
+        coutTotal: Value(v.coutTotal),
         annuleeLe: Value(v.annuleeLe),
         annuleeParNom: Value(v.annuleeParNom),
       );
@@ -620,6 +715,7 @@ abstract final class CommerceMapper {
         poste: Value(j['poste'] as String?),
         sequence: Value(_i(j['sequence'])),
         montantPaye: Value(_i(j['montant_paye']) ?? 0),
+        coutTotal: Value(_i(j['cout_total']) ?? 0),
         annuleeLe: Value(_dt(j['annulee_le'])),
         annuleeParNom: Value(j['annulee_par_nom'] as String?),
       );
@@ -642,6 +738,7 @@ abstract final class CommerceMapper {
         'poste': v.poste,
         'sequence': v.sequence,
         'montant_paye': v.montantPaye,
+        'cout_total': v.coutTotal,
       };
 
   static bool venteIdentique(VenteRow l, Map<String, dynamic> s) =>

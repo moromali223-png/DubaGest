@@ -188,9 +188,11 @@ extension AppLabels on AppLocalizations {
       FailureKind.businessRule => rule(f.ruleCode ?? '', f.params),
       FailureKind.network => errorNetwork,
       FailureKind.invalidCredentials => errorInvalidCredentials,
+      FailureKind.invalidIdentifier => 'Veuillez saisir une adresse e-mail valide ou un numéro de téléphone correct (ex: +223 70 00 00 00).',
       FailureKind.emailNotConfirmed => errorEmailNotConfirmed,
       FailureKind.accountExists => errorAccountExists,
       FailureKind.weakPassword => errorWeakPassword,
+      FailureKind.phoneResetUnsupported => 'La réinitialisation par téléphone n\'est pas disponible sans SMS. Veuillez contacter l\'administrateur ou vous connecter avec votre mot de passe.',
       FailureKind.oauthUnavailable => errorOauthUnavailable,
       FailureKind.rateLimited => errorRateLimited,
       FailureKind.sessionExpired => errorSessionExpired,
@@ -292,6 +294,7 @@ extension AppLabels on AppLocalizations {
       RuleCodes.movementInvalid => ruleFinanceInconsistent,
       RuleCodes.discrepancyJustificationRequired => 'Une note explicative est obligatoire pour tout écart d\'inventaire constaté.',
       RuleCodes.productUsed => 'Ce produit ne peut pas être supprimé car il possède un historique d\'opérations (ventes, achats ou stock).',
+      RuleCodes.productInStock => 'Ce produit possède encore du stock disponible. Il ne peut être archivé tant que le stock n\'est pas à zéro.',
       RuleCodes.mfProRequired => mfProOnlyMessage,
       RuleCodes.mfLoanImmutable => mfLoanImmutableMessage,
       RuleCodes.mfTransactionDeleteForbidden => mfTransactionDeleteForbiddenMessage,
@@ -575,5 +578,17 @@ extension AppLabels on AppLocalizations {
         'ar' => 'المعاملات والتقارير',
         'en' => 'Ledger & Reports',
         _ => 'Journal & Rapports',
+      };
+
+  String comConfirmDeleteProduct(String nom) => switch (localeName) {
+        'ar' => 'هل أنت متأكد من رغبتك في حذف المنتج "$nom" نهائياً؟ هذا الإجراء لا يمكن التراجع عنه.',
+        'en' => 'Are you sure you want to permanently delete the product "$nom"? This action cannot be undone.',
+        _ => 'Voulez-vous vraiment supprimer définitivement le produit « $nom » ? Cette action est irréversible.',
+      };
+
+  String get comProductDeleted => switch (localeName) {
+        'ar' => 'تم حذف المنتج بنجاح.',
+        'en' => 'Product deleted successfully.',
+        _ => 'Produit supprimé avec succès.',
       };
 }

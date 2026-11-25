@@ -434,6 +434,127 @@ enum MotifMouvement {
 /// les comprend.
 enum FamilleMouvement { entrees, sorties, transferts, ajustements, pertes }
 
+enum StatutLotStock {
+  actif('ACTIF'),
+  epuise('EPUISE'),
+  archive('ARCHIVE');
+
+  const StatutLotStock(this.code);
+  final String code;
+
+  static StatutLotStock parse(String? code) =>
+      values.firstWhere((s) => s.code == code, orElse: () => actif);
+}
+
+class LotStock {
+  const LotStock({
+    required this.id,
+    required this.entrepriseId,
+    required this.perimetreId,
+    required this.produitId,
+    required this.reference,
+    required this.dateAchat,
+    required this.dateReception,
+    required this.quantiteInitiale,
+    required this.quantiteRestante,
+    required this.prixAchatUnitaire,
+    required this.prixVenteUnitaire,
+    this.fournisseurId,
+    this.achatId,
+    this.receptionId,
+    this.lotOrigineId,
+    this.statut = StatutLotStock.actif,
+    this.version,
+    this.syncStatus = RecordSyncStatus.synced,
+  });
+
+  final String id;
+  final String entrepriseId;
+  final String perimetreId;
+  final String produitId;
+  final String reference;
+  final DateTime dateAchat;
+  final DateTime dateReception;
+  final Qte quantiteInitiale;
+  final Qte quantiteRestante;
+  final int prixAchatUnitaire;
+  final int prixVenteUnitaire;
+  final String? fournisseurId;
+  final String? achatId;
+  final String? receptionId;
+  final String? lotOrigineId;
+  final StatutLotStock statut;
+  final int? version;
+  final RecordSyncStatus syncStatus;
+
+  bool get estDisponible => quantiteRestante.estPositif && statut == StatutLotStock.actif;
+  bool get estEpuise => quantiteRestante <= Qte.zero || statut == StatutLotStock.epuise;
+
+  LotStock copyWith({
+    Qte? quantiteRestante,
+    StatutLotStock? statut,
+    int? prixVenteUnitaire,
+    int? version,
+    RecordSyncStatus? syncStatus,
+  }) =>
+      LotStock(
+        id: id,
+        entrepriseId: entrepriseId,
+        perimetreId: perimetreId,
+        produitId: produitId,
+        reference: reference,
+        dateAchat: dateAchat,
+        dateReception: dateReception,
+        quantiteInitiale: quantiteInitiale,
+        quantiteRestante: quantiteRestante ?? this.quantiteRestante,
+        prixAchatUnitaire: prixAchatUnitaire,
+        prixVenteUnitaire: prixVenteUnitaire ?? this.prixVenteUnitaire,
+        fournisseurId: fournisseurId,
+        achatId: achatId,
+        receptionId: receptionId,
+        lotOrigineId: lotOrigineId,
+        statut: statut ?? this.statut,
+        version: version ?? this.version,
+        syncStatus: syncStatus ?? this.syncStatus,
+      );
+}
+
+class LotConsommation {
+  const LotConsommation({
+    required this.lotId,
+    required this.reference,
+    required this.quantiteBase,
+    required this.prixAchatUnitaire,
+    required this.prixVenteUnitaire,
+    required this.coutTotal,
+  });
+
+  final String lotId;
+  final String reference;
+  final Qte quantiteBase;
+  final int prixAchatUnitaire;
+  final int prixVenteUnitaire;
+  final int coutTotal;
+
+  Map<String, dynamic> toJson() => {
+        'lot_id': lotId,
+        'reference': reference,
+        'quantite': quantiteBase.json,
+        'prix_achat_unitaire': prixAchatUnitaire,
+        'prix_vente_unitaire': prixVenteUnitaire,
+        'cout_total': coutTotal,
+      };
+
+  static LotConsommation fromJson(Map<String, dynamic> j) => LotConsommation(
+        lotId: j['lot_id'] as String,
+        reference: (j['reference'] as String?) ?? '',
+        quantiteBase: Qte.depuis(j['quantite'] as num),
+        prixAchatUnitaire: (j['prix_achat_unitaire'] as num).toInt(),
+        prixVenteUnitaire: (j['prix_vente_unitaire'] as num).toInt(),
+        coutTotal: (j['cout_total'] as num).toInt(),
+      );
+}
+
 class MouvementStock {
   const MouvementStock({
     required this.id,
@@ -456,6 +577,7 @@ class MouvementStock {
     this.auteurNom,
     this.version,
     this.syncStatus = RecordSyncStatus.synced,
+    this.lotId,
   });
 
   final String id;
@@ -482,6 +604,7 @@ class MouvementStock {
   final String? auteurNom;
   final int? version;
   final RecordSyncStatus syncStatus;
+  final String? lotId;
 
   /// Pas encore pris en compte par le serveur : s'ajoute au stock affiché.
   bool get enAttente => syncStatus == RecordSyncStatus.pendingSync;
@@ -553,6 +676,10 @@ class LigneOperation {
     required this.prixUnitaire,
     this.remise = 0,
     this.recu = Qte.zero,
+    this.prixVente,
+    this.lotId,
+    this.lots = const [],
+    this.coutTotal = 0,
   });
 
   final String id;
@@ -566,6 +693,18 @@ class LigneOperation {
   /// Achat : quantité déjà reçue (même unité).
   final Qte recu;
 
+  /// Achat : prix de vente recommandé saisi pour le lot.
+  final int? prixVente;
+
+  /// Lot spécifique choisi lors de la vente (prioritaire sur le FIFO automatique).
+  final String? lotId;
+
+  /// Vente : détails des lots FIFO consommés.
+  final List<LotConsommation> lots;
+
+  /// Coût réel total des marchandises consommées pour cette ligne (COGS).
+  final int coutTotal;
+
   Qte get quantiteBase => quantite.fois(facteur);
   int get montant => (quantite.montant(prixUnitaire) - remise).clamp(0, 10000000000);
   Qte get reste => (quantite - recu).max(Qte.zero);
@@ -578,6 +717,10 @@ class LigneOperation {
     Qte? recu,
     String? unite,
     Qte? facteur,
+    int? Function()? prixVente,
+    String? Function()? lotId,
+    List<LotConsommation>? lots,
+    int? coutTotal,
   }) =>
       LigneOperation(
         id: id,
@@ -588,6 +731,10 @@ class LigneOperation {
         prixUnitaire: prixUnitaire ?? this.prixUnitaire,
         remise: remise ?? this.remise,
         recu: recu ?? this.recu,
+        prixVente: prixVente == null ? this.prixVente : prixVente(),
+        lotId: lotId == null ? this.lotId : lotId(),
+        lots: lots ?? this.lots,
+        coutTotal: coutTotal ?? this.coutTotal,
       );
 
   Map<String, dynamic> toJson({bool avecRecu = false}) => {
@@ -599,6 +746,10 @@ class LigneOperation {
         'prix_unitaire': prixUnitaire,
         if (remise > 0) 'remise': remise,
         if (avecRecu) 'recu': recu.json,
+        if (prixVente != null) 'prix_vente': prixVente,
+        if (lotId != null) 'lot_id': lotId,
+        if (coutTotal > 0) 'cout_total': coutTotal,
+        if (lots.isNotEmpty) 'lots': [for (final l in lots) l.toJson()],
       };
 
   static LigneOperation fromJson(Map<String, dynamic> j) => LigneOperation(
@@ -610,6 +761,14 @@ class LigneOperation {
         prixUnitaire: (j['prix_unitaire'] as num).toInt(),
         remise: (j['remise'] as num?)?.toInt() ?? 0,
         recu: Qte.depuis((j['recu'] as num?) ?? 0),
+        prixVente: (j['prix_vente'] as num?)?.toInt(),
+        lotId: j['lot_id'] as String?,
+        coutTotal: (j['cout_total'] as num?)?.toInt() ?? 0,
+        lots: [
+          if (j['lots'] is List)
+            for (final item in j['lots'] as List)
+              if (item is Map<String, dynamic>) LotConsommation.fromJson(item),
+        ],
       );
 }
 
@@ -788,6 +947,7 @@ class Vente {
     this.poste,
     this.sequence,
     this.montantPaye = 0,
+    this.coutTotal = 0,
     this.annuleeLe,
     this.annuleeParNom,
   });
@@ -809,6 +969,9 @@ class Vente {
 
   /// Encaissé à la vente : le total au comptant, l'acompte à crédit.
   final int montantPaye;
+
+  /// Coût réel total des marchandises vendues (COGS déduit des lots).
+  final int coutTotal;
   final DateTime? annuleeLe;
   final String? annuleeParNom;
   final List<LigneOperation> lignes;
@@ -834,8 +997,55 @@ class Vente {
   /// Somme des lignes, avant remise.
   int get sousTotal => total + remise;
 
+  /// Marge brute réelle dégagée par la vente.
+  int get margeBrute => total - coutTotal;
+
   /// Reste dû au moment de la vente (le suivi des paiements fait foi ensuite).
   int get resteInitial => annulee ? 0 : total - montantPaye;
+
+  Vente copyWith({
+    List<LigneOperation>? lignes,
+    int? remise,
+    int? total,
+    int? montantPaye,
+    int? coutTotal,
+    bool? annulee,
+    String? Function()? motifAnnulation,
+    String? Function()? note,
+    DateTime? annuleeLe,
+    String? Function()? annuleeParNom,
+    int? version,
+    RecordSyncStatus? syncStatus,
+  }) =>
+      Vente(
+        id: id,
+        entrepriseId: entrepriseId,
+        perimetreId: perimetreId,
+        contactId: contactId,
+        mode: mode,
+        lignes: lignes ?? this.lignes,
+        remise: remise ?? this.remise,
+        total: total ?? this.total,
+        date: date,
+        reglement: reglement,
+        modePaiement: modePaiement,
+        sessionId: sessionId,
+        paiementId: paiementId,
+        annulee: annulee ?? this.annulee,
+        motifAnnulation: motifAnnulation == null ? this.motifAnnulation : motifAnnulation(),
+        note: note == null ? this.note : note(),
+        auteurNom: auteurNom,
+        version: version ?? this.version,
+        syncStatus: syncStatus ?? this.syncStatus,
+        numero: numero,
+        dateCommerciale: dateCommerciale,
+        poste: poste,
+        sequence: sequence,
+        montantPaye: montantPaye ?? this.montantPaye,
+        coutTotal: coutTotal ?? this.coutTotal,
+        annuleeLe: annuleeLe ?? this.annuleeLe,
+        annuleeParNom: annuleeParNom == null ? this.annuleeParNom : annuleeParNom(),
+      );
 
   Vente annuler({String? motif, required DateTime le, String? par}) => Vente(
         id: id,
@@ -862,6 +1072,7 @@ class Vente {
         poste: poste,
         sequence: sequence,
         montantPaye: montantPaye,
+        coutTotal: coutTotal,
         annuleeLe: le,
         annuleeParNom: par,
       );
@@ -891,6 +1102,7 @@ class Vente {
         poste: poste,
         sequence: sequence,
         montantPaye: montantPaye,
+        coutTotal: coutTotal,
         annuleeLe: annuleeLe,
         annuleeParNom: annuleeParNom,
       );

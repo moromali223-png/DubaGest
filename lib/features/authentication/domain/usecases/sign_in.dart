@@ -4,6 +4,6 @@ class SignIn {
   const SignIn(this._repository);
   final AuthRepository _repository;
 
-  Future<void> call({required String email, required String password}) =>
-      _repository.signIn(email: email.trim().toLowerCase(), password: password);
+  Future<void> call({required String identifier, required String password}) =>
+      _repository.signIn(identifier: identifier.trim(), password: password);
 }

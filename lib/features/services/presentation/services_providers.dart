@@ -5,6 +5,7 @@ import '../../../../core/permissions/permission_codes.dart';
 import '../../roles/domain/entities/role.dart';
 import '../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../entreprise/presentation/providers/espace_providers.dart';
+import '../data/datasources/prestation_photos_storage.dart';
 import '../data/datasources/services_local_data_source.dart';
 import '../data/datasources/services_remote_data_source.dart';
 import '../data/repositories/services_repository_impl.dart';
@@ -16,12 +17,22 @@ import '../domain/usecases/gerer_services.dart';
 
 // --- INFRASTRUCTURE & REPOSITORIES ---
 
+final prestationPhotosStorageProvider = Provider<PrestationPhotosStorage>((ref) {
+  return PrestationPhotosStorage(
+    ref.watch(appDatabaseProvider),
+    () => ref.watch(supabaseClientProvider),
+  );
+});
+
 final servicesLocalDataSourceProvider = Provider<ServicesLocalDataSource>((ref) {
   return ServicesLocalDataSource(ref.watch(appDatabaseProvider));
 });
 
 final servicesRemoteDataSourceProvider = Provider<ServicesRemoteDataSource>((ref) {
-  return ServicesRemoteDataSource(ref.watch(supabaseClientProvider));
+  return ServicesRemoteDataSource(
+    ref.watch(supabaseClientProvider),
+    photosStorage: ref.watch(prestationPhotosStorageProvider),
+  );
 });
 
 final servicesRepositoryProvider = Provider<ServicesRepository>((ref) {

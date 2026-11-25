@@ -14,11 +14,11 @@ enum SignUpResult {
 abstract interface class AuthRepository {
   /// Émet l'état courant puis chaque changement (connexion, expiration…).
   Stream<AuthState> watch();
-  Future<void> signIn({required String email, required String password});
+  Future<void> signIn({required String identifier, required String password});
   Future<SignUpResult> signUp({
     required String prenom,
     required String nom,
-    required String email,
+    required String identifier,
     required String password,
   });
 
@@ -26,6 +26,7 @@ abstract interface class AuthRepository {
   /// ensuite par [watch].
   Future<void> signInWithGoogle();
   Future<void> signOut();
-  Future<void> requestPasswordReset(String email);
+  Future<void> requestPasswordReset(String identifier);
   Future<void> changePassword(String newPassword);
+  Future<void> handleAppResume();
 }

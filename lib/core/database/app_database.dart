@@ -41,6 +41,7 @@ part 'app_database.g.dart';
   CategoriesProduits,
   Produits,
   Stocks,
+  LotsStock,
   MouvementsStock,
   TransfertsStock,
   Achats,
@@ -60,11 +61,11 @@ class AppDatabase extends _$AppDatabase {
 
   /// Tables du Commerce (catalogue, stock, achats, ventes).
   List<TableInfo> get tablesCommerce => [
-        categoriesProduits, produits, stocks, mouvementsStock, transfertsStock, achats, receptions, ventes,
+        categoriesProduits, produits, stocks, lotsStock, mouvementsStock, transfertsStock, achats, receptions, ventes,
       ];
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -153,6 +154,11 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(transfertsTresorerie);
         // Paiements déjà reçus : relus pour obtenir leur nature.
         await customStatement("DELETE FROM sync_cursors WHERE entity_table = 'paiements'");
+      case 12: // Commerce — Lots de stock, FIFO et coût réel des ventes.
+        await m.createTable(lotsStock);
+        await m.addColumn(mouvementsStock, mouvementsStock.lotId);
+        await m.addColumn(ventes, ventes.coutTotal);
+        await customStatement("DELETE FROM sync_cursors WHERE entity_table IN ('lots_stock', 'mouvements_stock', 'ventes')");
       default:
         throw StateError('Aucune étape de migration définie pour la version $version');
     }

@@ -141,7 +141,10 @@ class _ReactivezCompteBottomSheetState extends ConsumerState<ReactivezCompteBott
           return _buildLoadingContainer();
         }
 
-        final plans = plansAsync.value ?? cataloguePlansParDefaut;
+        final rawPlans = plansAsync.value ?? cataloguePlansParDefaut;
+        final plans = rawPlans
+            .where((p) => p.code.toUpperCase() != 'CATALOGUE_SEUL')
+            .toList();
         PlanCatalogueItem? planActif;
         for (final p in plans) {
           if (p.code.toUpperCase() == planCodeCible.toUpperCase()) {

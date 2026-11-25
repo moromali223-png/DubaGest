@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../documents/domain/entities/document.dart';
 import '../../../documents/presentation/pdf/document_pdf_generator.dart';
+import '../../../documents/presentation/services/document_export_service.dart';
 import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../domain/entities/resultat_encaissement_loyer.dart';
 import '../../domain/services/montant_en_lettres.dart';
@@ -41,10 +42,9 @@ class RecuLoyerConfirmationDialog extends ConsumerWidget {
   Future<void> _imprimerRecu(BuildContext context, Document? doc) async {
     if (doc == null) return;
     try {
-      final bytes = await genererDocumentPdf(doc);
-      await Printing.layoutPdf(
-        name: '${doc.numero}.pdf',
-        onLayout: (_) async => bytes,
+      await DocumentExportService.imprimerPdf(
+        nomDocument: '${doc.numero}.pdf',
+        onLayout: (_) => genererDocumentPdf(doc),
       );
     } catch (e) {
       if (context.mounted) {
@@ -62,15 +62,15 @@ class RecuLoyerConfirmationDialog extends ConsumerWidget {
     if (doc == null) return;
     try {
       final bytes = await genererDocumentPdf(doc);
-      await Printing.sharePdf(
+      await DocumentExportService.telechargerPdf(
         bytes: bytes,
-        filename: '${doc.numero}.pdf',
+        nomFichier: '${doc.numero}.pdf',
       );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors du partage : $e'),
+            content: Text('Erreur lors du téléchargement : $e'),
             backgroundColor: const Color(0xFFEF4444),
           ),
         );

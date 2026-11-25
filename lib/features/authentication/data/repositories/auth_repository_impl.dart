@@ -16,17 +16,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signIn({required String email, required String password}) =>
-      _guard(() => _remote.signIn(email, password));
+  Future<void> signIn({required String identifier, required String password}) =>
+      _guard(() => _remote.signIn(identifier, password));
 
   @override
   Future<SignUpResult> signUp({
     required String prenom,
     required String nom,
-    required String email,
+    required String identifier,
     required String password,
   }) =>
-      _guard(() => _remote.signUp(prenom: prenom, nom: nom, email: email, password: password));
+      _guard(() => _remote.signUp(prenom: prenom, nom: nom, identifierInput: identifier, password: password));
 
   @override
   Future<void> signInWithGoogle() => _guard(_remote.signInWithGoogle);
@@ -35,12 +35,15 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signOut() => _guard(_remote.signOut);
 
   @override
-  Future<void> requestPasswordReset(String email) =>
-      _guard(() => _remote.requestPasswordReset(email));
+  Future<void> requestPasswordReset(String identifier) =>
+      _guard(() => _remote.requestPasswordReset(identifier));
 
   @override
   Future<void> changePassword(String newPassword) =>
       _guard(() => _remote.changePassword(newPassword));
+
+  @override
+  Future<void> handleAppResume() => _remote.handleAppResume();
 
   Future<T> _guard<T>(Future<T> Function() action) async {
     try {

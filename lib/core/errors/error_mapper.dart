@@ -37,7 +37,7 @@ class ErrorMapper {
     final kind = switch (e.code) {
       'invalid_credentials' => FailureKind.invalidCredentials,
       'email_not_confirmed' => FailureKind.emailNotConfirmed,
-      'user_already_exists' || 'email_exists' => FailureKind.accountExists,
+      'user_already_exists' || 'email_exists' || 'phone_exists' => FailureKind.accountExists,
       'weak_password' => FailureKind.weakPassword,
       'provider_disabled' => FailureKind.oauthUnavailable,
       'over_request_rate_limit' || 'over_email_send_rate_limit' => FailureKind.rateLimited,

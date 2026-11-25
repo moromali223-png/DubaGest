@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/auth/auth_identifier_helper.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/sign_up.dart';
 import '../providers/auth_providers.dart';
@@ -23,16 +24,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _prenom = TextEditingController();
   final _nom = TextEditingController();
-  final _email = TextEditingController();
+  final _identifier = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  String? _emailAConfirmer;
 
   @override
   void dispose() {
-    for (final c in [_prenom, _nom, _email, _password, _confirm]) {
+    for (final c in [_prenom, _nom, _identifier, _password, _confirm]) {
       c.dispose();
     }
     super.dispose();
@@ -42,19 +42,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
     final signUp = ref.read(signUpProvider);
-    SignUpResult? result;
     await ref.read(signUpControllerProvider.notifier).run(() async {
-      result = await signUp(
+      await signUp(
         prenom: _prenom.text,
         nom: _nom.text,
-        email: _email.text,
+        identifier: _identifier.text,
         password: _password.text,
       );
     });
-    // Session ouverte : le routeur oriente vers l'onboarding.
-    if (mounted && result == SignUpResult.confirmationRequired) {
-      setState(() => _emailAConfirmer = _email.text.trim().toLowerCase());
-    }
+    // Inscription sans OTP réussie : l'utilisateur est directement connecté
+    // Le routeur AppRouter redirige automatiquement via authStateChanges vers l'onboarding / dashboard.
   }
 
   @override
@@ -63,37 +60,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final action = ref.watch(signUpControllerProvider);
     final loading = action.isLoading;
 
-    if (_emailAConfirmer case final email?) {
-      return AuthFormScaffold(
-        title: l10n.authCheckEmailTitle,
-        subtitle: l10n.authCheckEmailMessage(email),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: const BoxDecoration(
-                color: AppColors.greenLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.mark_email_read_outlined, size: 48, color: AppColors.green),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () => context.go(Routes.login),
-              child: Text(l10n.authSignInLink),
-            ),
-          ],
-        ),
-      );
-    }
-
     final theme = Theme.of(context);
-    InputDecoration deco(String label, {IconData? icon, Widget? suffixIcon}) => InputDecoration(
+    InputDecoration deco(String label, {IconData? icon, Widget? suffixIcon, String? hintText}) => InputDecoration(
           labelText: label,
+          hintText: hintText,
           prefixIcon: icon != null ? Icon(icon, size: 20) : null,
           suffixIcon: suffixIcon,
         );
@@ -154,15 +124,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                key: const Key('register-email'),
-                controller: _email,
+                key: const Key('register-identifier'),
+                controller: _identifier,
                 enabled: !loading,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.email],
-                decoration: deco(l10n.authEmail, icon: Icons.alternate_email_rounded),
-                validator: (v) => AuthValidators.email(v,
-                    required: l10n.validationRequired, invalid: l10n.validationEmail),
+                autofillHints: const [AutofillHints.email, AutofillHints.telephoneNumber, AutofillHints.username],
+                decoration: deco(
+                  'E-mail ou numéro de téléphone',
+                  hintText: 'exemple@domaine.com ou +223 70 00 00 00',
+                  icon: Icons.contact_mail_outlined,
+                ),
+                validator: (v) {
+                  final trimmed = v?.trim() ?? '';
+                  if (trimmed.isEmpty) return l10n.validationRequired;
+                  final parsed = AuthIdentifier.parse(trimmed);
+                  if (!parsed.isValid) {
+                    return 'Saisissez un e-mail valide ou un numéro de téléphone valide';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(

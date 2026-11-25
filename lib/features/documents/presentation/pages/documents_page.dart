@@ -19,6 +19,7 @@ import '../../../finances/presentation/widgets/finances_widgets.dart';
 import '../../domain/entities/document.dart';
 import '../pdf/document_pdf_generator.dart';
 import '../providers/documents_providers.dart';
+import '../services/document_export_service.dart';
 import '../widgets/apercu_document_feuille_a4.dart';
 import '../widgets/selection_type_document_sheet.dart';
 
@@ -658,7 +659,10 @@ class _DocumentPageState extends ConsumerState<DocumentPage> {
   Future<void> _telechargerPdf(Document d, bool annule, Uint8List? logo) async {
     try {
       final bytes = await genererDocumentPdf(d, annule: annule, logo: logo);
-      await Printing.sharePdf(bytes: bytes, filename: '${d.numero}.pdf');
+      await DocumentExportService.telechargerPdf(
+        bytes: bytes,
+        nomFichier: '${d.numero}.pdf',
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -668,7 +672,7 @@ class _DocumentPageState extends ConsumerState<DocumentPage> {
     }
   }
 
-  void _partagerWhatsApp(BuildContext context, Document d, String entrepriseNom) {
+  String _construireMessageWhatsApp(Document d, String entrepriseNom) {
     final contact = d.contactNom ?? (d.type == TypeDocument.bonCommande ? 'Fournisseur' : 'Client');
     final nombres = NumberFormat.decimalPattern('fr');
     final montantFmt = nombres.format(d.montant);
@@ -707,7 +711,7 @@ class _DocumentPageState extends ConsumerState<DocumentPage> {
       TypeDocument.contrat => 'CONTRAT',
     };
 
-    final message = '''
+    return '''
 📄 *$typeTitre — $entrepriseNom*
 ━━━━━━━━━━━━━━━━━━━━━
 🔖 *N° :* ${d.numero}
@@ -724,15 +728,25 @@ ${d.conditions != null && d.conditions!.isNotEmpty ? "📌 *Modalités :* ${d.co
 _Document officiel généré via DubaGest._
 _${entrepriseNom}_
 ''';
+  }
 
-    final tel = d.contactTelephone ?? '';
-    final cleanTel = tel.replaceAll(RegExp(r'\D'), '');
+  void _partagerWhatsApp(BuildContext context, Document d, String entrepriseNom) {
+    final message = _construireMessageWhatsApp(d, entrepriseNom);
+    DocumentExportService.partagerWhatsApp(
+      numero: d.contactTelephone ?? '',
+      message: message,
+    );
+  }
 
-    final uri = cleanTel.length >= 6
-        ? Uri.parse('https://wa.me/$cleanTel?text=${Uri.encodeComponent(message)}')
-        : Uri.parse('https://wa.me/?text=${Uri.encodeComponent(message)}');
-
-    launchUrl(uri, mode: LaunchMode.externalApplication);
+  void _ouvrirOptionsPartage(BuildContext context, Document d, bool annule, Uint8List? logo, String entrepriseNom) {
+    DocumentExportService.afficherOptionsExport(
+      context,
+      titre: '${d.numero} (${d.type.code})',
+      nomFichier: '${d.numero}.pdf',
+      genererPdf: () => genererDocumentPdf(d, annule: annule, logo: logo),
+      contactTelephone: d.contactTelephone,
+      messageWhatsApp: _construireMessageWhatsApp(d, entrepriseNom),
+    );
   }
 
   void _allerVersOrigine(BuildContext context, Document d) {
@@ -764,11 +778,16 @@ _${entrepriseNom}_
             title: Text('${d.numero} — Feuille officielle A4'),
             actions: [
               IconButton(
+                tooltip: 'Partager (WhatsApp, Téléphone...)',
+                icon: const Icon(Icons.share_rounded),
+                onPressed: () => _ouvrirOptionsPartage(context, d, annule, logo, entrepriseNom),
+              ),
+              IconButton(
                 tooltip: 'Imprimer officiel',
                 icon: const Icon(Icons.print),
-                onPressed: () => Printing.layoutPdf(
+                onPressed: () => DocumentExportService.imprimerPdf(
                   onLayout: (_) => genererDocumentPdf(d, annule: annule, logo: logo),
-                  name: '${d.numero}.pdf',
+                  nomDocument: '${d.numero}.pdf',
                 ),
               ),
               IconButton(
@@ -1076,17 +1095,23 @@ _${entrepriseNom}_
                                     OutlinedButton.icon(
                                       icon: const Icon(Icons.print_outlined, size: 16),
                                       label: const Text('Imprimer'),
-                                      onPressed: () => Printing.layoutPdf(
+                                      onPressed: () => DocumentExportService.imprimerPdf(
                                         onLayout: (_) => genererDocumentPdf(d, annule: annule, logo: logo),
-                                        name: '${d.numero}.pdf',
+                                        nomDocument: '${d.numero}.pdf',
                                       ),
                                     ),
-                                    if (droits.partager)
+                                    if (droits.partager) ...[
+                                      FilledButton.tonalIcon(
+                                        icon: const Icon(Icons.share_rounded, size: 16),
+                                        label: const Text('Partager & Exporter'),
+                                        onPressed: () => _ouvrirOptionsPartage(context, d, annule, logo, entrepriseNom),
+                                      ),
                                       FilledButton.tonalIcon(
                                         icon: const Icon(Icons.chat_bubble_outline, size: 16, color: Color(0xFF25D366)),
                                         label: const Text('Partager sur WhatsApp'),
                                         onPressed: () => _partagerWhatsApp(context, d, entrepriseNom),
                                       ),
+                                    ],
                                     if (d.type == TypeDocument.bonCommande && hasCommerce)
                                       FilledButton.icon(
                                         style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEA580C)),
@@ -1585,9 +1610,9 @@ _${entrepriseNom}_
                                 ),
                                 icon: const Icon(Icons.print, size: 15),
                                 label: const Text('Imprimer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                                onPressed: () => Printing.layoutPdf(
+                                onPressed: () => DocumentExportService.imprimerPdf(
                                   onLayout: (_) => genererDocumentPdf(d, annule: annule, logo: logo),
-                                  name: '${d.numero}.pdf',
+                                  nomDocument: '${d.numero}.pdf',
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -1608,6 +1633,13 @@ _${entrepriseNom}_
                                   visualDensity: VisualDensity.compact,
                                   icon: const Icon(Icons.chat_bubble_outline, size: 19, color: Color(0xFF25D366)),
                                   onPressed: () => _partagerWhatsApp(context, d, entrepriseNom),
+                                ),
+                                const SizedBox(width: 2),
+                                IconButton(
+                                  tooltip: 'Partager le document (Menu natif, AirDrop, Email...)',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.share_rounded, size: 19),
+                                  onPressed: () => _ouvrirOptionsPartage(context, d, annule, logo, entrepriseNom),
                                 ),
                               ],
 

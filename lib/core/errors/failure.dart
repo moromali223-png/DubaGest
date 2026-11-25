@@ -3,9 +3,11 @@
 enum FailureKind {
   network,
   invalidCredentials,
+  invalidIdentifier,
   emailNotConfirmed,
   accountExists,
   weakPassword,
+  phoneResetUnsupported,
 
   /// Connexion via un fournisseur externe (Google) annulée ou indisponible.
   oauthUnavailable,

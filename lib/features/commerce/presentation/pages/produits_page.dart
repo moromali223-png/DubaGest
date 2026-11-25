@@ -7,11 +7,17 @@ import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/state_views.dart';
 import '../../../../shared/widgets/sync_status_button.dart';
+import '../../../entreprise/presentation/providers/contexte_providers.dart';
 import '../../domain/entities/commerce.dart';
 import '../../domain/services/etat_commerce.dart';
 import '../commerce_providers.dart';
 import '../widgets/commerce_widgets.dart';
 import '../widgets/fiche_scan.dart';
+import '../widgets/operation_stock.dart';
+
+
+
+
 import '../widgets/scanner.dart';
 
 /// Catalogue visuel : photos, catégories, recherche et scan. Toutes les
@@ -106,6 +112,7 @@ class _ProduitsPageState extends ConsumerState<ProduitsPage> {
             grille: _grille,
             archives: _archives,
             tri: _tri,
+            onToggleArchives: () => setState(() => _archives = !_archives),
             onRecherche: (t) => setState(() => _recherche = t),
             onCategorie: (c) => setState(() {
               _categorie = c;
@@ -128,6 +135,7 @@ class _Catalogue extends ConsumerWidget {
     required this.grille,
     required this.archives,
     required this.tri,
+    this.onToggleArchives,
     required this.onRecherche,
     required this.onCategorie,
     required this.onSousCategorie,
@@ -140,6 +148,7 @@ class _Catalogue extends ConsumerWidget {
   final bool grille;
   final bool archives;
   final _Tri tri;
+  final VoidCallback? onToggleArchives;
   final ValueChanged<String> onRecherche;
   final ValueChanged<String?> onCategorie;
   final ValueChanged<String?> onSousCategorie;
@@ -183,6 +192,36 @@ class _Catalogue extends ConsumerWidget {
               key: const Key('produits-recherche'),
               decoration: InputDecoration(hintText: l10n.comSearchHint, prefixIcon: const Icon(Icons.search)),
               onChanged: onRecherche,
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: Text('Catalogue (${etat.produitsActifs.length})'),
+                    selected: !archives,
+                    showCheckmark: false,
+                    onSelected: (v) {
+                      if (v && archives) onToggleArchives?.call();
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: Text('Archives (${etat.produits.length - etat.produitsActifs.length})'),
+                    selected: archives,
+                    showCheckmark: false,
+                    avatar: const Icon(Icons.archive_outlined, size: 16),
+                    onSelected: (v) {
+                      if (v && !archives) onToggleArchives?.call();
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -383,6 +422,133 @@ class _TuileCategorie extends StatelessWidget {
   }
 }
 
+/// Action commune d'archivage / restauration avec option de solder le stock si nécessaire (Règle 7.D)
+Future<void> actionArchiverOuRestaurerProduit({
+  required BuildContext context,
+  required WidgetRef ref,
+  required Produit produit,
+  required EtatCommerce etat,
+  VoidCallback? onSuccess,
+}) async {
+  final l10n = context.l10n;
+  final ctx = ref.read(contexteActifProvider);
+  if (ctx == null) return;
+  if (produit.estActif) {
+    final stockRestant = etat.quantite(produit.id);
+    if (stockRestant.estPositif) {
+      final courante = ref.read(boutiqueCouranteProvider);
+      final choix = await showDialog<String>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          icon: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 40),
+          title: const Text('Archivage du produit'),
+          content: Text(
+            'Le produit « ${produit.nom} » possède encore du stock disponible (${quantiteLisible(context, produit, stockRestant)}).\n\n'
+            'Conformément aux règles de gestion (règle 7.D), le stock restant doit être soldé ou régularisé avant l\'archivage.',
+            style: const TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(null),
+              child: Text(l10n.commonCancel),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.of(dialogCtx).pop('ajuster'),
+              child: const Text('Ajuster manuellement'),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.archive_outlined, size: 18),
+              label: const Text('Solder le stock & Archiver'),
+              onPressed: () => Navigator.of(dialogCtx).pop('solder'),
+            ),
+          ],
+        ),
+      );
+      if (choix == null) return;
+      if (choix == 'ajuster') {
+        ouvrirOperationStock(
+          context,
+          produit: produit,
+          operation: OperationStock.sortie,
+          perimetreId: courante,
+        );
+        return;
+      }
+      if (choix == 'solder') {
+        try {
+          await ref.read(gererCommerceProvider).archiverProduit(ctx, etat, produit, solderStockSiNecessaire: true);
+          if (context.mounted) {
+            confirmer(context, 'Produit « ${produit.nom} » archivé avec succès (stock soldé)');
+            onSuccess?.call();
+          }
+        } catch (e) {
+          if (context.mounted) signalerErreur(context, e);
+        }
+        return;
+      }
+    }
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n.comArchive),
+        content: Text(
+          'Voulez-vous archiver le produit « ${produit.nom} » ? Il ne sera plus proposé lors des nouveaux achats et ventes, mais restera consultable dans l\'historique.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: Text(l10n.comArchive),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(gererCommerceProvider).archiverProduit(ctx, etat, produit);
+      if (context.mounted) {
+        confirmer(context, 'Produit « ${produit.nom} » archivé avec succès');
+        onSuccess?.call();
+      }
+    } catch (e) {
+      if (context.mounted) signalerErreur(context, e);
+    }
+  } else {
+    // Restauration d'un produit archivé
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n.comRestore),
+        content: Text('Voulez-vous restaurer le produit « ${produit.nom} » dans le catalogue actif ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: Text(l10n.comRestore),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(gererCommerceProvider).restaurerProduit(ctx, etat, produit);
+      if (context.mounted) {
+        confirmer(context, 'Produit « ${produit.nom} » restauré dans le catalogue');
+        onSuccess?.call();
+      }
+    } catch (e) {
+      if (context.mounted) signalerErreur(context, e);
+    }
+  }
+}
+
 /// Carte produit (grille) : la photo domine.
 class ProduitCarte extends ConsumerWidget {
   const ProduitCarte({super.key, required this.produit, this.onTap});
@@ -391,12 +557,14 @@ class ProduitCarte extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final etat = ref.watch(etatCommerceProvider).value;
     final boutiques = ref.watch(boutiquesVisiblesProvider);
     final p = produit;
     final q = etat?.quantite(p.id, boutiques) ?? Qte.zero;
     final statut = etat?.statut(p, q) ?? StatutStock.rupture;
     final categorie = etat?.categorie(p.categorieId);
+    final droits = ref.watch(droitsCommerceProvider);
 
     return Material(
       color: AppColors.surface,
@@ -424,6 +592,22 @@ class ProduitCarte extends ConsumerWidget {
                 ),
                 PositionedDirectional(top: 8, start: 8, child: StockBadge(statut: statut, compact: true)),
                 PositionedDirectional(top: 6, end: 6, child: RecordSyncBadge(status: p.syncStatus)),
+                if (!p.estActif)
+                  PositionedDirectional(
+                    bottom: 6,
+                    start: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        l10n.comArchived,
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
               ],
             ),
             Expanded(
@@ -442,12 +626,90 @@ class ProduitCarte extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                     const Spacer(),
-                    Text(montant(context, ref, p.prixDetail),
-                        style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green, fontSize: 14)),
-                    Text(quantiteLisible(context, p, q),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(montant(context, ref, p.prixDetail),
+                                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green, fontSize: 14)),
+                              Text(quantiteLisible(context, p, q),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                        if (droits.peutArchiverProduits && etat != null)
+                          Builder(builder: (context) {
+                            final aDesMouvements = etat.mouvements.any((m) => m.produitId == p.id);
+                            final aDesVentes = etat.ventes.any((v) => v.lignes.any((l) => l.produitId == p.id));
+                            final aDesAchats = etat.achats.any((a) => a.lignes.any((l) => l.produitId == p.id));
+                            final aDesLots = etat.lotsDe(p.id).isNotEmpty;
+                            final aHistorique = aDesMouvements || aDesVentes || aDesAchats || aDesLots;
+
+                            return PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.muted),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onSelected: (action) async {
+                                final ctx = ref.read(contexteActifProvider);
+                                if (ctx == null) return;
+                                if (action == 'modifier') {
+                                  context.push(Routes.produitModifier(p.id));
+                                } else if (action == 'archiver') {
+                                  await actionArchiverOuRestaurerProduit(
+                                    context: context,
+                                    ref: ref,
+                                    produit: p,
+                                    etat: etat,
+                                  );
+                                } else if (action == 'supprimer') {
+                                  final ok = await showDialog<bool>(
+                                    context: context,
+                                    builder: (dialogCtx) => AlertDialog(
+                                      title: Text(l10n.commonDelete),
+                                      content: Text(l10n.comConfirmDeleteProduct(p.nom)),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(dialogCtx).pop(false),
+                                          child: Text(l10n.commonCancel),
+                                        ),
+                                        FilledButton(
+                                          style: FilledButton.styleFrom(backgroundColor: AppColors.negative),
+                                          onPressed: () => Navigator.of(dialogCtx).pop(true),
+                                          child: Text(l10n.commonDelete),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (ok != true) return;
+                                  try {
+                                    await ref.read(gererCommerceProvider).supprimerProduit(ctx, etat, p);
+                                    if (context.mounted) confirmer(context, l10n.comProductDeleted);
+                                  } catch (e) {
+                                    if (context.mounted) signalerErreur(context, e);
+                                  }
+                                }
+                              },
+                              itemBuilder: (_) => [
+                                if (droits.modifierProduits)
+                                  PopupMenuItem(value: 'modifier', child: Text(l10n.commonEdit)),
+                                PopupMenuItem(
+                                  value: 'archiver',
+                                  child: Text(p.estActif ? l10n.comArchive : l10n.comRestore),
+                                ),
+                                if (!aHistorique)
+                                  PopupMenuItem(
+                                    value: 'supprimer',
+                                    child: Text(l10n.commonDelete, style: const TextStyle(color: AppColors.negative)),
+                                  ),
+                              ],
+                            );
+                          }),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -475,6 +737,7 @@ class ProduitLigne extends ConsumerWidget {
     final q = etat?.quantite(p.id, boutiques) ?? Qte.zero;
     final statut = etat?.statut(p, q) ?? StatutStock.rupture;
     final categorie = etat?.categorie(p.categorieId);
+    final droits = ref.watch(droitsCommerceProvider);
     return Card(
       child: InkWell(
         key: Key('produit-${p.id}'),
@@ -527,7 +790,77 @@ class ProduitLigne extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+              if (trailing != null) ...[
+                const SizedBox(width: 8),
+                trailing!,
+              ] else if (droits.peutArchiverProduits && etat != null) ...[
+                Builder(
+                  builder: (context) {
+                    final aDesMouvements = etat.mouvements.any((m) => m.produitId == p.id);
+                    final aDesVentes = etat.ventes.any((v) => v.lignes.any((l) => l.produitId == p.id));
+                    final aDesAchats = etat.achats.any((a) => a.lignes.any((l) => l.produitId == p.id));
+                    final aDesLots = etat.lotsDe(p.id).isNotEmpty;
+                    final aHistorique = aDesMouvements || aDesVentes || aDesAchats || aDesLots;
+
+                    return PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.muted),
+                      onSelected: (action) async {
+                        final ctx = ref.read(contexteActifProvider);
+                        if (ctx == null) return;
+                        if (action == 'modifier') {
+                          context.push(Routes.produitModifier(p.id));
+                        } else if (action == 'archiver') {
+                          await actionArchiverOuRestaurerProduit(
+                            context: context,
+                            ref: ref,
+                            produit: p,
+                            etat: etat,
+                          );
+                        } else if (action == 'supprimer') {
+                          final ok = await showDialog<bool>(
+                            context: context,
+                            builder: (dialogCtx) => AlertDialog(
+                              title: Text(l10n.commonDelete),
+                              content: Text(l10n.comConfirmDeleteProduct(p.nom)),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(dialogCtx).pop(false),
+                                  child: Text(l10n.commonCancel),
+                                ),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(backgroundColor: AppColors.negative),
+                                  onPressed: () => Navigator.of(dialogCtx).pop(true),
+                                  child: Text(l10n.commonDelete),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (ok != true) return;
+                          try {
+                            await ref.read(gererCommerceProvider).supprimerProduit(ctx, etat, p);
+                            if (context.mounted) confirmer(context, l10n.comProductDeleted);
+                          } catch (e) {
+                            if (context.mounted) signalerErreur(context, e);
+                          }
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        if (droits.modifierProduits)
+                          PopupMenuItem(value: 'modifier', child: Text(l10n.commonEdit)),
+                        PopupMenuItem(
+                          value: 'archiver',
+                          child: Text(p.estActif ? l10n.comArchive : l10n.comRestore),
+                        ),
+                        if (!aHistorique)
+                          PopupMenuItem(
+                            value: 'supprimer',
+                            child: Text(l10n.commonDelete, style: const TextStyle(color: AppColors.negative)),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),

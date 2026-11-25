@@ -98,7 +98,10 @@ class _ChoixFormulePageState extends ConsumerState<ChoixFormulePage> {
             ),
           );
         },
-        data: (plans) {
+        data: (plansList) {
+          final plans = plansList
+              .where((p) => p.code.toUpperCase() != 'CATALOGUE_SEUL')
+              .toList();
           if (plans.isEmpty) {
             return const Center(child: Text('Aucune formule disponible actuellement.'));
           }

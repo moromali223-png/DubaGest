@@ -28,12 +28,13 @@ import '../recus/recu_vente_widgets.dart';
 const _couleurGros = Color(0xFF4338CA);
 const _couleurGrosFond = Color(0xFFEEF2FF);
 
-/// Une ligne du panier avec unité, quantité et prix personnalisé éventuel.
+/// Une ligne du panier avec unité, quantité, lot sélectionné éventuel et prix personnalisé éventuel.
 class _Ligne {
-  _Ligne(this.produitId, this.unite, this.quantite);
+  _Ligne(this.produitId, this.unite, this.quantite, {this.lotId, this.prixPerso});
   final String produitId;
   UniteVente unite;
   Qte quantite;
+  String? lotId;
   int? prixPerso;
 
   int prixEffectif(ModeVente mode, Produit p) {
@@ -49,19 +50,21 @@ class _Ligne {
   }
 }
 
-/// Résultat retourné par l'éditeur de ligne (quantité, unité, prix personnalisé).
+/// Résultat retourné par l'éditeur de ligne (quantité, unité, lotId, prix personnalisé).
 class _ResultatEditionLigne {
-  const _ResultatEditionLigne({required this.quantite, required this.unite, this.prixPerso});
+  const _ResultatEditionLigne({required this.quantite, required this.unite, this.lotId, this.prixPerso});
   final Qte quantite;
   final UniteVente unite;
+  final String? lotId;
   final int? prixPerso;
 }
 
 /// Vente au comptoir : rapide, visuelle, gestion gros / détail fluide,
 /// modification de prix à la volée, multi-unités (pièces, cartons, litres, kg, sacs...).
 class VentePage extends ConsumerStatefulWidget {
-  const VentePage({super.key, this.produitId});
+  const VentePage({super.key, this.produitId, this.lotId});
   final String? produitId;
+  final String? lotId;
 
   @override
   ConsumerState<VentePage> createState() => _VentePageState();
@@ -102,16 +105,25 @@ class _VentePageState extends ConsumerState<VentePage> {
   Qte _disponible(EtatCommerce etat, Produit p) =>
       _boutique == null ? Qte.zero : etat.quantiteBoutique(p.id, _boutique!) - _dansPanier(p.id);
 
-  void _ajouter(EtatCommerce etat, Produit p) {
+  void _ajouter(EtatCommerce etat, Produit p, {String? lotChoisiId}) {
     final l10n = context.l10n;
     final memo = ref.read(unitesMemoriseesProvider.notifier).pour('vente', p.id);
     final unite = p.unite(memo ?? UniteVente.idBase);
     const pas = Qte.un;
 
+    // Si un lot spécifique est ciblé, récupérer son prix de vente recommandé
+    int? prixLot;
+    if (lotChoisiId != null && lotChoisiId.isNotEmpty) {
+      final lot = etat.lotsDe(p.id).where((l) => l.id == lotChoisiId).firstOrNull;
+      if (lot != null && lot.prixVenteUnitaire > 0) {
+        prixLot = unite.estBase ? lot.prixVenteUnitaire : CalculPrix.lot(lot.prixVenteUnitaire, unite.facteur);
+      }
+    }
+
     // Si en mode gros et que le produit n'a pas de prix de gros défini,
     // on ouvre directement l'éditeur pour permettre la saisie immédiate du prix.
     final sansPrixGros = _mode == ModeVente.gros && p.prixGrosEffectif == null && unite.prixGros == null;
-    final existante = _panier.where((l) => l.produitId == p.id && l.unite.id == unite.id).firstOrNull;
+    final existante = _panier.where((l) => l.produitId == p.id && l.unite.id == unite.id && l.lotId == lotChoisiId).firstOrNull;
 
     if (sansPrixGros && existante == null) {
       final dispo = _disponible(etat, p);
@@ -119,7 +131,7 @@ class _VentePageState extends ConsumerState<VentePage> {
         signalerErreur(context, l10n.comStockInsufficientInline(quantiteLisible(context, p, dispo.max(Qte.zero))));
         return;
       }
-      final nouvelle = _Ligne(p.id, unite, pas);
+      final nouvelle = _Ligne(p.id, unite, pas, lotId: lotChoisiId, prixPerso: prixLot);
       _editer(etat, nouvelle, estNouvelle: true);
       return;
     }
@@ -133,7 +145,7 @@ class _VentePageState extends ConsumerState<VentePage> {
       if (existante != null) {
         existante.quantite = existante.quantite + pas;
       } else {
-        _panier.add(_Ligne(p.id, unite, pas));
+        _panier.add(_Ligne(p.id, unite, pas, lotId: lotChoisiId, prixPerso: prixLot));
       }
     });
   }
@@ -166,13 +178,20 @@ class _VentePageState extends ConsumerState<VentePage> {
       showDragHandle: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => _EditeurQuantite(produit: p, ligne: ligne, mode: _mode, disponible: dispoLigne),
+      builder: (_) => _EditeurQuantite(
+        produit: p,
+        ligne: ligne,
+        mode: _mode,
+        disponible: dispoLigne,
+        boutiqueId: _boutique,
+      ),
     );
     if (resultat == null || !mounted) return;
     setState(() {
       ligne
         ..quantite = resultat.quantite
         ..unite = resultat.unite
+        ..lotId = resultat.lotId
         ..prixPerso = resultat.prixPerso;
 
       if (estNouvelle && !_panier.contains(ligne)) {
@@ -200,6 +219,7 @@ class _VentePageState extends ConsumerState<VentePage> {
             facteur: l.unite.facteur,
             quantite: l.quantite,
             prixUnitaire: l.prixEffectif(_mode, p),
+            lotId: l.lotId,
           ),
     ];
     final vente = await showModalBottomSheet<Vente>(
@@ -234,7 +254,9 @@ class _VentePageState extends ConsumerState<VentePage> {
     if (!_initialise && etatAsync.value != null && widget.produitId != null) {
       _initialise = true;
       final p = etatAsync.value!.produit(widget.produitId!);
-      if (p != null) WidgetsBinding.instance.addPostFrameCallback((_) => _ajouter(etatAsync.value!, p));
+      if (p != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _ajouter(etatAsync.value!, p, lotChoisiId: widget.lotId));
+      }
     }
 
     return Scaffold(
@@ -978,12 +1000,19 @@ class _PanneauPanier extends ConsumerWidget {
 /// Éditeur complet de ligne : Quantité, Unités multiples (pièces, cartons, litres, kg...)
 /// et Modification de prix (gros / détail / prix personnalisé).
 class _EditeurQuantite extends ConsumerStatefulWidget {
-  const _EditeurQuantite({required this.produit, required this.ligne, required this.mode, required this.disponible});
+  const _EditeurQuantite({
+    required this.produit,
+    required this.ligne,
+    required this.mode,
+    required this.disponible,
+    this.boutiqueId,
+  });
 
   final Produit produit;
   final _Ligne ligne;
   final ModeVente mode;
   final Qte disponible;
+  final String? boutiqueId;
 
   @override
   ConsumerState<_EditeurQuantite> createState() => _EditeurQuantiteState();
@@ -992,6 +1021,7 @@ class _EditeurQuantite extends ConsumerStatefulWidget {
 class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
   late Qte? _q = widget.ligne.quantite;
   late UniteVente _u = widget.ligne.unite;
+  late String? _lotIdChoisi = widget.ligne.lotId;
   late final TextEditingController _prixController;
   late final List<UniteVente> _unites;
   bool _sauvegarderPrixDefaut = false;
@@ -1198,7 +1228,15 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
 
     if (mounted) {
       final prixPerso = prixChoisi != _prixCatalogue ? prixChoisi : null;
-      Navigator.pop(context, _ResultatEditionLigne(quantite: q, unite: _u, prixPerso: prixPerso));
+      Navigator.pop(
+        context,
+        _ResultatEditionLigne(
+          quantite: q,
+          unite: _u,
+          lotId: _lotIdChoisi,
+          prixPerso: prixPerso,
+        ),
+      );
     }
   }
 
@@ -1219,6 +1257,11 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
     final sousTotal = (_q != null && _q!.estPositif) ? _q!.montant(prixActuel) : 0;
     final estPrixPerso = _prixSaisi != null && _prixSaisi != _prixCatalogue;
     final sansPrixGrosOrigine = widget.mode == ModeVente.gros && p.prixGrosEffectif == null && _u.prixGros == null;
+
+    final etat = ref.watch(etatCommerceProvider).value;
+    final lotsDispos = etat != null && widget.boutiqueId != null
+        ? etat.lotsDisponibles(p.id, widget.boutiqueId!)
+        : <LotStock>[];
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -1350,6 +1393,77 @@ class _EditeurQuantiteState extends ConsumerState<_EditeurQuantite> {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
+
+            // Sélecteur de Lot de stock spécifique (si plusieurs lots existent)
+            if (lotsDispos.isNotEmpty) ...[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Flexible(
+                        child: Text(
+                          'Lot de stock à vendre',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (_lotIdChoisi != null)
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _lotIdChoisi = null;
+                              _prixController.text = '${_u.prix(widget.mode)}';
+                            });
+                          },
+                          child: const Text('Auto (FIFO)', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Premier arrivé (Auto FIFO)'),
+                        selected: _lotIdChoisi == null,
+                        onSelected: (_) {
+                          setState(() {
+                            _lotIdChoisi = null;
+                            _prixController.text = '${_u.prix(widget.mode)}';
+                          });
+                        },
+                      ),
+                      for (final lot in lotsDispos)
+                        ChoiceChip(
+                          label: Text('${lot.reference} • Reste: ${lot.quantiteRestante.valeur} ${p.uniteBase} • ${montant(context, ref, lot.prixVenteUnitaire)}'),
+                          selected: _lotIdChoisi == lot.id,
+                          onSelected: (_) {
+                            setState(() {
+                              _lotIdChoisi = lot.id;
+                              // Ajuster automatiquement le prix de vente en fonction du lot sélectionné
+                              if (lot.prixVenteUnitaire > 0) {
+                                final prixCalcule = _u.estBase
+                                    ? lot.prixVenteUnitaire
+                                    : CalculPrix.lot(lot.prixVenteUnitaire, _u.facteur);
+                                _prixController.text = '$prixCalcule';
+                              }
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
 
             // Saisie de la quantité
             ChampQuantite(

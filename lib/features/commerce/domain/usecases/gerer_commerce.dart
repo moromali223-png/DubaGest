@@ -127,16 +127,20 @@ class GererCommerce {
     }
     final produit = _produitValide(etat, brouillon);
     MouvementStock? initial;
+    LotStock? initialLot;
     if (stockInitial.estPositif) {
       if (perimetreId == null) throw const Failure.rule(RuleCodes.shopRequired);
       _verifier(_peut(ctx, ModuleCodes.commerceStock, PermissionCodes.stockCreate, perimetreId));
       final unite = uniteStock ?? produit.uniteDeBase;
       final base = _quantiteValide(produit, stockInitial, unite.facteur);
+      final lotId = _uuid.v4();
+      final maintenant = DateTime.now();
       initial = MouvementStock(
         id: _uuid.v4(),
         entrepriseId: produit.entrepriseId,
         perimetreId: perimetreId,
         produitId: produit.id,
+        lotId: lotId,
         type: TypeMouvementStock.entree,
         motif: MotifMouvement.ajustement,
         quantite: base,
@@ -144,13 +148,28 @@ class GererCommerce {
         uniteSaisie: unite.nom,
         facteur: unite.facteur,
         delta: base,
-        date: DateTime.now(),
+        date: maintenant,
         note: noteStockInitial,
         auteurNom: ctx.nomComplet,
         syncStatus: RecordSyncStatus.pendingSync,
       );
+      initialLot = LotStock(
+        id: lotId,
+        entrepriseId: produit.entrepriseId,
+        perimetreId: perimetreId,
+        produitId: produit.id,
+        reference: 'LOT-INIT-${maintenant.year}${maintenant.month.toString().padLeft(2, '0')}',
+        dateAchat: maintenant,
+        dateReception: maintenant,
+        quantiteInitiale: base,
+        quantiteRestante: base,
+        prixAchatUnitaire: produit.prixAchat ?? 0,
+        prixVenteUnitaire: produit.prixDetail,
+        statut: StatutLotStock.actif,
+        syncStatus: RecordSyncStatus.pendingSync,
+      );
     }
-    await _repository.creerProduit(produit, stockInitial: initial);
+    await _repository.creerProduit(produit, stockInitial: initial, lotInitial: initialLot);
     return produit;
   }
 
@@ -166,7 +185,83 @@ class GererCommerce {
         }
       }
     }
+    // Règle d'archivage : interdire l'archivage si le produit possède du stock disponible
+    if (avant.estActif && !apres.estActif) {
+      final stockTotal = etat.quantite(avant.id);
+      if (stockTotal.estPositif) {
+        throw const Failure.rule(RuleCodes.productInStock);
+      }
+    }
     await _repository.modifierProduit(avant, _produitValide(etat, apres));
+  }
+
+  /// Archivage sécurisé d'un produit (règles 7.B, 7.C, 7.D) :
+  /// - Si le stock est à 0 : archive immédiatement.
+  /// - Si le stock est > 0 et [solderStockSiNecessaire] est true :
+  ///   régularise automatiquement le stock à 0 (sortie traçable) et clôture les lots,
+  ///   puis archive le produit.
+  /// - Si le stock est > 0 et [solderStockSiNecessaire] est false :
+  ///   refuse avec [RuleCodes.productInStock].
+  Future<void> archiverProduit(
+    ContexteSession ctx,
+    EtatCommerce etat,
+    Produit produit, {
+    bool solderStockSiNecessaire = false,
+  }) async {
+    _verifier(_peut(ctx, ModuleCodes.commerceProduits, PermissionCodes.productsUpdate));
+    final stockTotal = etat.quantite(produit.id);
+
+    if (stockTotal.estPositif) {
+      if (!solderStockSiNecessaire) {
+        throw const Failure.rule(RuleCodes.productInStock);
+      }
+      final boutiques = {
+        for (final s in etat.stocks)
+          if (s.produitId == produit.id && s.quantite.estPositif) s.perimetreId,
+        for (final m in etat.mouvements)
+          if (m.produitId == produit.id && etat.quantiteBoutique(produit.id, m.perimetreId).estPositif)
+            m.perimetreId,
+      };
+      for (final pid in boutiques) {
+        final qteBoutique = etat.quantiteBoutique(produit.id, pid);
+        if (qteBoutique.estPositif) {
+          final m = MouvementStock(
+            id: _uuid.v4(),
+            entrepriseId: produit.entrepriseId,
+            perimetreId: pid,
+            produitId: produit.id,
+            type: TypeMouvementStock.sortie,
+            motif: MotifMouvement.ajustement,
+            quantite: qteBoutique,
+            quantiteSaisie: qteBoutique,
+            uniteSaisie: produit.uniteBase,
+            facteur: Qte.un,
+            delta: -qteBoutique,
+            stockAvant: qteBoutique,
+            stockApres: Qte.zero,
+            date: DateTime.now(),
+            note: 'Régularisation du stock pour archivage',
+            auteurNom: ctx.nomComplet,
+            syncStatus: RecordSyncStatus.pendingSync,
+          );
+          await _repository.enregistrerMouvement(m);
+        }
+      }
+      for (final lot in etat.lotsDe(produit.id).where((l) => l.quantiteRestante.estPositif && !l.id.startsWith('lot-auto-'))) {
+        await _repository.modifierLot(lot.copyWith(
+          quantiteRestante: Qte.zero,
+          statut: StatutLotStock.epuise,
+        ));
+      }
+    }
+
+    await _repository.modifierProduit(produit, _produitValide(etat, produit.copyWith(estActif: false)));
+  }
+
+  /// Réactivation / Restauration d'un produit archivé dans le catalogue
+  Future<void> restaurerProduit(ContexteSession ctx, EtatCommerce etat, Produit produit) async {
+    _verifier(_peut(ctx, ModuleCodes.commerceProduits, PermissionCodes.productsUpdate));
+    await _repository.modifierProduit(produit, _produitValide(etat, produit.copyWith(estActif: true)));
   }
 
   /// Protection contre la suppression d'un produit déjà mouvementé ou vendu
@@ -175,9 +270,11 @@ class GererCommerce {
     final aDesMouvements = etat.mouvements.any((m) => m.produitId == produit.id);
     final aDesVentes = etat.ventes.any((v) => v.lignes.any((l) => l.produitId == produit.id));
     final aDesAchats = etat.achats.any((a) => a.lignes.any((l) => l.produitId == produit.id));
-    if (aDesMouvements || aDesVentes || aDesAchats) {
+    final aDesLots = etat.lotsDe(produit.id).isNotEmpty;
+    if (aDesMouvements || aDesVentes || aDesAchats || aDesLots) {
       throw const Failure.rule(RuleCodes.productUsed);
     }
+    await _repository.supprimerProduit(produit);
   }
 
   Produit _produitValide(EtatCommerce etat, Produit p) {
@@ -232,11 +329,32 @@ class GererCommerce {
     final base = _quantiteValide(produit, quantite, unite.facteur);
     final avant = etat.quantiteBoutique(produit.id, perimetreId);
     if (!entree) _assezDeStock(produit, avant, base);
+    final lotId = entree ? _uuid.v4() : null;
+    final maintenant = DateTime.now();
+    LotStock? lotCree;
+    if (entree) {
+      lotCree = LotStock(
+        id: lotId!,
+        entrepriseId: produit.entrepriseId,
+        perimetreId: perimetreId,
+        produitId: produit.id,
+        reference: 'LOT-${maintenant.year}${maintenant.month.toString().padLeft(2, '0')}${maintenant.day.toString().padLeft(2, '0')}-${lotId.substring(0, 4).toUpperCase()}',
+        dateAchat: maintenant,
+        dateReception: maintenant,
+        quantiteInitiale: base,
+        quantiteRestante: base,
+        prixAchatUnitaire: produit.prixAchat ?? 0,
+        prixVenteUnitaire: produit.prixDetail,
+        statut: StatutLotStock.actif,
+        syncStatus: RecordSyncStatus.pendingSync,
+      );
+    }
     final m = MouvementStock(
       id: _uuid.v4(),
       entrepriseId: produit.entrepriseId,
       perimetreId: perimetreId,
       produitId: produit.id,
+      lotId: lotId,
       type: entree ? TypeMouvementStock.entree : TypeMouvementStock.sortie,
       motif: motif,
       quantite: base,
@@ -246,12 +364,12 @@ class GererCommerce {
       delta: entree ? base : -base,
       stockAvant: avant,
       stockApres: entree ? avant + base : avant - base,
-      date: DateTime.now(),
+      date: maintenant,
       note: _nul(note),
       auteurNom: ctx.nomComplet,
       syncStatus: RecordSyncStatus.pendingSync,
     );
-    await _repository.enregistrerMouvement(m);
+    await _repository.enregistrerMouvement(m, lotCree: lotCree);
     return m;
   }
 
@@ -318,6 +436,68 @@ class GererCommerce {
     final avantVers = etat.quantiteBoutique(produit.id, versPerimetreId);
     _assezDeStock(produit, avantDe, base);
     final maintenant = DateTime.now();
+    // Sortie FIFO sur les lots disponibles de la boutique source (dePerimetreId)
+    final dispos = List<LotStock>.from(etat.lotsDisponibles(produit.id, dePerimetreId));
+    var aTransferer = base;
+    final lotsModifies = <LotStock>[];
+    final lotsCrees = <LotStock>[];
+
+    for (var i = 0; i < dispos.length && aTransferer.estPositif; i++) {
+      final lotSrc = dispos[i];
+      if (!lotSrc.estDisponible || !lotSrc.quantiteRestante.estPositif) continue;
+
+      final pris = lotSrc.quantiteRestante < aTransferer ? lotSrc.quantiteRestante : aTransferer;
+      final nouveauReste = lotSrc.quantiteRestante - pris;
+      final lotSrcMaj = lotSrc.copyWith(
+        quantiteRestante: nouveauReste,
+        statut: nouveauReste <= Qte.zero ? StatutLotStock.epuise : StatutLotStock.actif,
+      );
+      lotsModifies.add(lotSrcMaj);
+
+      // Création du lot dans la boutique de destination (versPerimetreId) au même prix d'achat (0 bénéfice artificiel)
+      final destLotId = _uuid.v4();
+      final lotDest = LotStock(
+        id: destLotId,
+        entrepriseId: produit.entrepriseId,
+        perimetreId: versPerimetreId,
+        produitId: produit.id,
+        reference: '${lotSrc.reference}-TRF',
+        dateAchat: lotSrc.dateAchat,
+        dateReception: maintenant,
+        quantiteInitiale: pris,
+        quantiteRestante: pris,
+        prixAchatUnitaire: lotSrc.prixAchatUnitaire,
+        prixVenteUnitaire: lotSrc.prixVenteUnitaire,
+        fournisseurId: lotSrc.fournisseurId,
+        achatId: lotSrc.achatId,
+        receptionId: lotSrc.receptionId,
+        lotOrigineId: lotSrc.id,
+        statut: StatutLotStock.actif,
+        syncStatus: RecordSyncStatus.pendingSync,
+      );
+      lotsCrees.add(lotDest);
+      aTransferer = aTransferer - pris;
+    }
+
+    if (lotsCrees.isEmpty && base.estPositif) {
+      final destLotId = _uuid.v4();
+      lotsCrees.add(LotStock(
+        id: destLotId,
+        entrepriseId: produit.entrepriseId,
+        perimetreId: versPerimetreId,
+        produitId: produit.id,
+        reference: 'LOT-TRF-${maintenant.millisecondsSinceEpoch}',
+        dateAchat: maintenant,
+        dateReception: maintenant,
+        quantiteInitiale: base,
+        quantiteRestante: base,
+        prixAchatUnitaire: produit.prixAchat ?? 0,
+        prixVenteUnitaire: produit.prixDetail,
+        statut: StatutLotStock.actif,
+        syncStatus: RecordSyncStatus.pendingSync,
+      ));
+    }
+
     final t = Transfert(
       id: _uuid.v4(),
       entrepriseId: produit.entrepriseId,
@@ -334,11 +514,12 @@ class GererCommerce {
       auteurNom: ctx.nomComplet,
       syncStatus: RecordSyncStatus.pendingSync,
     );
-    MouvementStock m(String id, String perimetre, TypeMouvementStock type, Qte delta, Qte avant) => MouvementStock(
+    MouvementStock m(String id, String perimetre, TypeMouvementStock type, Qte delta, Qte avant, String? lotId) => MouvementStock(
           id: id,
           entrepriseId: t.entrepriseId,
           perimetreId: perimetre,
           produitId: t.produitId,
+          lotId: lotId,
           type: type,
           motif: MotifMouvement.transfert,
           quantite: base,
@@ -357,8 +538,10 @@ class GererCommerce {
         );
     await _repository.transferer(
       t,
-      sortie: m(t.id, dePerimetreId, TypeMouvementStock.transfertSortie, -base, avantDe),
-      entree: m(t.mouvementEntreeId, versPerimetreId, TypeMouvementStock.transfertEntree, base, avantVers),
+      sortie: m(t.id, dePerimetreId, TypeMouvementStock.transfertSortie, -base, avantDe, lotsModifies.firstOrNull?.id),
+      entree: m(t.mouvementEntreeId, versPerimetreId, TypeMouvementStock.transfertEntree, base, avantVers, lotsCrees.firstOrNull?.id),
+      lotsModifies: lotsModifies,
+      lotsCrees: lotsCrees,
     );
     return t;
   }
@@ -408,9 +591,9 @@ class GererCommerce {
       await _repository.creerAchat(achat, dette: dette);
       return achat;
     }
-    final (reception, entrees, achatRecu) =
+    final (reception, entrees, achatRecu, lotsCrees) =
         _reception(ctx, etat, achat, {for (final l in achat.lignes) l.id: l.quantite});
-    await _repository.creerAchat(achat, dette: dette, reception: reception, entrees: entrees, achatRecu: achatRecu);
+    await _repository.creerAchat(achat, dette: dette, reception: reception, entrees: entrees, achatRecu: achatRecu, lotsCrees: lotsCrees);
     return achat;
   }
 
@@ -491,12 +674,12 @@ class GererCommerce {
     }
     if (achat.annule) throw const Failure.rule(RuleCodes.purchaseCancelled);
     if (!achat.aRecevoir) throw const Failure.rule(RuleCodes.purchaseReceived);
-    final (reception, entrees, achatRecu) = _reception(ctx, etat, achat, quantites, note: note);
-    await _repository.receptionner(reception, entrees: entrees, achatRecu: achatRecu);
+    final (reception, entrees, achatRecu, lotsCrees) = _reception(ctx, etat, achat, quantites, note: note);
+    await _repository.receptionner(reception, entrees: entrees, achatRecu: achatRecu, lotsCrees: lotsCrees);
     return reception;
   }
 
-  (Reception, List<MouvementStock>, Achat) _reception(
+  (Reception, List<MouvementStock>, Achat, List<LotStock>) _reception(
     ContexteSession ctx,
     EtatCommerce etat,
     Achat achat,
@@ -508,6 +691,7 @@ class GererCommerce {
     final lignes = <LigneReception>[];
     final entrees = <MouvementStock>[];
     final recues = <LigneOperation>[];
+    final lotsCrees = <LotStock>[];
     for (final l in achat.lignes) {
       final q = quantites[l.id] ?? Qte.zero;
       if (q.estNegatif) throw const Failure.rule(RuleCodes.quantityInvalid);
@@ -515,14 +699,39 @@ class GererCommerce {
       recues.add(l.copyWith(recu: l.recu + q));
       if (!q.estPositif) continue;
       final id = _uuid.v4();
+      final lotId = _uuid.v4();
       final base = q.fois(l.facteur);
       final avant = etat.quantiteBoutique(l.produitId, achat.perimetreId);
+      final p = etat.produit(l.produitId);
+      final refLot = 'LOT-${maintenant.year}${maintenant.month.toString().padLeft(2, '0')}${maintenant.day.toString().padLeft(2, '0')}-${achat.reference ?? achat.id.substring(0, 6).toUpperCase()}-${lignes.length + 1}';
+      
+      final lot = LotStock(
+        id: lotId,
+        entrepriseId: achat.entrepriseId,
+        perimetreId: achat.perimetreId,
+        produitId: l.produitId,
+        reference: refLot,
+        dateAchat: achat.dateAchat,
+        dateReception: maintenant,
+        quantiteInitiale: base,
+        quantiteRestante: base,
+        prixAchatUnitaire: l.facteur == Qte.un ? l.prixUnitaire : (l.prixUnitaire / l.facteur.valeur).round(),
+        prixVenteUnitaire: l.prixVente ?? p?.prixDetail ?? 0,
+        fournisseurId: achat.fournisseurId,
+        achatId: achat.id,
+        receptionId: receptionId,
+        statut: StatutLotStock.actif,
+        syncStatus: RecordSyncStatus.pendingSync,
+      );
+      lotsCrees.add(lot);
+
       lignes.add(LigneReception(id: id, ligneId: l.id, quantite: q));
       entrees.add(MouvementStock(
         id: id,
         entrepriseId: achat.entrepriseId,
         perimetreId: achat.perimetreId,
         produitId: l.produitId,
+        lotId: lotId,
         type: TypeMouvementStock.entree,
         motif: MotifMouvement.achat,
         quantite: base,
@@ -552,7 +761,7 @@ class GererCommerce {
       syncStatus: RecordSyncStatus.pendingSync,
     );
     final statut = recues.every((l) => l.complete) ? StatutAchat.recu : StatutAchat.recuPartiel;
-    return (reception, entrees, achat.copyWith(lignes: recues, statut: statut));
+    return (reception, entrees, achat.copyWith(lignes: recues, statut: statut), lotsCrees);
   }
 
   // ===========================================================================
@@ -597,37 +806,97 @@ class GererCommerce {
     final maintenant = DateTime.now();
     final venteId = _uuid.v4();
     final paiementId = encaisse ? _uuid.v4() : null;
-    final vente = Vente(
-      id: venteId,
-      entrepriseId: ctx.entreprise!.id,
-      perimetreId: s.perimetreId,
-      contactId: s.contactId,
-      mode: s.mode,
-      lignes: lignes,
-      remise: s.remise,
-      total: total,
-      date: maintenant,
-      reglement: s.reglement,
-      modePaiement: encaisse ? s.modePaiement.code : null,
-      sessionId: session?.id,
-      paiementId: paiementId,
-      note: _nul(s.note),
-      auteurNom: ctx.nomComplet,
-      syncStatus: RecordSyncStatus.pendingSync,
-      dateCommerciale: jourCommercial(maintenant),
-      montantPaye: paye,
-    );
 
     final sorties = <MouvementStock>[];
     final cumul = <String, Qte>{};
+    final lotsModifies = <LotStock>[];
+    final lignesAvecLots = <LigneOperation>[];
+    int totalCoutVente = 0;
+
+    // Lots disponibles groupés par produit
+    final lotsDisposParProduit = <String, List<LotStock>>{};
+    for (final l in lignes) {
+      lotsDisposParProduit.putIfAbsent(
+        l.produitId,
+        () => List<LotStock>.from(etat.lotsDisponibles(l.produitId, s.perimetreId)),
+      );
+    }
+
     for (final l in lignes) {
       final avant = etat.quantiteBoutique(l.produitId, s.perimetreId) - (cumul[l.produitId] ?? Qte.zero);
       cumul[l.produitId] = (cumul[l.produitId] ?? Qte.zero) + l.quantiteBase;
+
+      // Déduction : si un lot précis a été sélectionné, le traiter en priorité absolue
+      final dispos = lotsDisposParProduit[l.produitId] ?? [];
+      if (l.lotId != null && l.lotId!.isNotEmpty) {
+        final idxLot = dispos.indexWhere((x) => x.id == l.lotId);
+        if (idxLot > 0) {
+          final choisi = dispos.removeAt(idxLot);
+          dispos.insert(0, choisi);
+        }
+      }
+
+      var aDeduire = l.quantiteBase;
+      final consommations = <LotConsommation>[];
+      int coutTotalLigne = 0;
+      String? primaryLotId = l.lotId;
+
+      for (var i = 0; i < dispos.length && aDeduire.estPositif; i++) {
+        final lot = dispos[i];
+        if (!lot.estDisponible || !lot.quantiteRestante.estPositif) continue;
+
+        primaryLotId ??= lot.id;
+        final pris = lot.quantiteRestante < aDeduire ? lot.quantiteRestante : aDeduire;
+        final cout = (pris.valeur * lot.prixAchatUnitaire).round();
+        coutTotalLigne += cout;
+
+        consommations.add(LotConsommation(
+          lotId: lot.id,
+          reference: lot.reference,
+          quantiteBase: pris,
+          prixAchatUnitaire: lot.prixAchatUnitaire,
+          prixVenteUnitaire: lot.prixVenteUnitaire,
+          coutTotal: cout,
+        ));
+
+        final nouveauReste = lot.quantiteRestante - pris;
+        final lotMisAJour = lot.copyWith(
+          quantiteRestante: nouveauReste,
+          statut: nouveauReste <= Qte.zero ? StatutLotStock.epuise : StatutLotStock.actif,
+        );
+        dispos[i] = lotMisAJour;
+
+        final idx = lotsModifies.indexWhere((x) => x.id == lot.id);
+        if (idx >= 0) {
+          lotsModifies[idx] = lotMisAJour;
+        } else {
+          lotsModifies.add(lotMisAJour);
+        }
+
+        aDeduire = aDeduire - pris;
+      }
+
+      // Si quantité restante non couverte par des lots (données existantes sans lots), valoriser au prix d'achat du produit
+      if (aDeduire.estPositif) {
+        final p = etat.produit(l.produitId);
+        final prixAchat = p?.prixAchat ?? 0;
+        coutTotalLigne += (aDeduire.valeur * prixAchat).round();
+      }
+
+      totalCoutVente += coutTotalLigne;
+
+      lignesAvecLots.add(l.copyWith(
+        prixVente: () => l.prixUnitaire,
+        lots: consommations,
+        coutTotal: coutTotalLigne,
+      ));
+
       sorties.add(MouvementStock(
         id: l.id,
-        entrepriseId: vente.entrepriseId,
+        entrepriseId: ctx.entreprise!.id,
         perimetreId: s.perimetreId,
         produitId: l.produitId,
+        lotId: primaryLotId,
         type: TypeMouvementStock.sortie,
         motif: MotifMouvement.vente,
         quantite: l.quantiteBase,
@@ -644,6 +913,28 @@ class GererCommerce {
         syncStatus: RecordSyncStatus.pendingSync,
       ));
     }
+
+    final vente = Vente(
+      id: venteId,
+      entrepriseId: ctx.entreprise!.id,
+      perimetreId: s.perimetreId,
+      contactId: s.contactId,
+      mode: s.mode,
+      lignes: lignesAvecLots,
+      remise: s.remise,
+      total: total,
+      coutTotal: totalCoutVente,
+      date: maintenant,
+      reglement: s.reglement,
+      modePaiement: encaisse ? s.modePaiement.code : null,
+      sessionId: session?.id,
+      paiementId: paiementId,
+      note: _nul(s.note),
+      auteurNom: ctx.nomComplet,
+      syncStatus: RecordSyncStatus.pendingSync,
+      dateCommerciale: jourCommercial(maintenant),
+      montantPaye: paye,
+    );
 
     // Copies locales de ce que le serveur créera, avec les mêmes identifiants.
     fin.Engagement? creance;
@@ -690,7 +981,11 @@ class GererCommerce {
       }
     }
     return _repository.vendre(vente,
-        sorties: sorties, creance: creance, paiement: paiement, mouvementCaisse: mouvementCaisse);
+        sorties: sorties,
+        lotsModifies: lotsModifies.where((l) => !l.id.startsWith('lot-auto-')).toList(),
+        creance: creance,
+        paiement: paiement,
+        mouvementCaisse: mouvementCaisse);
   }
 
   /// Annuler une vente non encaissée : les produits reviennent en stock.

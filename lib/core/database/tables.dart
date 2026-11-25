@@ -588,6 +588,34 @@ class MouvementsStock extends Table {
   TextColumn get note => text().nullable()();
   DateTimeColumn get dateMouvement => dateTime()();
   TextColumn get auteurNom => text().nullable()();
+  TextColumn get lotId => text().nullable()();
+  IntColumn get version => integer().nullable()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get syncStatus => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('LotStockRow')
+class LotsStock extends Table {
+  TextColumn get id => text()();
+  TextColumn get entrepriseId => text()();
+  TextColumn get perimetreId => text()();
+  TextColumn get produitId => text()();
+  TextColumn get reference => text()();
+  DateTimeColumn get dateAchat => dateTime()();
+  DateTimeColumn get dateReception => dateTime()();
+  IntColumn get quantiteInitiale => integer()();
+  IntColumn get quantiteRestante => integer()();
+  IntColumn get prixAchatUnitaire => integer()();
+  IntColumn get prixVenteUnitaire => integer()();
+  TextColumn get fournisseurId => text().nullable()();
+  TextColumn get achatId => text().nullable()();
+  TextColumn get receptionId => text().nullable()();
+  TextColumn get lotOrigineId => text().nullable()();
+  TextColumn get statut => text().withDefault(const Constant('ACTIF'))();
   IntColumn get version => integer().nullable()();
   DateTimeColumn get updatedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -692,6 +720,7 @@ class Ventes extends Table {
   TextColumn get poste => text().nullable()();
   IntColumn get sequence => integer().nullable()();
   IntColumn get montantPaye => integer().withDefault(const Constant(0))();
+  IntColumn get coutTotal => integer().withDefault(const Constant(0))();
   DateTimeColumn get annuleeLe => dateTime().nullable()();
   TextColumn get annuleeParNom => text().nullable()();
 

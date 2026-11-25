@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../app/localization/l10n.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/auth/auth_identifier_helper.dart';
 import '../../domain/entities/auth_state.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/auth_form_scaffold.dart';
@@ -20,13 +21,13 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
+  final _identifier = TextEditingController();
   final _password = TextEditingController();
   bool _obscure = true;
 
   @override
   void dispose() {
-    _email.dispose();
+    _identifier.dispose();
     _password.dispose();
     super.dispose();
   }
@@ -36,7 +37,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     FocusScope.of(context).unfocus();
     final signIn = ref.read(signInProvider);
     await ref.read(signInControllerProvider.notifier).run(
-          () => signIn(email: _email.text, password: _password.text),
+          () => signIn(identifier: _identifier.text, password: _password.text),
         );
   }
 
@@ -65,18 +66,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const SizedBox(height: AppSpacing.md),
               ],
               TextFormField(
-                key: const Key('login-email'),
-                controller: _email,
+                key: const Key('login-identifier'),
+                controller: _identifier,
                 enabled: !loading,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.email, AutofillHints.username],
-                decoration: InputDecoration(
-                  labelText: l10n.authEmail,
-                  prefixIcon: const Icon(Icons.alternate_email),
+                autofillHints: const [AutofillHints.email, AutofillHints.telephoneNumber, AutofillHints.username],
+                decoration: const InputDecoration(
+                  labelText: 'E-mail ou numéro de téléphone',
+                  hintText: 'exemple@domaine.com ou +223 70 00 00 00',
+                  prefixIcon: Icon(Icons.contact_mail_outlined),
                 ),
-                validator: (v) => AuthValidators.email(v,
-                    required: l10n.validationRequired, invalid: l10n.validationEmail),
+                validator: (v) {
+                  final trimmed = v?.trim() ?? '';
+                  if (trimmed.isEmpty) return l10n.validationRequired;
+                  final parsed = AuthIdentifier.parse(trimmed);
+                  if (!parsed.isValid) {
+                    return 'Saisissez un e-mail valide ou un numéro de téléphone valide';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(

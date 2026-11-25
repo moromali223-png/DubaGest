@@ -10,6 +10,7 @@ class EtatCommerce {
     this.categories = const [],
     this.produits = const [],
     this.stocks = const [],
+    this.lots = const [],
     this.mouvements = const [],
     this.transferts = const [],
     this.achats = const [],
@@ -50,6 +51,7 @@ class EtatCommerce {
   final List<CategorieProduit> categories;
   final List<Produit> produits;
   final List<StockBoutique> stocks;
+  final List<LotStock> lots;
   final List<MouvementStock> mouvements;
   final List<Transfert> transferts;
   final List<Achat> achats;
@@ -94,9 +96,104 @@ class EtatCommerce {
   Qte quantiteBoutique(String produitId, String perimetreId) =>
       (_serveur[produitId]?[perimetreId] ?? Qte.zero) + (_attente[produitId]?[perimetreId] ?? Qte.zero);
 
-  /// Quantité sur les boutiques visibles (ou une seule).
-  Qte quantite(String produitId, Iterable<String> boutiques) =>
-      boutiques.map((b) => quantiteBoutique(produitId, b)).somme;
+  /// Quantité sur les boutiques visibles (ou toutes si non spécifié).
+  Qte quantite(String produitId, [Iterable<String>? boutiques]) {
+    if (boutiques == null) {
+      final s = _serveur[produitId]?.values.somme ?? Qte.zero;
+      final a = _attente[produitId]?.values.somme ?? Qte.zero;
+      return s + a;
+    }
+    return boutiques.map((b) => quantiteBoutique(produitId, b)).somme;
+  }
+
+  // --- Lots de stock ---------------------------------------------------------
+
+  LotStock? lot(String id) => lots.where((l) => l.id == id).firstOrNull;
+
+  /// Lots rattachés à un produit, filtrés optionnellement par boutiques visibles.
+  List<LotStock> lotsDe(String produitId, [Iterable<String>? boutiquesVisibles]) {
+    final ensemble = (boutiquesVisibles == null || boutiquesVisibles.isEmpty)
+        ? null
+        : boutiquesVisibles.toSet();
+    final list = [
+      for (final l in lots)
+        if (l.produitId == produitId && (ensemble == null || ensemble.contains(l.perimetreId)))
+          l,
+    ];
+    // Rétrocompatibilité et robustesse : si un produit dispose de stock physique dans une boutique
+    // sans lot formalisé dans la table (ex: ancien stock avant migration ou ajustement direct),
+    // on synthétise automatiquement un lot disponible pour garantir l'affichage et la traçabilité.
+    final p = _produits[produitId];
+    if (p != null) {
+      final perimetresStock = <String>{
+        ...?_serveur[produitId]?.keys,
+        ...?_attente[produitId]?.keys,
+      };
+      for (final bId in perimetresStock) {
+        if (ensemble != null && !ensemble.contains(bId)) continue;
+        final qteBoutique = quantiteBoutique(produitId, bId);
+        if (qteBoutique.estPositif) {
+          final aDejaLotActif = list.any((l) => l.perimetreId == bId && l.quantiteRestante.estPositif);
+          if (!aDejaLotActif) {
+            final sansTiret = bId.replaceAll('-', '');
+            final courtId = sansTiret.substring(0, sansTiret.length.clamp(0, 4)).toUpperCase();
+            list.add(
+              LotStock(
+                id: 'lot-auto-$produitId-$bId',
+                entrepriseId: p.entrepriseId,
+                perimetreId: bId,
+                produitId: produitId,
+                reference: 'LOT-${courtId.isEmpty ? '01' : courtId}',
+                dateAchat: DateTime(2026, 1, 1),
+                dateReception: DateTime(2026, 1, 1),
+                quantiteInitiale: qteBoutique,
+                quantiteRestante: qteBoutique,
+                prixAchatUnitaire: p.prixAchat ?? 0,
+                prixVenteUnitaire: p.prixDetail,
+                statut: StatutLotStock.actif,
+              ),
+            );
+          }
+        }
+      }
+    }
+    list.sort((a, b) => b.dateReception.compareTo(a.dateReception));
+    return list;
+  }
+
+  /// Lots disponibles dans une boutique donnée, triés selon la méthode FIFO (les plus anciens d'abord).
+  List<LotStock> lotsDisponibles(String produitId, String perimetreId) {
+    final dispo = [
+      for (final l in lotsDe(produitId, [perimetreId]))
+        if (l.perimetreId == perimetreId && l.estDisponible)
+          l,
+    ];
+    dispo.sort((a, b) {
+      final c1 = a.dateReception.compareTo(b.dateReception);
+      if (c1 != 0) return c1;
+      final c2 = a.dateAchat.compareTo(b.dateAchat);
+      if (c2 != 0) return c2;
+      return a.id.compareTo(b.id);
+    });
+    return dispo;
+  }
+
+  /// Quantité cumulée restante dans tous les lots disponibles.
+  Qte quantiteLots(String produitId, [Iterable<String>? boutiquesVisibles]) =>
+      lotsDe(produitId, boutiquesVisibles).where((l) => l.estDisponible).map((l) => l.quantiteRestante).somme;
+
+  /// Coût moyen pondéré unitaire (FCFA) des lots restants pour un produit.
+  int? coutMoyenPondere(String produitId, [String? perimetreId]) {
+    final cibles = lots.where((l) =>
+        l.produitId == produitId &&
+        l.estDisponible &&
+        (perimetreId == null || l.perimetreId == perimetreId)).toList();
+    if (cibles.isEmpty) return produit(produitId)?.prixAchat;
+    final totalQte = cibles.map((l) => l.quantiteRestante).somme;
+    if (totalQte <= Qte.zero) return produit(produitId)?.prixAchat;
+    final totalCout = cibles.fold(0, (s, l) => s + l.quantiteRestante.montant(l.prixAchatUnitaire));
+    return (totalCout * Qte.echelle / totalQte.brut).round();
+  }
 
   /// Répartition par boutique (boutiques visibles seulement où le produit est autorisé).
   Map<String, Qte> repartition(String produitId, Iterable<String> boutiques) {

@@ -95,6 +95,7 @@ abstract final class RuleCodes {
   static const customerRequired = 'CLIENT_REQUIS';
   static const movementInvalid = 'MOUVEMENT_INVALIDE';
   static const productUsed = 'PRODUIT_UTILISE';
+  static const productInStock = 'PRODUIT_EN_STOCK';
 
   // Microfinance.
   static const mfProRequired = 'MODULE_RESERVE_PRO';

@@ -1,6 +1,6 @@
 # Redirection officielle du téléchargement APK (CDN GitHub Releases officiel, sans limite 25 Mo)
-/downloads/DubaGest-Android.apk   https://github.com/moromali223-png/DubaGest/releases/download/v1.0.3/DubaGest-Android.apk 302
-/downloads/*                      https://github.com/moromali223-png/DubaGest/releases/download/v1.0.3/DubaGest-Android.apk 302
+/downloads/DubaGest-Android.apk   https://github.com/moromali223-png/DubaGest/releases/download/v1.0.4/DubaGest-Android.apk 302
+/downloads/*                      https://github.com/moromali223-png/DubaGest/releases/download/v1.0.4/DubaGest-Android.apk 302
 
 # Redirections d'accès direct vers la PWA DubaGest
 /app                              https://app.dubagest.com                                                                   302

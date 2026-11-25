@@ -199,7 +199,8 @@ void main() {
       expect(e.quantiteBoutique(p.id, boutiqueA), Qte.depuis(4000), reason: '100 cartons × 40');
       expect(e.statutDans(p, [boutiqueA]), StatutStock.enStock);
       final ops = await queue.due(userId, DateTime.now().add(const Duration(days: 1)));
-      expect(ops.map((o) => o.entityTable), ['produits', 'mouvements_stock'], reason: 'le produit part avant son stock');
+      expect(ops.map((o) => o.entityTable), ['produits', 'lots_stock', 'mouvements_stock'],
+          reason: 'le produit part avant son lot et son stock');
     });
 
     test('sortie : stock négatif interdit, message clair', () async {

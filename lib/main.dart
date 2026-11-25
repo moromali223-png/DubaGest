@@ -12,6 +12,7 @@ import 'app/app.dart';
 import 'app/config/app_config.dart';
 import 'app/config/config_providers.dart';
 import 'app/di/app_composition.dart';
+import 'core/auth/resilient_auth_storage.dart';
 import 'core/database/app_database.dart';
 import 'core/database/connection.dart';
 import 'core/di/core_providers.dart';
@@ -32,13 +33,16 @@ Future<void> main() async {
   try {
     final config = AppConfig.fromEnvironment();
     final prefs = await SharedPreferences.getInstance();
-    // Restaure la session persistée (fonctionne hors-ligne) et échange le code PKCE OAuth si présent.
+    final authStorage = ResilientAuthStorage(prefs: prefs);
+    await authStorage.initialize();
+    // Restaure la session persistée (avec protection multi-couches IndexedDB/iOS Safari)
     await Supabase.initialize(
       url: config.supabaseUrl,
       publishableKey: config.supabaseKey,
-      authOptions: const FlutterAuthClientOptions(
+      authOptions: FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
         detectSessionInUri: true,
+        localStorage: authStorage,
       ),
     );
     await _ensureOAuthCallbackSession(initialUri);

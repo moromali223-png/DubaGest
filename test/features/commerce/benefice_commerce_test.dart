@@ -91,13 +91,13 @@ void main() {
       date: dateVente,
       reglement: ReglementVente.immediat,
       lignes: [
-        LigneVente(
+        LigneOperation(
           id: 'lv-1',
           produitId: 'prod-riz',
           unite: 'Sac',
+          facteur: Qte.un,
           quantite: Qte.depuis(2),
           prixUnitaire: 15000,
-          montant: 30000,
         ),
       ],
       total: 30000,
@@ -114,13 +114,13 @@ void main() {
       date: dateVente,
       reglement: ReglementVente.credit,
       lignes: [
-        LigneVente(
+        LigneOperation(
           id: 'lv-2',
           produitId: 'prod-huile',
           unite: 'Bidon',
+          facteur: Qte.un,
           quantite: Qte.depuis(1),
           prixUnitaire: 6000,
-          montant: 6000,
         ),
       ],
       total: 6000,
@@ -137,19 +137,19 @@ void main() {
       date: dateVente,
       reglement: ReglementVente.immediat,
       lignes: [
-        LigneVente(
+        LigneOperation(
           id: 'lv-3',
           produitId: 'prod-riz',
           unite: 'Sac',
+          facteur: Qte.un,
           quantite: Qte.depuis(5),
           prixUnitaire: 15000,
-          montant: 75000,
         ),
       ],
       total: 75000,
       remise: 0,
       montantPaye: 75000,
-      statut: 'ANNULEE',
+      annulee: true,
     );
 
     // 4. Vente 4 sur Boutique B : 1 article sans coût (CA = 500 FCFA)
@@ -161,13 +161,13 @@ void main() {
       date: dateVente,
       reglement: ReglementVente.immediat,
       lignes: [
-        LigneVente(
+        LigneOperation(
           id: 'lv-4',
           produitId: 'prod-inconnu',
           unite: 'Sachet',
+          facteur: Qte.un,
           quantite: Qte.depuis(1),
           prixUnitaire: 500,
-          montant: 500,
         ),
       ],
       total: 500,

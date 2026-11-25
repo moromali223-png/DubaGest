@@ -2,20 +2,24 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../app/theme/app_theme.dart';
 import '../../../fichiers/data/fichiers_repository_impl.dart' show bucketFichiers;
 import '../../domain/entities/prestation.dart';
-
-/// Cache mémoire partagé des octets de photos téléchargées depuis Supabase Storage
-/// ou capturées localement afin d'assurer un affichage instantané et fluide sur mobile et Web.
-final Map<String, Uint8List> prestationPhotoBytesCache = {};
+import '../services_providers.dart';
+import '../../data/datasources/prestation_photos_storage.dart';
 
 /// Widget réutilisable qui affiche une [PhotoPrestation] qu'elle soit locale,
 /// en base64, via URL HTTP ou stockée dans le bucket privé Supabase Storage « fichiers ».
-class PrestationPhotoImage extends StatefulWidget {
+///
+/// Intègre une résolution résiliente Offline-First :
+/// - Cache RAM direct
+/// - Table SQLite `photosLocales` persistante
+/// - Téléchargement Supabase Storage avec mise en cache pérenne
+class PrestationPhotoImage extends ConsumerStatefulWidget {
   const PrestationPhotoImage({
     super.key,
     required this.photo,
@@ -30,51 +34,48 @@ class PrestationPhotoImage extends StatefulWidget {
   final double? height;
 
   @override
-  State<PrestationPhotoImage> createState() => _PrestationPhotoImageState();
+  ConsumerState<PrestationPhotoImage> createState() => _PrestationPhotoImageState();
 }
 
-class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
-  Future<Uint8List?>? _remoteFuture;
+class _PrestationPhotoImageState extends ConsumerState<PrestationPhotoImage> {
+  Future<Uint8List?>? _loaderFuture;
 
   @override
   void initState() {
     super.initState();
-    _initRemoteLoader();
+    _initLoader();
   }
 
   @override
   void didUpdateWidget(covariant PrestationPhotoImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.photo.cheminDistant != widget.photo.cheminDistant ||
+    if (oldWidget.photo.id != widget.photo.id ||
+        oldWidget.photo.cheminDistant != widget.photo.cheminDistant ||
         oldWidget.photo.cheminLocal != widget.photo.cheminLocal) {
-      _initRemoteLoader();
+      _initLoader();
     }
   }
 
-  void _initRemoteLoader() {
-    final distant = widget.photo.cheminDistant;
-    if (distant != null && distant.isNotEmpty && !distant.startsWith('http') && !distant.startsWith('data:')) {
-      if (prestationPhotoBytesCache.containsKey(distant) || prestationPhotoBytesCache.containsKey(widget.photo.id)) {
-        final cached = prestationPhotoBytesCache[distant] ?? prestationPhotoBytesCache[widget.photo.id];
-        _remoteFuture = Future.value(cached);
-      } else {
-        _remoteFuture = _telechargerDepuisStorage(distant);
-      }
-    } else {
-      _remoteFuture = null;
+  void _initLoader() {
+    final p = widget.photo;
+    // Si déjà disponible en RAM, pas besoin de future asynchrone
+    if (prestationPhotoBytesCache.containsKey(p.id) ||
+        (p.cheminDistant != null && prestationPhotoBytesCache.containsKey(p.cheminDistant!)) ||
+        (p.cheminLocal != null && prestationPhotoBytesCache.containsKey(p.cheminLocal!))) {
+      _loaderFuture = null;
+      return;
     }
+
+    _loaderFuture = _chargerOctets();
   }
 
-  Future<Uint8List?> _telechargerDepuisStorage(String path) async {
+  Future<Uint8List?> _chargerOctets() async {
     try {
-      final bytes = await Supabase.instance.client.storage.from(bucketFichiers).download(path);
-      if (bytes.isNotEmpty) {
-        prestationPhotoBytesCache[path] = bytes;
-        prestationPhotoBytesCache[widget.photo.id] = bytes;
-        return bytes;
-      }
-    } catch (_) {}
-    return null;
+      final storage = ref.read(prestationPhotosStorageProvider);
+      return await storage.chargerOctets(widget.photo);
+    } catch (_) {
+      return null;
+    }
   }
 
   Uint8List? _extraireOctetsDataUri(String uri) {
@@ -183,7 +184,7 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
       );
     }
 
-    // Chemin Supabase Storage privé
+    // Chemin Supabase Storage privé ou récupération résiliente SQLite / Stockage
     if (prestationPhotoBytesCache.containsKey(distant)) {
       return Image.memory(
         prestationPhotoBytesCache[distant]!,
@@ -195,7 +196,7 @@ class _PrestationPhotoImageState extends State<PrestationPhotoImage> {
     }
 
     return FutureBuilder<Uint8List?>(
-      future: _remoteFuture,
+      future: _loaderFuture,
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return Container(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -8,10 +9,12 @@ import '../../../../core/utils/app_logger.dart';
 import '../../../fichiers/data/fichiers_repository_impl.dart' show bucketFichiers;
 import '../../domain/entities/prestation.dart';
 import '../../domain/entities/service_catalogue.dart';
+import 'prestation_photos_storage.dart';
 
 class ServicesRemoteDataSource {
-  const ServicesRemoteDataSource(this._client);
+  const ServicesRemoteDataSource(this._client, {this.photosStorage});
   final SupabaseClient _client;
+  final PrestationPhotosStorage? photosStorage;
 
   // --- CATALOGUE ---
 
@@ -172,7 +175,10 @@ class ServicesRemoteDataSource {
       return photo.copyWith(prestationId: prestationId, syncStatus: RecordSyncStatus.synced);
     }
 
-    final octets = await _lireOctetsLocaux(photo.cheminLocal);
+    Uint8List? octets = await _lireOctetsLocaux(photo.cheminLocal);
+    if ((octets == null || octets.isEmpty) && photosStorage != null) {
+      octets = await photosStorage!.chargerOctets(photo);
+    }
     if (octets == null || octets.isEmpty) {
       return photo.copyWith(prestationId: prestationId);
     }
@@ -185,6 +191,12 @@ class ServicesRemoteDataSource {
             octets,
             fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
           );
+      await photosStorage?.sauvegarderOctets(
+        photoId: photo.id,
+        octets: octets,
+        cheminDistant: cheminPrestation,
+        cheminLocal: photo.cheminLocal,
+      );
       return photo.copyWith(
         prestationId: prestationId,
         cheminDistant: cheminPrestation,
@@ -212,6 +224,12 @@ class ServicesRemoteDataSource {
         'type_mime': 'image/jpeg',
         'taille': octets.length,
       });
+      await photosStorage?.sauvegarderOctets(
+        photoId: photo.id,
+        octets: octets,
+        cheminDistant: cheminPj,
+        cheminLocal: photo.cheminLocal,
+      );
       return photo.copyWith(
         prestationId: prestationId,
         cheminDistant: cheminPj,
@@ -281,12 +299,15 @@ class ServicesRemoteDataSource {
       'id': prestation.id,
       'entreprise_id': prestation.entrepriseId,
       'activite_code': prestation.activiteCode,
+      'metier_code': prestation.metierCode.code,
+      if (prestation.champsMetier.isNotEmpty) 'champs_metier': prestation.champsMetier,
       'perimetre_id': prestation.perimetreId,
       'contact_id': prestation.contactId,
       'titre': prestation.titre,
       'description': prestation.description,
       'lignes': prestation.lignes.map((l) => l.toJson()).toList(),
       'remise': prestation.remise,
+      'total': prestation.total,
       'statut': prestation.statut.code,
       'priorite': prestation.priorite.code,
       'debut_prevu': prestation.debutPrevu?.toIso8601String(),
@@ -294,33 +315,53 @@ class ServicesRemoteDataSource {
           ? '${prestation.echeanceJour!.year.toString().padLeft(4, '0')}-${prestation.echeanceJour!.month.toString().padLeft(2, '0')}-${prestation.echeanceJour!.day.toString().padLeft(2, '0')}'
           : null,
       'echeance_heure': prestation.echeanceHeure,
+      if (prestation.dureeEstimee != null) 'duree_estimee': prestation.dureeEstimee,
+      'unite_duree': prestation.uniteDuree.code,
+      if (prestation.dateRemisePrevue != null) 'date_remise_prevue': prestation.dateRemisePrevue!.toIso8601String(),
       'livraison_requise': prestation.livraisonRequise,
       'duree_minutes': prestation.dureeMinutes,
       'responsable_id': prestation.responsableId,
       'lieu': prestation.lieu,
       'note': prestation.note,
+      if (prestation.photos.isNotEmpty) 'photos': _photosPourServeur(prestation.photos),
     };
 
-    final response = await _client.from('prestations').insert(payload).select().single();
+    Map<String, dynamic> response;
+    try {
+      response = await _client.from('prestations').insert(payload).select().single();
+    } catch (e) {
+      if (e.toString().contains('photos')) {
+        payload.remove('photos');
+        response = await _client.from('prestations').insert(payload).select().single();
+      } else {
+        rethrow;
+      }
+    }
 
-    // Une fois la prestation (et son engagement trigger) créée, synchroniser les photos
-    final photosSynced = await _synchroniserPhotosPrestation(prestation);
-    if (photosSynced.isNotEmpty) {
-      try {
+    // Le téléversement des binaires vers Supabase Storage s'exécute en arrière-plan
+    // pour garantir un enregistrement instantané sur PWA et mobile sans bloquer l'interface.
+    if (prestation.photos.isNotEmpty) {
+      unawaited(_televerserPhotosEnArrierePlan(prestation));
+    }
+
+    return _mapPrestation(response, 0, photosPiecesJointes: prestation.photos).copyWith(photos: prestation.photos);
+  }
+
+  Future<void> _televerserPhotosEnArrierePlan(Prestation prestation) async {
+    try {
+      final photosSynced = await _synchroniserPhotosPrestation(prestation);
+      if (photosSynced.isNotEmpty && photosSynced.any((p) => p.cheminDistant != null)) {
         await _client
             .from('prestations')
             .update({'photos': _photosPourServeur(photosSynced)})
             .eq('id', prestation.id);
-      } catch (_) {}
+      }
+    } catch (e) {
+      AppLogger.warning('Upload photos arrière-plan (${prestation.id}) : $e', tag: 'services_photos');
     }
-
-    return _mapPrestation(response, 0).copyWith(photos: photosSynced);
   }
 
   Future<Prestation> modifierPrestation(Prestation prestation) async {
-    final photosSynced = await _synchroniserPhotosPrestation(prestation);
-    await _nettoyerPhotosSupprimees(prestation.id, photosSynced);
-
     final payload = <String, dynamic>{
       'perimetre_id': prestation.perimetreId,
       'contact_id': prestation.contactId,
@@ -328,6 +369,7 @@ class ServicesRemoteDataSource {
       'description': prestation.description,
       'lignes': prestation.lignes.map((l) => l.toJson()).toList(),
       'remise': prestation.remise,
+      'total': prestation.total,
       'statut': prestation.statut.code,
       'priorite': prestation.priorite.code,
       'debut_prevu': prestation.debutPrevu?.toIso8601String(),
@@ -335,12 +377,15 @@ class ServicesRemoteDataSource {
           ? '${prestation.echeanceJour!.year.toString().padLeft(4, '0')}-${prestation.echeanceJour!.month.toString().padLeft(2, '0')}-${prestation.echeanceJour!.day.toString().padLeft(2, '0')}'
           : null,
       'echeance_heure': prestation.echeanceHeure,
+      if (prestation.dureeEstimee != null) 'duree_estimee': prestation.dureeEstimee,
+      'unite_duree': prestation.uniteDuree.code,
+      if (prestation.dateRemisePrevue != null) 'date_remise_prevue': prestation.dateRemisePrevue!.toIso8601String(),
       'livraison_requise': prestation.livraisonRequise,
       'duree_minutes': prestation.dureeMinutes,
       'responsable_id': prestation.responsableId,
       'lieu': prestation.lieu,
       'note': prestation.note,
-      'photos': _photosPourServeur(photosSynced),
+      if (prestation.photos.isNotEmpty) 'photos': _photosPourServeur(prestation.photos),
     };
 
     Map<String, dynamic> response;
@@ -355,8 +400,13 @@ class ServicesRemoteDataSource {
         rethrow;
       }
     }
-    return _mapPrestation(response, prestation.montantRegle, photosPiecesJointes: photosSynced)
-        .copyWith(photos: photosSynced);
+
+    if (prestation.photos.isNotEmpty) {
+      unawaited(_televerserPhotosEnArrierePlan(prestation));
+    }
+
+    return _mapPrestation(response, prestation.montantRegle, photosPiecesJointes: prestation.photos)
+        .copyWith(photos: prestation.photos);
   }
 
   Future<void> changerStatutPrestation(String prestationId, StatutPrestation statut, {String? motif}) async {

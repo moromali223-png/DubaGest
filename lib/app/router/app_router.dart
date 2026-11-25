@@ -535,7 +535,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.ventes,
             redirect: (_, _) => guardModule(ModuleCodes.commerceVentes),
-            builder: (_, state) => VentePage(produitId: state.uri.queryParameters['produit']),
+            builder: (_, state) => VentePage(
+              produitId: state.uri.queryParameters['produit'],
+              lotId: state.uri.queryParameters['lot'],
+            ),
             routes: [
               GoRoute(path: 'historique', builder: (_, _) => const VentesPage()),
               GoRoute(path: ':id', builder: (_, state) => VenteDetailPage(venteId: state.pathParameters['id']!)),

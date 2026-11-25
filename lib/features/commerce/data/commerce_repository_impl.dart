@@ -45,9 +45,14 @@ class CommerceRepositoryImpl implements CommerceRepository {
       });
 
   @override
-  Future<void> creerProduit(Produit p, {MouvementStock? stockInitial}) => _ecrire((uid) async {
+  Future<void> creerProduit(Produit p, {MouvementStock? stockInitial, LotStock? lotInitial}) => _ecrire((uid) async {
         await _local.insererProduit(p);
         await _envoyer(uid, 'produits', p.id, SyncOperationType.insert, CommerceMapper.produitPayload(p, creation: true));
+        if (lotInitial != null) {
+          await _local.insererLot(lotInitial);
+          await _envoyer(uid, 'lots_stock', lotInitial.id, SyncOperationType.insert,
+              CommerceMapper.lotPayload(lotInitial, creation: true));
+        }
         if (stockInitial != null) {
           await _local.insererMouvement(stockInitial);
           await _envoyer(uid, 'mouvements_stock', stockInitial.id, SyncOperationType.insert,
@@ -65,15 +70,46 @@ class CommerceRepositoryImpl implements CommerceRepository {
       });
 
   @override
-  Future<void> enregistrerMouvement(MouvementStock m) => _ecrire((uid) async {
+  Future<void> modifierLot(LotStock lot) => _ecrire((uid) async {
+        await _local.remplacerLot(lot);
+        await _envoyer(uid, 'lots_stock', lot.id, SyncOperationType.update, CommerceMapper.lotPayload(lot),
+            baseVersion: lot.version);
+      });
+
+  @override
+  Future<void> supprimerProduit(Produit p) => _ecrire((uid) async {
+        await _local.retirer('produits', p.id);
+        await _envoyer(uid, 'produits', p.id, SyncOperationType.delete, const {}, baseVersion: p.version);
+      });
+
+  @override
+  Future<void> enregistrerMouvement(MouvementStock m, {LotStock? lotCree}) => _ecrire((uid) async {
+        if (lotCree != null) {
+          await _local.insererLot(lotCree);
+          await _envoyer(uid, 'lots_stock', lotCree.id, SyncOperationType.insert, CommerceMapper.lotPayload(lotCree, creation: true));
+        }
         await _local.insererMouvement(m);
         await _envoyer(uid, 'mouvements_stock', m.id, SyncOperationType.insert, CommerceMapper.mouvementPayload(m));
       });
 
   @override
-  Future<void> transferer(Transfert t, {required MouvementStock sortie, required MouvementStock entree}) =>
+  Future<void> transferer(
+    Transfert t, {
+    required MouvementStock sortie,
+    required MouvementStock entree,
+    List<LotStock> lotsModifies = const [],
+    List<LotStock> lotsCrees = const [],
+  }) =>
       _ecrire((uid) async {
         await _local.insererTransfert(t);
+        for (final l in lotsModifies) {
+          await _local.remplacerLot(l);
+        }
+        for (final l in lotsCrees) {
+          await _local.insererLot(l);
+          await _envoyer(uid, 'lots_stock', l.id, SyncOperationType.insert,
+              CommerceMapper.lotPayload(l, creation: true));
+        }
         await _local.insererMouvement(sortie);
         await _local.insererMouvement(entree);
         await _envoyer(uid, 'transferts_stock', t.id, SyncOperationType.insert, CommerceMapper.transfertPayload(t));
@@ -81,13 +117,13 @@ class CommerceRepositoryImpl implements CommerceRepository {
 
   @override
   Future<void> creerAchat(Achat a, {Engagement? dette, Reception? reception, List<MouvementStock> entrees = const [],
-          Achat? achatRecu}) =>
+          Achat? achatRecu, List<LotStock> lotsCrees = const []}) =>
       _ecrire((uid) async {
         await _local.insererAchat(a);
         if (dette != null) await _local.insererEngagement(dette);
         await _envoyer(uid, 'achats', a.id, SyncOperationType.insert, CommerceMapper.achatPayload(a, creation: true));
         if (reception != null) {
-          await _receptionner(uid, reception, entrees, achatRecu ?? a);
+          await _receptionner(uid, reception, entrees, achatRecu ?? a, lotsCrees);
         }
       });
 
@@ -105,11 +141,16 @@ class CommerceRepositoryImpl implements CommerceRepository {
       });
 
   @override
-  Future<void> receptionner(Reception r, {required List<MouvementStock> entrees, required Achat achatRecu}) =>
-      _ecrire((uid) => _receptionner(uid, r, entrees, achatRecu));
+  Future<void> receptionner(Reception r, {required List<MouvementStock> entrees, required Achat achatRecu, List<LotStock> lotsCrees = const []}) =>
+      _ecrire((uid) => _receptionner(uid, r, entrees, achatRecu, lotsCrees));
 
-  Future<void> _receptionner(String uid, Reception r, List<MouvementStock> entrees, Achat achatRecu) async {
+  Future<void> _receptionner(String uid, Reception r, List<MouvementStock> entrees, Achat achatRecu,
+      [List<LotStock> lotsCrees = const []]) async {
     await _local.insererReception(r);
+    for (final l in lotsCrees) {
+      await _local.insererLot(l);
+      await _envoyer(uid, 'lots_stock', l.id, SyncOperationType.insert, CommerceMapper.lotPayload(l, creation: true));
+    }
     for (final m in entrees) {
       await _local.insererMouvement(m);
     }
@@ -118,7 +159,11 @@ class CommerceRepositoryImpl implements CommerceRepository {
   }
 
   @override
-  Future<Vente> vendre(Vente v, {required List<MouvementStock> sorties, Engagement? creance, Paiement? paiement,
+  Future<Vente> vendre(Vente v,
+      {required List<MouvementStock> sorties,
+      List<LotStock> lotsModifies = const [],
+      Engagement? creance,
+      Paiement? paiement,
       MouvementCaisse? mouvementCaisse}) async {
     var numerotee = v;
     await _ecrire((uid) async {
@@ -126,6 +171,9 @@ class CommerceRepositoryImpl implements CommerceRepository {
       final numInfo = await _local.prochainNumero(v.entrepriseId, v.perimetreId, jour);
       numerotee = v.numerotee(poste: numInfo.poste, sequence: numInfo.sequence, dateCommerciale: jour);
       await _local.insererVente(numerotee);
+      for (final lot in lotsModifies) {
+        await _local.remplacerLot(lot);
+      }
       for (final m in sorties) {
         await _local.insererMouvement(m);
       }
@@ -141,6 +189,11 @@ class CommerceRepositoryImpl implements CommerceRepository {
   @override
   Future<void> annulerVente(Vente avant, Vente apres, {required List<MouvementStock> retours}) => _ecrire((uid) async {
         await _local.remplacerVente(apres);
+        for (final l in avant.lignes) {
+          if (l.lots.isNotEmpty) {
+            await _local.restaurerLots(l.lots);
+          }
+        }
         for (final m in retours) {
           await _local.insererMouvement(m);
         }
@@ -187,6 +240,7 @@ class CommerceRepositoryImpl implements CommerceRepository {
 List<SyncEntityHandler> commerceSyncHandlers(CommerceLocalDataSource local, SyncCursorStore cursors) => [
       StandardSyncHandler(local.categories, cursors, local.enTransaction),
       StandardSyncHandler(local.produits, cursors, local.enTransaction),
+      StandardSyncHandler(local.lots, cursors, local.enTransaction),
       OperationSyncHandler(local.achats, local, cursors, dettesEtPaiements: true),
       OperationSyncHandler(local.receptions, local, cursors),
       OperationSyncHandler(local.ventes, local, cursors, dettesEtPaiements: true),

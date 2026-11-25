@@ -25,6 +25,11 @@ class CommerceLocalDataSource {
             identique: CommerceMapper.produitIdentique),
         stocks = StockageStocks(_db, _db.stocks,
             versLocal: CommerceMapper.stockServeur, statutDe: (r) => r.syncStatus, versionDe: (r) => r.version),
+        lots = StockageMiroir(_db, _db.lotsStock,
+            versLocal: CommerceMapper.lotServeur,
+            statutDe: (r) => r.syncStatus,
+            versionDe: (r) => r.version,
+            identique: CommerceMapper.lotIdentique),
         mouvements = StockageMiroir(_db, _db.mouvementsStock,
             versLocal: CommerceMapper.mouvementServeur, statutDe: (r) => r.syncStatus, versionDe: (r) => r.version),
         transferts = StockageMiroir(_db, _db.transfertsStock,
@@ -46,13 +51,14 @@ class CommerceLocalDataSource {
   final StockageMiroir<$CategoriesProduitsTable, CategorieProduitRow> categories;
   final StockageMiroir<$ProduitsTable, ProduitRow> produits;
   final StockageMiroir<$StocksTable, StockRow> stocks;
+  final StockageMiroir<$LotsStockTable, LotStockRow> lots;
   final StockageMiroir<$MouvementsStockTable, MouvementStockRow> mouvements;
   final StockageMiroir<$TransfertsStockTable, TransfertStockRow> transferts;
   final StockageMiroir<$AchatsTable, AchatRow> achats;
   final StockageMiroir<$ReceptionsTable, ReceptionRow> receptions;
   final StockageMiroir<$VentesTable, VenteRow> ventes;
 
-  List<StockageMiroir> get tous => [categories, produits, stocks, mouvements, transferts, achats, receptions, ventes];
+  List<StockageMiroir> get tous => [categories, produits, stocks, lots, mouvements, transferts, achats, receptions, ventes];
 
   Future<void> enTransaction(Future<void> Function() action) => _db.transaction(action);
 
@@ -77,6 +83,7 @@ class CommerceLocalDataSource {
           ..orderBy([(t) => OrderingTerm.asc(t.cleRecherche)]))
         .get();
     final stks = await lire(_db.stocks, (t) => t.entrepriseId.equals(eid) & t.deletedAt.isNull());
+    final lts = await lire(_db.lotsStock, (t) => t.entrepriseId.equals(eid) & t.deletedAt.isNull());
     final mvts = await lire(_db.mouvementsStock, (t) => t.entrepriseId.equals(eid) & t.deletedAt.isNull());
     final trfs = await lire(_db.transfertsStock, (t) => t.entrepriseId.equals(eid) & t.deletedAt.isNull());
     final achs = await (_db.select(_db.achats)
@@ -92,6 +99,7 @@ class CommerceLocalDataSource {
       categories: cats.map(CommerceMapper.categorie).toList(),
       produits: prods.map(CommerceMapper.produit).toList(),
       stocks: stks.map(CommerceMapper.stock).toList(),
+      lots: lts.map(CommerceMapper.lot).toList(),
       mouvements: mvts.map(CommerceMapper.mouvement).toList(),
       transferts: trfs.map(CommerceMapper.transfert).toList(),
       achats: achs.map(CommerceMapper.achat).toList(),
@@ -142,6 +150,85 @@ class CommerceLocalDataSource {
 
   Future<void> insererReception(Reception r) =>
       _db.into(_db.receptions).insert(CommerceMapper.receptionLocale(r, RecordSyncStatus.pendingSync));
+
+  Future<void> insererLot(LotStock l) =>
+      _db.into(_db.lotsStock).insert(CommerceMapper.lotLocal(l, RecordSyncStatus.pendingSync));
+
+  Future<void> remplacerLot(LotStock l) => (_db.update(_db.lotsStock)..where((t) => t.id.equals(l.id))).write(
+        CommerceMapper.lotLocal(l, RecordSyncStatus.pendingSync).copyWith(id: const Value.absent()),
+      );
+
+  /// Consommation automatique FIFO des lots d'une boutique pour un produit.
+  /// Décrémente la quantité restante de chaque lot consommé et met à jour son statut.
+  Future<List<LotConsommation>> consommerLotsFifo(
+    String entrepriseId,
+    String perimetreId,
+    String produitId,
+    Qte quantiteDemandeeBase,
+  ) async {
+    final rows = await (_db.select(_db.lotsStock)
+          ..where((t) =>
+              t.entrepriseId.equals(entrepriseId) &
+              t.perimetreId.equals(perimetreId) &
+              t.produitId.equals(produitId) &
+              t.quantiteRestante.isBiggerThanValue(0) &
+              t.statut.equals('ACTIF') &
+              t.deletedAt.isNull())
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.dateReception),
+            (t) => OrderingTerm.asc(t.dateAchat),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .get();
+
+    final consommations = <LotConsommation>[];
+    var reste = quantiteDemandeeBase;
+
+    for (final r in rows) {
+      if (reste <= Qte.zero) break;
+      final qteLot = Qte(r.quantiteRestante);
+      final prise = reste < qteLot ? reste : qteLot;
+      reste = reste - prise;
+      final nvRestante = qteLot - prise;
+      final statut = nvRestante <= Qte.zero ? 'EPUISE' : 'ACTIF';
+
+      await (_db.update(_db.lotsStock)..where((t) => t.id.equals(r.id))).write(
+        LotsStockCompanion(
+          quantiteRestante: Value(nvRestante.brut),
+          statut: Value(statut),
+          syncStatus: const Value('pending'),
+        ),
+      );
+
+      final coutTotal = prise.montant(r.prixAchatUnitaire);
+      consommations.add(LotConsommation(
+        lotId: r.id,
+        reference: r.reference,
+        quantiteBase: prise,
+        prixAchatUnitaire: r.prixAchatUnitaire,
+        prixVenteUnitaire: r.prixVenteUnitaire,
+        coutTotal: coutTotal,
+      ));
+    }
+    return consommations;
+  }
+
+  /// Restauration des quantités dans les lots lors d'une annulation de vente ou retour.
+  Future<void> restaurerLots(List<LotConsommation> consommations) async {
+    for (final c in consommations) {
+      final lot = await (_db.select(_db.lotsStock)..where((t) => t.id.equals(c.lotId))).getSingleOrNull();
+      if (lot != null) {
+        final nvQte = Qte(lot.quantiteRestante) + c.quantiteBase;
+        await (_db.update(_db.lotsStock)..where((t) => t.id.equals(c.lotId))).write(
+          LotsStockCompanion(
+            quantiteRestante: Value(nvQte.brut),
+            statut: const Value('ACTIF'),
+            syncStatus: const Value('pending'),
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> insererVente(Vente v) =>
       _db.into(_db.ventes).insert(CommerceMapper.venteLocale(v, RecordSyncStatus.pendingSync));
