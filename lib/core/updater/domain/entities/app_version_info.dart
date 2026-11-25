@@ -1,7 +1,7 @@
 /// Configuration statique de version officielle de l'application
 abstract final class AppVersionConfig {
-  static const String currentVersionName = '1.0.3';
-  static const int currentVersionCode = 4;
+  static const String currentVersionName = '1.0.4';
+  static const int currentVersionCode = 5;
 }
 
 /// Statut de disponibilité de la mise à jour
