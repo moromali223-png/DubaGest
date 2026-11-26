@@ -11,6 +11,19 @@ class VitrineRemoteDataSource {
   const VitrineRemoteDataSource(this._client);
   final SupabaseClient _client;
 
+  bool _isTableOrSchemaCacheError(Object e) {
+    if (e is PostgrestException) {
+      if (e.code == 'PGRST205' || e.code == '42P01') return true;
+      final msg = e.message.toLowerCase();
+      if (msg.contains('could not find the table') ||
+          msg.contains('schema cache') ||
+          (msg.contains('relation') && msg.contains('does not exist'))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // --- CONFIGURATION VITRINE ---
 
   Future<VitrineConfig?> chargerVitrine(String entrepriseId) async {
@@ -24,6 +37,9 @@ class VitrineRemoteDataSource {
       if (res == null) return null;
       return VitrineConfig.fromJson(res);
     } catch (e, st) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return null;
+      }
       throw ErrorMapper.map(e, st);
     }
   }
@@ -77,6 +93,9 @@ class VitrineRemoteDataSource {
 
       return (res as List).map((j) => VitrinePrestation.fromJson(j as Map<String, dynamic>)).toList();
     } catch (e, st) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return const [];
+      }
       throw ErrorMapper.map(e, st);
     }
   }
@@ -116,6 +135,9 @@ class VitrineRemoteDataSource {
 
       return (res as List).map((j) => VitrineGalerieItem.fromJson(j as Map<String, dynamic>)).toList();
     } catch (e, st) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return const [];
+      }
       throw ErrorMapper.map(e, st);
     }
   }
@@ -154,6 +176,9 @@ class VitrineRemoteDataSource {
 
       return (res as List).map((j) => VitrineMembreEquipe.fromJson(j as Map<String, dynamic>)).toList();
     } catch (e, st) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return const [];
+      }
       throw ErrorMapper.map(e, st);
     }
   }
@@ -193,6 +218,9 @@ class VitrineRemoteDataSource {
 
       return (res as List).map((j) => VitrineRendezVous.fromJson(j as Map<String, dynamic>)).toList();
     } catch (e, st) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return const [];
+      }
       throw ErrorMapper.map(e, st);
     }
   }
