@@ -53,6 +53,8 @@ class VitrineSections {
     this.galerie = false,
     this.equipe = false,
     this.rdv = false,
+    this.biens = false,
+    this.demandeVisite = false,
     this.horaires = true,
     this.contact = true,
     this.temoignages = false,
@@ -66,6 +68,8 @@ class VitrineSections {
   final bool galerie;
   final bool equipe;
   final bool rdv;
+  final bool biens;
+  final bool demandeVisite;
   final bool horaires;
   final bool contact;
   final bool temoignages;
@@ -79,6 +83,8 @@ class VitrineSections {
         'galerie': galerie,
         'equipe': equipe,
         'rdv': rdv,
+        'biens': biens,
+        'demande_visite': demandeVisite,
         'horaires': horaires,
         'contact': contact,
         'temoignages': temoignages,
@@ -93,6 +99,8 @@ class VitrineSections {
         galerie: j['galerie'] as bool? ?? false,
         equipe: j['equipe'] as bool? ?? false,
         rdv: j['rdv'] as bool? ?? false,
+        biens: j['biens'] as bool? ?? false,
+        demandeVisite: j['demande_visite'] as bool? ?? false,
         horaires: j['horaires'] as bool? ?? true,
         contact: j['contact'] as bool? ?? true,
         temoignages: j['temoignages'] as bool? ?? false,
@@ -107,6 +115,8 @@ class VitrineSections {
     bool? galerie,
     bool? equipe,
     bool? rdv,
+    bool? biens,
+    bool? demandeVisite,
     bool? horaires,
     bool? contact,
     bool? temoignages,
@@ -120,6 +130,8 @@ class VitrineSections {
         galerie: galerie ?? this.galerie,
         equipe: equipe ?? this.equipe,
         rdv: rdv ?? this.rdv,
+        biens: biens ?? this.biens,
+        demandeVisite: demandeVisite ?? this.demandeVisite,
         horaires: horaires ?? this.horaires,
         contact: contact ?? this.contact,
         temoignages: temoignages ?? this.temoignages,
@@ -138,10 +150,14 @@ class VitrineSections {
           galerie: false,
           equipe: false,
           rdv: false,
+          biens: false,
+          demandeVisite: false,
           horaires: true,
           contact: true,
         );
       case TypeActivite.boutiqueSpecialisee:
+      case TypeActivite.boutiqueTech:
+      case TypeActivite.cosmetiqueBeaute:
         return const VitrineSections(
           accueil: true,
           aPropos: true,
@@ -151,6 +167,8 @@ class VitrineSections {
           galerie: true,
           equipe: false,
           rdv: false,
+          biens: false,
+          demandeVisite: false,
           horaires: true,
           contact: true,
         );
@@ -158,12 +176,14 @@ class VitrineSections {
         return const VitrineSections(
           accueil: true,
           aPropos: true,
-          produits: false, // Peut être activé si vente de mèches/produits
+          produits: true, // Pour vendre perruques, mèches, huiles capillaires
           prestations: true,
           tarifs: true,
           galerie: true,
           equipe: true,
           rdv: true,
+          biens: false,
+          demandeVisite: false,
           horaires: true,
           contact: true,
         );
@@ -177,8 +197,28 @@ class VitrineSections {
           galerie: true,
           equipe: true,
           rdv: true,
+          biens: false,
+          demandeVisite: false,
           horaires: true,
           contact: true,
+        );
+      case TypeActivite.immobilierLocation:
+      case TypeActivite.immobilierVente:
+      case TypeActivite.agenceImmobiliere:
+        return const VitrineSections(
+          accueil: true,
+          aPropos: true,
+          produits: false,
+          prestations: false,
+          tarifs: false,
+          galerie: true,
+          equipe: true,
+          rdv: false,
+          biens: true,
+          demandeVisite: true,
+          horaires: true,
+          contact: true,
+          temoignages: true,
         );
       case TypeActivite.prestataireServices:
       case TypeActivite.autre:
@@ -191,6 +231,8 @@ class VitrineSections {
           galerie: true,
           equipe: true,
           rdv: true,
+          biens: false,
+          demandeVisite: false,
           horaires: true,
           contact: true,
           temoignages: true,

@@ -1,4 +1,6 @@
+import '../entities/vitrine_bien_immobilier.dart';
 import '../entities/vitrine_config.dart';
+import '../entities/vitrine_demande_visite.dart';
 import '../entities/vitrine_galerie_item.dart';
 import '../entities/vitrine_membre_equipe.dart';
 import '../entities/vitrine_prestation.dart';
@@ -30,4 +32,14 @@ abstract class VitrineRepository {
   Future<List<VitrineRendezVous>> chargerRendezVous(String entrepriseId);
   Future<VitrineRendezVous> changerStatutRendezVous(String rdvId, StatutRendezVous statut, {String? reponse});
   Future<void> creerDemandeRendezVous(VitrineRendezVous rdv);
+
+  // --- BIENS IMMOBILIERS (MODÈLE IMMOBILIER) ---
+  Future<List<VitrineBienImmobilier>> chargerBiens(String vitrineId, String entrepriseId);
+  Future<VitrineBienImmobilier> sauvegarderBien(VitrineBienImmobilier bien);
+  Future<void> supprimerBien(String bienId);
+
+  // --- DEMANDES DE VISITE IMMOBILIÈRE ---
+  Future<List<VitrineDemandeVisite>> chargerDemandesVisite(String entrepriseId);
+  Future<VitrineDemandeVisite> changerStatutDemandeVisite(String id, StatutDemandeVisite statut);
+  Future<void> creerDemandeVisite(VitrineDemandeVisite demande);
 }

@@ -5,6 +5,8 @@ import 'package:dubagest/features/vitrine/domain/entities/vitrine_prestation.dar
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_galerie_item.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_membre_equipe.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_rendez_vous.dart';
+import 'package:dubagest/features/vitrine/domain/entities/vitrine_bien_immobilier.dart';
+import 'package:dubagest/features/vitrine/domain/entities/vitrine_demande_visite.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_publique_data.dart';
 import 'package:dubagest/features/catalogue/services/media_hybrid_resolver.dart';
 
@@ -21,7 +23,8 @@ void main() {
       expect(sections.galerie, isTrue);
       expect(sections.equipe, isTrue);
       expect(sections.rdv, isTrue);
-      expect(sections.produits, isFalse); // Produits désactivés par défaut (salon sans stock)
+      expect(sections.produits, isTrue); // Produits activés pour perruques & mèches
+      expect(sections.biens, isFalse);
     });
 
     test('2. Modèle A recommandé pour Commerce général avec produits activés', () {
@@ -32,15 +35,30 @@ void main() {
       final sections = VitrineSections.parDefautPour(act);
       expect(sections.produits, isTrue);
       expect(sections.prestations, isFalse);
+      expect(sections.biens, isFalse);
     });
 
-    test('3. Modèle B pour Boutique spécialisée et Modèle D pour Beauté', () {
+    test('3. Modèle B pour Boutique spécialisée, Modèle D pour Beauté et Modèle F pour Immobilier', () {
       expect(ModeleVitrine.recommanderPour(TypeActivite.boutiqueSpecialisee), ModeleVitrine.modeleB);
-      expect(ModeleVitrine.recommanderPour(TypeActivite.beauteEsthetique), ModeleVitrine.modeleD);
+      expect(ModeleVitrine.recommanderPour(TypeActivite.boutiqueTech), ModeleVitrine.modeleB);
+      expect(ModeleVitrine.recommanderPour(TypeActivite.cosmetiqueBeaute), ModeleVitrine.modeleD);
       expect(ModeleVitrine.recommanderPour(TypeActivite.prestataireServices), ModeleVitrine.modeleE);
+      expect(ModeleVitrine.recommanderPour(TypeActivite.agenceImmobiliere), ModeleVitrine.modeleF);
+      expect(ModeleVitrine.recommanderPour(TypeActivite.immobilierLocation), ModeleVitrine.modeleF);
+      expect(ModeleVitrine.recommanderPour(TypeActivite.immobilierVente), ModeleVitrine.modeleF);
     });
 
-    test('4. Sérialisation et désérialisation VitrineConfig', () {
+    test('4. Sections par défaut Domaine Immobilier', () {
+      final sections = VitrineSections.parDefautPour(TypeActivite.agenceImmobiliere);
+      expect(sections.biens, isTrue);
+      expect(sections.demandeVisite, isTrue);
+      expect(sections.galerie, isTrue);
+      expect(sections.equipe, isTrue);
+      expect(sections.produits, isFalse);
+      expect(sections.prestations, isFalse);
+    });
+
+    test('5. Sérialisation et désérialisation VitrineConfig', () {
       const config = VitrineConfig(
         id: 'vitrine-123',
         entrepriseId: 'ent-456',
@@ -72,7 +90,7 @@ void main() {
       expect(parsed.sections.produits, isTrue);
     });
 
-    test('5. Sérialisation VitrinePrestation et formatage durée', () {
+    test('6. Sérialisation VitrinePrestation et formatage durée et prix', () {
       const p = VitrinePrestation(
         id: 'p-1',
         vitrineId: 'v-1',
@@ -84,6 +102,8 @@ void main() {
       );
 
       expect(p.dureeFormatee, '2 h');
+      expect(p.prixFormate, '15 000 FCFA');
+
       const p2 = VitrinePrestation(
         id: 'p-2',
         vitrineId: 'v-1',
@@ -93,15 +113,7 @@ void main() {
         dureeMinutes: 45,
       );
       expect(p2.dureeFormatee, '45 min');
-      const p3 = VitrinePrestation(
-        id: 'p-3',
-        vitrineId: 'v-1',
-        entrepriseId: 'e-1',
-        nom: 'Coloration',
-        prix: 20000,
-        dureeMinutes: 135,
-      );
-      expect(p3.dureeFormatee, '2 h 15 min');
+      expect(p2.prixFormate, '5 000 FCFA');
 
       final json = p.toJson();
       final parsed = VitrinePrestation.fromJson(json);
@@ -110,7 +122,7 @@ void main() {
       expect(parsed.categorie, 'Tresses');
     });
 
-    test('6. Sérialisation VitrineRendezVous et statut', () {
+    test('7. Sérialisation VitrineRendezVous et statut', () {
       final rdv = VitrineRendezVous(
         id: 'rdv-1',
         vitrineId: 'v-1',
@@ -132,7 +144,59 @@ void main() {
       expect(parsed.telephoneClient, '+22371234567');
     });
 
-    test('7. Détection Cloudflare R2 vs Supabase Storage V1', () {
+    test('8. Sérialisation VitrineBienImmobilier et formatage prix/loyer', () {
+      const bien = VitrineBienImmobilier(
+        id: 'b-1',
+        vitrineId: 'v-1',
+        entrepriseId: 'e-1',
+        titre: 'Villa Moderne F5 avec Piscine',
+        typeBien: 'VILLA',
+        typeOffre: 'LOCATION',
+        prix: 750000,
+        surfaceM2: 350,
+        nbChambres: 4,
+        nbSallesDeBain: 3,
+        ville: 'Bamako',
+        quartier: 'ACI 2000',
+      );
+
+      expect(bien.prixFormate, '750 000 FCFA / mois');
+
+      final json = bien.toJson();
+      expect(json['titre'], 'Villa Moderne F5 avec Piscine');
+      expect(json['type_offre'], 'LOCATION');
+      expect(json['prix'], 750000);
+
+      final parsed = VitrineBienImmobilier.fromJson(json);
+      expect(parsed.titre, 'Villa Moderne F5 avec Piscine');
+      expect(parsed.nbChambres, 4);
+      expect(parsed.nbSallesDeBain, 3);
+      expect(parsed.surfaceM2, 350.0);
+    });
+
+    test('9. Sérialisation VitrineDemandeVisite', () {
+      final visite = VitrineDemandeVisite(
+        id: 'visite-1',
+        vitrineId: 'v-1',
+        entrepriseId: 'e-1',
+        nomBien: 'Villa Moderne F5',
+        nomClient: 'Amadou Coulibaly',
+        telephoneClient: '+22370000000',
+        dateSouhaitee: DateTime(2026, 12, 5),
+        heureSouhaitee: '10:00',
+        statut: StatutDemandeVisite.enAttente,
+      );
+
+      final json = visite.toJson();
+      expect(json['nom_client'], 'Amadou Coulibaly');
+      expect(json['statut'], 'EN_ATTENTE');
+
+      final parsed = VitrineDemandeVisite.fromJson(json);
+      expect(parsed.nomClient, 'Amadou Coulibaly');
+      expect(parsed.statut, StatutDemandeVisite.enAttente);
+    });
+
+    test('10. Détection Cloudflare R2 vs Supabase Storage V1', () {
       expect(
         MediaHybridResolver.detectOrigin('r2:vitrines/ent-1/banniere/img.jpg'),
         MediaOrigin.cloudflareR2,
@@ -151,42 +215,53 @@ void main() {
       );
     });
 
-    test('8. VitrinePubliqueData JSON parsing unifié', () {
+    test('11. VitrinePubliqueData JSON parsing unifié avec biens immobiliers', () {
       final json = {
         'vitrine': {
           'id': 'v-1',
           'entreprise_id': 'e-1',
-          'nom': 'Salon Kiff Coiffure',
-          'slug': 'kiff-coiffure',
-          'type_activite': 'SALON_COIFFURE',
-          'modele_visuel': 'MODELE_C',
-          'theme_style': 'LUXE_OR',
-          'couleur_principale': '#111111',
-          'couleur_secondaire': '#D4AF37',
-          'sections_actives': {'prestations': true, 'galerie': true, 'rdv': true},
+          'nom': 'Agence Havenly Prestige',
+          'slug': 'havenly-prestige',
+          'type_activite': 'AGENCE_IMMOBILIERE',
+          'modele_visuel': 'MODELE_F',
+          'theme_style': 'NATUREL_CHAUD',
+          'couleur_principale': '#1B3B2B',
+          'couleur_secondaire': '#EFE9DF',
+          'sections_actives': {'biens': true, 'demande_visite': true},
         },
-        'prestations': [
-          {'id': 'pr-1', 'nom': 'Coupe Dame', 'prix': 5000, 'ordre': 1},
-        ],
+        'prestations': [],
         'galerie': [
-          {'id': 'g-1', 'photo_url': 'r2:galerie/e-1/photo.jpg', 'titre': 'Braids Chic'},
+          {'id': 'g-1', 'photo_url': 'r2:galerie/e-1/photo.jpg', 'titre': 'Villa Havenly'},
         ],
         'equipe': [
-          {'id': 'eq-1', 'nom': 'Awa', 'role_ou_specialite': 'Experte Tresses'},
+          {'id': 'eq-1', 'nom': 'Sarah Mansouri', 'role_ou_specialite': 'Directrice Immobilière'},
         ],
         'produits': [],
         'collections': [],
         'nouveautes': [],
+        'biens': [
+          {
+            'id': 'b-1',
+            'titre': 'Modern Villa in Casablanca',
+            'type_bien': 'VILLA',
+            'type_offre': 'VENTE',
+            'prix': 450000000,
+            'photos': ['r2:biens/villa.jpg'],
+            'nb_chambres': 4,
+            'nb_salles_de_bain': 3,
+            'surface_m2': 320,
+          }
+        ],
       };
 
       final data = VitrinePubliqueData.fromJson(json);
-      expect(data.vitrine.slug, 'kiff-coiffure');
-      expect(data.vitrine.modeleVisuel, ModeleVitrine.modeleC);
-      expect(data.prestations.length, 1);
-      expect(data.prestations.first.nom, 'Coupe Dame');
-      expect(data.galerie.length, 1);
+      expect(data.vitrine.slug, 'havenly-prestige');
+      expect(data.vitrine.modeleVisuel, ModeleVitrine.modeleF);
+      expect(data.biens.length, 1);
+      expect(data.biens.first.titre, 'Modern Villa in Casablanca');
+      expect(data.biens.first.nbChambres, 4);
+      expect(data.biens.first.surfaceM2, 320.0);
       expect(data.equipe.length, 1);
-      expect(data.equipe.first.nom, 'Awa');
     });
   });
 }

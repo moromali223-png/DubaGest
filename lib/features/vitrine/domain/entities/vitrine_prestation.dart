@@ -39,6 +39,14 @@ class VitrinePrestation {
     return '$h h $m min';
   }
 
+  String get prixFormate {
+    final s = prix.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]} ',
+    );
+    return '$s FCFA';
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'vitrine_id': vitrineId,

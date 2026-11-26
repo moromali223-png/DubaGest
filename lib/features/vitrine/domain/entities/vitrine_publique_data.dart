@@ -1,10 +1,11 @@
 import '../../../catalogue/domain/entities/catalogue_public_data.dart';
+import 'vitrine_bien_immobilier.dart';
 import 'vitrine_config.dart';
 import 'vitrine_galerie_item.dart';
 import 'vitrine_membre_equipe.dart';
 import 'vitrine_prestation.dart';
 
-/// Données complètes publiques pour le rendu de la vitrine (tous modèles confondus)
+/// Données complètes publiques pour le rendu de la vitrine (tous modèles confondus : Commerce, Services, Immobilier)
 class VitrinePubliqueData {
   const VitrinePubliqueData({
     required this.vitrine,
@@ -14,6 +15,7 @@ class VitrinePubliqueData {
     this.produits = const [],
     this.collections = const [],
     this.nouveautes = const [],
+    this.biens = const [],
   });
 
   final VitrineConfig vitrine;
@@ -23,6 +25,7 @@ class VitrinePubliqueData {
   final List<ProduitCataloguePublic> produits;
   final List<CollectionPublique> collections;
   final List<NouveautePublique> nouveautes;
+  final List<VitrineBienImmobilier> biens;
 
   factory VitrinePubliqueData.fromJson(Map<String, dynamic> json) {
     final vJson = (json['vitrine'] as Map?)?.cast<String, dynamic>() ?? {};
@@ -50,6 +53,10 @@ class VitrinePubliqueData {
       for (final n in (json['nouveautes'] as List?) ?? const [])
         if (n is Map) NouveautePublique.fromJson(n.cast<String, dynamic>()),
     ];
+    final bns = [
+      for (final b in (json['biens'] as List?) ?? const [])
+        if (b is Map) VitrineBienImmobilier.fromJson(b.cast<String, dynamic>()),
+    ];
 
     return VitrinePubliqueData(
       vitrine: VitrineConfig.fromJson(vJson),
@@ -59,6 +66,7 @@ class VitrinePubliqueData {
       produits: prods,
       collections: colls,
       nouveautes: nouvs,
+      biens: bns,
     );
   }
 }

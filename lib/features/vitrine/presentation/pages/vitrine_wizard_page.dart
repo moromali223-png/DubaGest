@@ -278,12 +278,20 @@ class _VitrineWizardPageState extends ConsumerState<VitrineWizardPage> {
         return Icons.storefront_rounded;
       case TypeActivite.boutiqueSpecialisee:
         return Icons.shopping_bag_rounded;
+      case TypeActivite.boutiqueTech:
+        return Icons.devices_other_rounded;
+      case TypeActivite.cosmetiqueBeaute:
+        return Icons.spa_rounded;
       case TypeActivite.salonCoiffure:
         return Icons.content_cut_rounded;
       case TypeActivite.beauteEsthetique:
-        return Icons.spa_rounded;
+        return Icons.auto_awesome_rounded;
       case TypeActivite.prestataireServices:
         return Icons.handyman_rounded;
+      case TypeActivite.immobilierLocation:
+      case TypeActivite.immobilierVente:
+      case TypeActivite.agenceImmobiliere:
+        return Icons.apartment_rounded;
       case TypeActivite.autre:
         return Icons.business_center_rounded;
     }
@@ -328,6 +336,8 @@ class _VitrineWizardPageState extends ConsumerState<VitrineWizardPage> {
         return Icons.auto_awesome_rounded;
       case ModeleVitrine.modeleE:
         return Icons.work_outline_rounded;
+      case ModeleVitrine.modeleF:
+        return Icons.apartment_rounded;
     }
   }
 

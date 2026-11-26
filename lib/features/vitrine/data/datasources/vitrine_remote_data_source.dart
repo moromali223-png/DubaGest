@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../domain/entities/vitrine_bien_immobilier.dart';
 import '../../domain/entities/vitrine_config.dart';
+import '../../domain/entities/vitrine_demande_visite.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
 import '../../domain/entities/vitrine_prestation.dart';
@@ -259,6 +261,115 @@ class VitrineRemoteDataSource {
         data.remove('id');
       }
       await _client.from('vitrine_rendez_vous').insert(data);
+    } catch (e, st) {
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  // --- BIENS IMMOBILIERS VITRINE ---
+
+  Future<List<VitrineBienImmobilier>> chargerBiens(String vitrineId, String entrepriseId) async {
+    try {
+      final res = await _client
+          .from('vitrine_biens')
+          .select()
+          .eq('entreprise_id', entrepriseId)
+          .order('ordre', ascending: true);
+
+      final liste = (res as List).map((j) => VitrineBienImmobilier.fromJson(j as Map<String, dynamic>)).toList();
+      if (liste.isNotEmpty) return liste;
+    } catch (_) {}
+
+    // Fallback automatique vers les biens de gestion ERP immobilier_biens (Mode A)
+    try {
+      final resImmo = await _client
+          .from('immobilier_biens')
+          .select()
+          .eq('entreprise_id', entrepriseId)
+          .eq('statut', 'DISPONIBLE')
+          .order('created_at', ascending: false);
+
+      return (resImmo as List).map((j) => VitrineBienImmobilier.fromJson(j as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<VitrineBienImmobilier> sauvegarderBien(VitrineBienImmobilier bien) async {
+    try {
+      final data = bien.toJson();
+      if (bien.id.isEmpty) {
+        data.remove('id');
+      }
+      data['updated_at'] = DateTime.now().toIso8601String();
+
+      final res = await _client
+          .from('vitrine_biens')
+          .upsert(data)
+          .select()
+          .single();
+
+      return VitrineBienImmobilier.fromJson(res);
+    } catch (e, st) {
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  Future<void> supprimerBien(String bienId) async {
+    try {
+      await _client.from('vitrine_biens').delete().eq('id', bienId);
+    } catch (e, st) {
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  // --- DEMANDES DE VISITE IMMOBILIÈRE ---
+
+  Future<List<VitrineDemandeVisite>> chargerDemandesVisite(String entrepriseId) async {
+    try {
+      final res = await _client
+          .from('vitrine_demandes_visite')
+          .select()
+          .eq('entreprise_id', entrepriseId)
+          .order('created_at', ascending: false);
+
+      return (res as List).map((j) => VitrineDemandeVisite.fromJson(j as Map<String, dynamic>)).toList();
+    } catch (e, st) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return const [];
+      }
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  Future<VitrineDemandeVisite> changerStatutDemandeVisite(
+    String id,
+    StatutDemandeVisite statut,
+  ) async {
+    try {
+      final res = await _client
+          .from('vitrine_demandes_visite')
+          .update({
+            'statut': statut.code,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+      return VitrineDemandeVisite.fromJson(res);
+    } catch (e, st) {
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  Future<void> creerDemandeVisite(VitrineDemandeVisite demande) async {
+    try {
+      final data = demande.toJson();
+      if (demande.id.isEmpty) {
+        data.remove('id');
+      }
+      await _client.from('vitrine_demandes_visite').insert(data);
     } catch (e, st) {
       throw ErrorMapper.map(e, st);
     }

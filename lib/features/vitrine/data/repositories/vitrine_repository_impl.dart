@@ -1,4 +1,6 @@
+import '../../domain/entities/vitrine_bien_immobilier.dart';
 import '../../domain/entities/vitrine_config.dart';
+import '../../domain/entities/vitrine_demande_visite.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
 import '../../domain/entities/vitrine_prestation.dart';
@@ -98,5 +100,39 @@ class VitrineRepositoryImpl implements VitrineRepository {
   @override
   Future<void> creerDemandeRendezVous(VitrineRendezVous rdv) {
     return _remote.creerDemandeRendezVous(rdv);
+  }
+
+  // --- BIENS IMMOBILIERS ---
+
+  @override
+  Future<List<VitrineBienImmobilier>> chargerBiens(String vitrineId, String entrepriseId) {
+    return _remote.chargerBiens(vitrineId, entrepriseId);
+  }
+
+  @override
+  Future<VitrineBienImmobilier> sauvegarderBien(VitrineBienImmobilier bien) {
+    return _remote.sauvegarderBien(bien);
+  }
+
+  @override
+  Future<void> supprimerBien(String bienId) {
+    return _remote.supprimerBien(bienId);
+  }
+
+  // --- DEMANDES DE VISITE IMMOBILIÈRE ---
+
+  @override
+  Future<List<VitrineDemandeVisite>> chargerDemandesVisite(String entrepriseId) {
+    return _remote.chargerDemandesVisite(entrepriseId);
+  }
+
+  @override
+  Future<VitrineDemandeVisite> changerStatutDemandeVisite(String id, StatutDemandeVisite statut) {
+    return _remote.changerStatutDemandeVisite(id, statut);
+  }
+
+  @override
+  Future<void> creerDemandeVisite(VitrineDemandeVisite demande) {
+    return _remote.creerDemandeVisite(demande);
   }
 }

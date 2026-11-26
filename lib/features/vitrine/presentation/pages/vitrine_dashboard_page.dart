@@ -9,12 +9,15 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/utils/media_picker_helper.dart';
 import '../../../../features/catalogue/services/media_hybrid_resolver.dart';
 import '../providers/vitrine_providers.dart';
+import '../../domain/entities/vitrine_bien_immobilier.dart';
 import '../../domain/entities/vitrine_config.dart';
+import '../../domain/entities/vitrine_demande_visite.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
 import '../../domain/entities/vitrine_prestation.dart';
 import '../../domain/entities/vitrine_rendez_vous.dart';
 import '../../domain/entities/vitrine_types.dart';
+import 'vitrine_publique_page.dart';
 
 /// Page d'administration complète « Ma Vitrine » pour le professionnel
 class VitrineDashboardPage extends ConsumerStatefulWidget {
@@ -24,21 +27,7 @@ class VitrineDashboardPage extends ConsumerStatefulWidget {
   ConsumerState<VitrineDashboardPage> createState() => _VitrineDashboardPageState();
 }
 
-class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 6, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
+class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
   void _copierLien(String url) {
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -51,11 +40,19 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> wit
   }
 
   Future<void> _partagerWhatsApp(VitrineConfig vitrine) async {
-    final texte = 'Bonjour ! Découvrez notre site vitrine officiel et nos prestations chez *${vitrine.titreHero ?? "DubaGest"}* ici : ${vitrine.urlPublique}';
+    final texte = 'Bonjour ! Découvrez notre site vitrine officiel chez *${vitrine.titreHero ?? "DubaGest"}* ici : ${vitrine.urlPublique}';
     final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _ouvrirStudioPrevisualisation(BuildContext context, VitrineConfig vitrine) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (ctx) => _StudioPrevisualisationDialog(vitrine: vitrine),
+    );
   }
 
   @override
@@ -73,6 +70,14 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> wit
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.preview_rounded, color: Color(0xFF0F172A)),
+            tooltip: 'Prévisualiser le site',
+            onPressed: () {
+              final v = asyncVitrine.value;
+              if (v != null) _ouvrirStudioPrevisualisation(context, v);
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.green),
             tooltip: 'Assistant création & refonte (Wizard)',
@@ -93,47 +98,84 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> wit
             return const Center(child: Text('Aucune vitrine configurée.'));
           }
 
-          return Column(
-            children: [
-              // 1. En-tête statut et lien public
-              _buildHeaderStatus(vitrine),
+          List<Tab> tabs;
+          List<Widget> views;
 
-              // 2. Barre d'onglets
-              Container(
-                color: Colors.white,
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  indicatorColor: AppColors.green,
-                  labelColor: AppColors.green,
-                  unselectedLabelColor: const Color(0xFF64748B),
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                  tabs: const [
-                    Tab(icon: Icon(Icons.calendar_today_rounded, size: 18), text: 'Rendez-vous'),
-                    Tab(icon: Icon(Icons.content_cut_rounded, size: 18), text: 'Prestations & Tarifs'),
-                    Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Réalisations'),
-                    Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'Notre Équipe'),
-                    Tab(icon: Icon(Icons.storefront_rounded, size: 18), text: 'Produits en vitrine'),
-                    Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Design & Réglages'),
-                  ],
-                ),
-              ),
+          if (vitrine.typeActivite.domaine == DomaineActivite.immobilier) {
+            tabs = const [
+              Tab(icon: Icon(Icons.home_work_rounded, size: 18), text: 'Biens Immobiliers'),
+              Tab(icon: Icon(Icons.event_available_rounded, size: 18), text: 'Demandes de Visite'),
+              Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Photos'),
+              Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'Notre Équipe'),
+              Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Design & Réglages'),
+            ];
+            views = [
+              _OngletBiensImmobiliers(vitrine: vitrine),
+              _OngletDemandesVisite(vitrine: vitrine),
+              _OngletGalerie(vitrine: vitrine),
+              _OngletEquipe(vitrine: vitrine),
+              _OngletReglages(vitrine: vitrine),
+            ];
+          } else if (vitrine.typeActivite.domaine == DomaineActivite.services) {
+            tabs = const [
+              Tab(icon: Icon(Icons.calendar_today_rounded, size: 18), text: 'Rendez-vous'),
+              Tab(icon: Icon(Icons.content_cut_rounded, size: 18), text: 'Prestations & Tarifs'),
+              Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Réalisations'),
+              Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'Notre Équipe'),
+              Tab(icon: Icon(Icons.shopping_bag_rounded, size: 18), text: 'Produits / Wigs'),
+              Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Design & Réglages'),
+            ];
+            views = [
+              _OngletRendezVous(vitrine: vitrine),
+              _OngletPrestations(vitrine: vitrine),
+              _OngletGalerie(vitrine: vitrine),
+              _OngletEquipe(vitrine: vitrine),
+              _OngletProduits(vitrine: vitrine),
+              _OngletReglages(vitrine: vitrine),
+            ];
+          } else {
+            // Domaine Commerce
+            tabs = const [
+              Tab(icon: Icon(Icons.storefront_rounded, size: 18), text: 'Produits en vitrine'),
+              Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Réalisations'),
+              Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Design & Réglages'),
+            ];
+            views = [
+              _OngletProduits(vitrine: vitrine),
+              _OngletGalerie(vitrine: vitrine),
+              _OngletReglages(vitrine: vitrine),
+            ];
+          }
 
-              // 3. Contenu de chaque onglet
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _OngletRendezVous(vitrine: vitrine),
-                    _OngletPrestations(vitrine: vitrine),
-                    _OngletGalerie(vitrine: vitrine),
-                    _OngletEquipe(vitrine: vitrine),
-                    _OngletProduits(vitrine: vitrine),
-                    _OngletReglages(vitrine: vitrine),
-                  ],
+          return DefaultTabController(
+            key: ValueKey('${vitrine.typeActivite.domaine.code}_${tabs.length}'),
+            length: tabs.length,
+            child: Column(
+              children: [
+                // 1. En-tête statut et lien public
+                _buildHeaderStatus(vitrine),
+
+                // 2. Barre d'onglets adaptée au métier
+                Container(
+                  color: Colors.white,
+                  child: TabBar(
+                    isScrollable: true,
+                    indicatorColor: AppColors.green,
+                    labelColor: AppColors.green,
+                    unselectedLabelColor: const Color(0xFF64748B),
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                    tabs: tabs,
+                  ),
                 ),
-              ),
-            ],
+
+                // 3. Contenu de chaque onglet
+                Expanded(
+                  child: TabBarView(
+                    children: views,
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -230,6 +272,26 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> wit
             ],
           ),
           const SizedBox(height: 12),
+          // GRAND BOUTON PROÉMINENT : PRÉVISUALISER MON SITE AVANT DE PARTAGER
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0F172A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+              ),
+              icon: const Icon(Icons.preview_rounded, size: 20),
+              label: const Text(
+                '👁️ Prévisualiser mon site avant de partager',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+              ),
+              onPressed: () => _ouvrirStudioPrevisualisation(context, vitrine),
+            ),
+          ),
+          const SizedBox(height: 10),
           // DEUX GRANDS BOUTONS PRINCIPAUX TRÈS CLAIRS ET ÉVIDENTS
           Row(
             children: [
@@ -241,12 +303,12 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> wit
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 2,
+                    elevation: 1,
                   ),
-                  icon: const Icon(Icons.language_rounded, size: 20),
+                  icon: const Icon(Icons.language_rounded, size: 18),
                   label: const Text(
-                    'Voir mon site',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                    'Plein écran web',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                   ),
                   onPressed: () => context.push('/v/${vitrine.slug}'),
                 ),
@@ -384,6 +446,20 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> wit
                     activite: TypeActivite.beauteEsthetique,
                     modele: ModeleVitrine.modeleD,
                     style: ThemeStyle.elegantBeige,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFDCFCE7), child: Icon(Icons.apartment_rounded, color: Color(0xFF15803D))),
+                title: const Text('Modèle F — Havenly (Agence & Biens Immobiliers)', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Villas, appartements, recherche par ville, demandes de visite'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleF,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.agenceImmobiliere,
+                    modele: ModeleVitrine.modeleF,
+                    style: ThemeStyle.naturelChaud,
                   );
                 },
               ),
@@ -1484,3 +1560,706 @@ class _OngletReglages extends ConsumerWidget {
     );
   }
 }
+
+// =============================================================================
+// ONGLET BIENS IMMOBILIERS (MODÈLE IMMOBILIER TYPE HAVENLY)
+// =============================================================================
+
+class _OngletBiensImmobiliers extends ConsumerWidget {
+  const _OngletBiensImmobiliers({required this.vitrine});
+  final VitrineConfig vitrine;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncBiens = ref.watch(vitrineBiensProvider);
+
+    return asyncBiens.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Erreur: $e')),
+      data: (biens) {
+        if (biens.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle),
+                    child: const Icon(Icons.home_work_rounded, size: 48, color: Color(0xFF15803D)),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Aucun bien immobilier en vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Ajoutez vos villas, appartements ou terrains pour les présenter sur votre site Havenly avec boutons de visite.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.green, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                    icon: const Icon(Icons.add_home_work_rounded),
+                    label: const Text('Ajouter un premier bien immobilier', style: TextStyle(fontWeight: FontWeight.w800)),
+                    onPressed: () => _ouvrirFormulaireBien(context, ref, vitrine),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('OU ajouter un exemple type en 1 clic :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8))),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ActionChip(
+                        avatar: const Icon(Icons.villa_rounded, size: 16, color: Color(0xFF15803D)),
+                        label: const Text('Villa Moderne F5 (750 000 F/mois)'),
+                        onPressed: () => _ajouterBienExemple(
+                          ref,
+                          vitrine,
+                          titre: 'Villa Moderne F5 avec Piscine',
+                          typeBien: 'VILLA',
+                          typeOffre: 'LOCATION',
+                          prix: 750000,
+                          chambres: 4,
+                          sdb: 3,
+                          surface: 350,
+                          description: 'Superbe villa sécurisée avec grand jardin, piscine, groupe électrogène et garage.',
+                        ),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.apartment_rounded, size: 16, color: Color(0xFF2563EB)),
+                        label: const Text('Appartement Meublé 2 Ch. (350 000 F)'),
+                        onPressed: () => _ajouterBienExemple(
+                          ref,
+                          vitrine,
+                          titre: 'Appartement Haut Standing Meublé',
+                          typeBien: 'APPARTEMENT',
+                          typeOffre: 'LOCATION',
+                          prix: 350000,
+                          chambres: 2,
+                          sdb: 2,
+                          surface: 120,
+                          description: 'Appartement climatisé, entièrement équipé avec wifi, gardiennage 24/7.',
+                        ),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.landscape_rounded, size: 16, color: Color(0xFFD97706)),
+                        label: const Text('Terrain Viabilisé 400 m² (25M F)'),
+                        onPressed: () => _ajouterBienExemple(
+                          ref,
+                          vitrine,
+                          titre: 'Terrain Résidentiel Titre Foncier',
+                          typeBien: 'TERRAIN',
+                          typeOffre: 'VENTE',
+                          prix: 25000000,
+                          chambres: null,
+                          sdb: null,
+                          surface: 400,
+                          description: 'Parcelle clôturée avec eau et électricité disponibles, accès goudronné immédiat.',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('${biens.length} bien(s) en vitrine', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+                  icon: const Icon(Icons.add_home_rounded, size: 16),
+                  label: const Text('Nouveau bien'),
+                  onPressed: () => _ouvrirFormulaireBien(context, ref, vitrine),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            for (final b in biens)
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(12),
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: b.premierePhoto.isNotEmpty
+                        ? Image.network(
+                            MediaHybridResolver.resolvePublicUrl(b.premierePhoto),
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Container(color: const Color(0xFFF1F5F9), width: 60, height: 60, child: const Icon(Icons.home_rounded)),
+                          )
+                        : Container(color: const Color(0xFFF1F5F9), width: 60, height: 60, child: const Icon(Icons.home_work_rounded)),
+                  ),
+                  title: Text(b.titre, style: const TextStyle(fontWeight: FontWeight.w900)),
+                  subtitle: Text(
+                    '${b.prixFormate} • ${b.typeBien} • ${[b.quartier, b.ville].whereType<String>().join(", ")}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                    onPressed: () async {
+                      await ref.read(vitrineRepositoryProvider).supprimerBien(b.id);
+                      ref.invalidate(vitrineBiensProvider);
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _ajouterBienExemple(
+    WidgetRef ref,
+    VitrineConfig vitrine, {
+    required String titre,
+    required String typeBien,
+    required String typeOffre,
+    required int prix,
+    required int? chambres,
+    required int? sdb,
+    required double surface,
+    required String description,
+  }) async {
+    var vId = vitrine.id;
+    if (vId.isEmpty) {
+      final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+      vId = vMaj.id;
+      ref.invalidate(vitrineActuelleProvider);
+    }
+    final bien = VitrineBienImmobilier(
+      id: '',
+      vitrineId: vId,
+      entrepriseId: vitrine.entrepriseId,
+      titre: titre,
+      typeBien: typeBien,
+      typeOffre: typeOffre,
+      prix: prix,
+      surfaceM2: surface,
+      nbChambres: chambres,
+      nbSallesDeBain: sdb,
+      description: description,
+      ville: vitrine.ville ?? 'Bamako',
+      quartier: 'Quartier Résidentiel',
+      climatisation: true,
+      parking: true,
+    );
+    await ref.read(vitrineRepositoryProvider).sauvegarderBien(bien);
+    ref.invalidate(vitrineBiensProvider);
+  }
+
+  void _ouvrirFormulaireBien(BuildContext context, WidgetRef ref, VitrineConfig vitrine) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _DialogueAjoutBien(vitrine: vitrine),
+    );
+  }
+}
+
+// =============================================================================
+// ONGLET DEMANDES DE VISITE IMMOBILIÈRE
+// =============================================================================
+
+class _OngletDemandesVisite extends ConsumerWidget {
+  const _OngletDemandesVisite({required this.vitrine});
+  final VitrineConfig vitrine;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncVisites = ref.watch(vitrineDemandesVisiteProvider);
+
+    return asyncVisites.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Erreur: $e')),
+      data: (visites) {
+        if (visites.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                    child: const Icon(Icons.event_note_rounded, size: 48, color: Color(0xFF94A3B8)),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Aucune demande de visite pour le moment', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Les prospects qui souhaitent visiter vos biens depuis votre site vitrine apparaîtront ici.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  ),
+                  const SizedBox(height: 20),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.science_outlined, size: 16),
+                    label: const Text('Générer une demande de visite test d\'exemple'),
+                    onPressed: () async {
+                      var vId = vitrine.id;
+                      if (vId.isEmpty) {
+                        final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+                        vId = vMaj.id;
+                        ref.invalidate(vitrineActuelleProvider);
+                      }
+                      final testVisite = VitrineDemandeVisite(
+                        id: '',
+                        vitrineId: vId,
+                        entrepriseId: vitrine.entrepriseId,
+                        nomBien: 'Villa Moderne F5 avec Piscine',
+                        nomClient: 'Ibrahim Diarra (Prospect Test)',
+                        telephoneClient: '+223 75 00 00 00',
+                        dateSouhaitee: DateTime.now().add(const Duration(days: 2)),
+                        heureSouhaitee: '10:00',
+                        messageClient: 'Bonjour, je souhaite visiter cette villa pour une location annuelle.',
+                      );
+                      await ref.read(vitrineRepositoryProvider).creerDemandeVisite(testVisite);
+                      ref.invalidate(vitrineDemandesVisiteProvider);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: visites.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (ctx, i) {
+            final v = visites[i];
+            return Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(v.nomBien, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: v.statut == StatutDemandeVisite.confirmee ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            v.statut.libelle,
+                            style: TextStyle(
+                              color: v.statut == StatutDemandeVisite.confirmee ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text('Client : ${v.nomClient} • ${v.telephoneClient}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(
+                      'Créneau souhaité : ${v.dateSouhaitee.day}/${v.dateSouhaitee.month}/${v.dateSouhaitee.year} à ${v.heureSouhaitee}',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                    ),
+                    if (v.messageClient != null && v.messageClient!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text('Note : ${v.messageClient}', style: const TextStyle(fontStyle: FontStyle.italic, color: Color(0xFF475569), fontSize: 12)),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        FilledButton.tonalIcon(
+                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDCFCE7), foregroundColor: const Color(0xFF15803D)),
+                          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                          label: const Text('Confirmer par WhatsApp'),
+                          onPressed: () async {
+                            final clean = v.telephoneClient.replaceAll(RegExp(r'[^0-9]'), '');
+                            final dateStr = '${v.dateSouhaitee.day}/${v.dateSouhaitee.month}/${v.dateSouhaitee.year}';
+                            final msg = 'Bonjour *${v.nomClient}*, votre visite pour *${v.nomBien}* le *$dateStr* à *${v.heureSouhaitee}* est bien confirmée !';
+                            final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                            await ref.read(vitrineDemandesVisiteProvider.notifier).changerStatut(v.id, StatutDemandeVisite.confirmee);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+// =============================================================================
+// MODAL D'AJOUT RAPIDE D'UN BIEN IMMOBILIER
+// =============================================================================
+
+class _DialogueAjoutBien extends ConsumerStatefulWidget {
+  const _DialogueAjoutBien({required this.vitrine});
+  final VitrineConfig vitrine;
+
+  @override
+  ConsumerState<_DialogueAjoutBien> createState() => _DialogueAjoutBienState();
+}
+
+class _DialogueAjoutBienState extends ConsumerState<_DialogueAjoutBien> {
+  final _formKey = GlobalKey<FormState>();
+  final _titreCtrl = TextEditingController();
+  final _prixCtrl = TextEditingController();
+  final _villeCtrl = TextEditingController();
+  final _quartierCtrl = TextEditingController();
+  final _surfaceCtrl = TextEditingController();
+  final _chambresCtrl = TextEditingController();
+  final _sdbCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  String _typeBien = 'VILLA';
+  String _typeOffre = 'LOCATION';
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Nouveau bien immobilier', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+                  IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _titreCtrl,
+                decoration: const InputDecoration(labelText: 'Titre du bien * (ex: Villa Moderne F5)', border: OutlineInputBorder()),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Veuillez saisir un titre' : null,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _typeBien,
+                      decoration: const InputDecoration(labelText: 'Type de bien', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'VILLA', child: Text('Villa / Maison')),
+                        DropdownMenuItem(value: 'APPARTEMENT', child: Text('Appartement')),
+                        DropdownMenuItem(value: 'TERRAIN', child: Text('Terrain')),
+                        DropdownMenuItem(value: 'MAGASIN', child: Text('Magasin / Espace pro')),
+                      ],
+                      onChanged: (v) => setState(() => _typeBien = v ?? 'VILLA'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _typeOffre,
+                      decoration: const InputDecoration(labelText: 'Offre', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(value: 'LOCATION', child: Text('À Louer')),
+                        DropdownMenuItem(value: 'VENTE', child: Text('À Vendre')),
+                      ],
+                      onChanged: (v) => setState(() => _typeOffre = v ?? 'LOCATION'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _prixCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: _typeOffre == 'LOCATION' ? 'Loyer mensuel (FCFA) *' : 'Prix de vente (FCFA) *',
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Veuillez renseigner le prix' : null,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _chambresCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Chambres', border: OutlineInputBorder()),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _sdbCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'SDB', border: OutlineInputBorder()),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _surfaceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Surface m²', border: OutlineInputBorder()),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _villeCtrl,
+                      decoration: const InputDecoration(labelText: 'Ville (ex: Bamako)', border: OutlineInputBorder()),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _quartierCtrl,
+                      decoration: const InputDecoration(labelText: 'Quartier (ex: ACI 2000)', border: OutlineInputBorder()),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _descCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Description détaillée', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.green, padding: const EdgeInsets.symmetric(vertical: 14)),
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text('Enregistrer le bien en vitrine', style: TextStyle(fontWeight: FontWeight.w800)),
+                  onPressed: () async {
+                    if (!_formKey.currentState!.validate()) return;
+                    final bien = VitrineBienImmobilier(
+                      id: '',
+                      vitrineId: widget.vitrine.id,
+                      entrepriseId: widget.vitrine.entrepriseId,
+                      titre: _titreCtrl.text.trim(),
+                      typeBien: _typeBien,
+                      typeOffre: _typeOffre,
+                      prix: int.tryParse(_prixCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
+                      nbChambres: int.tryParse(_chambresCtrl.text),
+                      nbSallesDeBain: int.tryParse(_sdbCtrl.text),
+                      surfaceM2: double.tryParse(_surfaceCtrl.text),
+                      description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
+                      ville: _villeCtrl.text.trim().isEmpty ? widget.vitrine.ville : _villeCtrl.text.trim(),
+                      quartier: _quartierCtrl.text.trim().isEmpty ? null : _quartierCtrl.text.trim(),
+                    );
+                    await ref.read(vitrineRepositoryProvider).sauvegarderBien(bien);
+                    ref.invalidate(vitrineBiensProvider);
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// STUDIO DE PRÉVISUALISATION MULTI-ÉCRANS (VOIR SON SITE AVANT DE PARTAGER)
+// =============================================================================
+
+class _StudioPrevisualisationDialog extends StatefulWidget {
+  const _StudioPrevisualisationDialog({required this.vitrine});
+  final VitrineConfig vitrine;
+
+  @override
+  State<_StudioPrevisualisationDialog> createState() => _StudioPrevisualisationDialogState();
+}
+
+class _StudioPrevisualisationDialogState extends State<_StudioPrevisualisationDialog> {
+  int _modeEcran = 0; // 0 = Mobile, 1 = Tablette, 2 = Ordinateur
+
+  double get _largeurCadre {
+    switch (_modeEcran) {
+      case 1:
+        return 768;
+      case 2:
+        return 1050;
+      default:
+        return 385;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = widget.vitrine;
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(12),
+      backgroundColor: Colors.transparent,
+      child: Center(
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.sizeOf(context).height * 0.94,
+          constraints: const BoxConstraints(maxWidth: 1200),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 30, offset: const Offset(0, 10)),
+            ],
+          ),
+          child: Column(
+            children: [
+              // 1. Barre d'outils du studio
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.preview_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Studio de Prévisualisation • Vérifiez votre site avant de partager',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 0, icon: Icon(Icons.smartphone_rounded, size: 16), label: Text('Mobile', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: 1, icon: Icon(Icons.tablet_rounded, size: 16), label: Text('Tablette', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: 2, icon: Icon(Icons.computer_rounded, size: 16), label: Text('PC', style: TextStyle(fontSize: 11))),
+                      ],
+                      selected: {_modeEcran},
+                      onSelectionChanged: (val) => setState(() => _modeEcran = val.first),
+                      style: SegmentedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        selectedBackgroundColor: AppColors.green,
+                        foregroundColor: Colors.white,
+                        selectedForegroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 2. Rendu interactif en direct
+              Expanded(
+                child: Container(
+                  color: const Color(0xFF0B1120),
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    width: _largeurCadre,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(_modeEcran == 0 ? 32 : 12),
+                      border: Border.all(color: Colors.black, width: _modeEcran == 0 ? 8 : 4),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 24),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: VitrinePubliquePage(slug: v.slug),
+                  ),
+                ),
+              ),
+
+              // 3. Barre inférieure d'actions de partage
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F172A),
+                  border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Lien public : ${v.urlPublique}',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Color(0xFF475569)),
+                      ),
+                      icon: const Icon(Icons.copy_rounded, size: 16),
+                      label: const Text('Copier le lien'),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: v.urlPublique));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Lien copié dans le presse-papier !'), backgroundColor: AppColors.green),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                      icon: const Icon(Icons.share_rounded, size: 16),
+                      label: const Text('Partager sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        final texte = 'Bonjour ! Découvrez notre site officiel ici : ${v.urlPublique}';
+                        launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}'), mode: LaunchMode.externalApplication);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
