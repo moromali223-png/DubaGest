@@ -288,5 +288,35 @@ void main() {
       expect(decoded.prixFormate, '45 000 FCFA');
       expect(decoded.aPromotion, isTrue);
     });
+
+    test('13. VitrinePubliqueData intègre les produits vitrine de reseaux_sociaux', () {
+      final json = {
+        'vitrine': {
+          'id': 'v-1',
+          'entreprise_id': 'e-1',
+          'slug': 'salon-beaute',
+          'type_activite': 'SALON_COIFFURE',
+          'reseaux_sociaux': {
+            'produits_vitrine': [
+              {
+                'id': 'prod-v-1',
+                'nom': 'Shampoing Kératine Bio',
+                'prix_public': 12000,
+                'photos': ['https://images.unsplash.com/photo-shampoing'],
+                'est_publie_catalogue': true,
+              }
+            ],
+          },
+        },
+        'prestations': [],
+        'produits': [],
+      };
+
+      final data = VitrinePubliqueData.fromJson(json);
+      expect(data.produits.length, 1);
+      expect(data.produits.first.id, 'prod-v-1');
+      expect(data.produits.first.nom, 'Shampoing Kératine Bio');
+      expect(data.produits.first.prix, 12000);
+    });
   });
 }

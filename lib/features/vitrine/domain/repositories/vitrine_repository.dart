@@ -47,6 +47,6 @@ abstract class VitrineRepository {
   // --- PRODUITS EN VITRINE ---
   Future<List<VitrineProduitItem>> chargerProduitsVitrine(String entrepriseId);
   Future<VitrineProduitItem> sauvegarderProduitVitrine(VitrineProduitItem item, String entrepriseId);
-  Future<void> basculerPublicationProduit(String produitId, bool estPublie);
-  Future<void> supprimerProduitVitrine(String produitId);
+  Future<void> basculerPublicationProduit(String produitId, bool estPublie, {String? entrepriseId});
+  Future<void> supprimerProduitVitrine(String produitId, {String? entrepriseId});
 }

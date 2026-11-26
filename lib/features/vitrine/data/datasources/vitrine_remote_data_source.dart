@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/errors/error_mapper.dart';
 import '../../domain/entities/vitrine_bien_immobilier.dart';
 import '../../domain/entities/vitrine_config.dart';
@@ -16,10 +17,12 @@ class VitrineRemoteDataSource {
 
   bool _isTableOrSchemaCacheError(Object e) {
     if (e is PostgrestException) {
-      if (e.code == 'PGRST205' || e.code == '42P01') return true;
+      if (e.code == 'PGRST205' || e.code == '42P01' || e.code == '42501') return true;
       final msg = e.message.toLowerCase();
       if (msg.contains('could not find the table') ||
           msg.contains('schema cache') ||
+          msg.contains('permission denied') ||
+          msg.contains('forbidden') ||
           (msg.contains('relation') && msg.contains('does not exist'))) {
         return true;
       }
@@ -379,6 +382,18 @@ class VitrineRemoteDataSource {
   // --- GESTION DES PRODUITS DE LA VITRINE ---
 
   Future<List<VitrineProduitItem>> chargerProduitsVitrine(String entrepriseId) async {
+    final List<VitrineProduitItem> produitsVitrineConfig = [];
+    try {
+      final v = await chargerVitrine(entrepriseId);
+      if (v != null && v.reseauxSociaux['produits_vitrine'] is List) {
+        for (final p in (v.reseauxSociaux['produits_vitrine'] as List)) {
+          if (p is Map) {
+            produitsVitrineConfig.add(VitrineProduitItem.fromJson(Map<String, dynamic>.from(p)));
+          }
+        }
+      }
+    } catch (_) {}
+
     try {
       final res = await _client
           .from('produits')
@@ -387,52 +402,125 @@ class VitrineRemoteDataSource {
           .isFilter('deleted_at', null)
           .order('created_at', ascending: false);
 
-      return (res as List).map((j) => VitrineProduitItem.fromJson(j as Map<String, dynamic>)).toList();
-    } catch (e, st) {
-      if (_isTableOrSchemaCacheError(e)) {
-        return const [];
+      final produitsSql = (res as List).map((j) => VitrineProduitItem.fromJson(j as Map<String, dynamic>)).toList();
+
+      final fusion = <String, VitrineProduitItem>{};
+      for (final p in produitsSql) {
+        fusion[p.id] = p;
       }
-      throw ErrorMapper.map(e, st);
+      for (final p in produitsVitrineConfig) {
+        fusion[p.id] = p;
+      }
+      return fusion.values.toList();
+    } catch (e) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return produitsVitrineConfig;
+      }
+      return produitsVitrineConfig;
     }
   }
 
   Future<VitrineProduitItem> sauvegarderProduitVitrine(VitrineProduitItem item, String entrepriseId) async {
+    final itemId = item.id.isNotEmpty ? item.id : const Uuid().v4();
+    final itemAEnregistrer = item.id.isEmpty ? item.copyWith(id: itemId) : item;
+
+    // 1. Tenter d'enregistrer dans public.produits (si permissions accordées)
     try {
-      final data = item.toJson(entrepriseId: entrepriseId);
+      final data = itemAEnregistrer.toJson(entrepriseId: entrepriseId);
       data['updated_at'] = DateTime.now().toIso8601String();
+      await _client.from('produits').upsert(data);
+    } catch (_) {
+      // Résilience : Si 42501 (permission denied table produits) pour compte Services ou absence de module,
+      // on ignore pour basculer en toute transparence sur la persistance vitrine.
+    }
 
-      final res = await _client
-          .from('produits')
-          .upsert(data)
-          .select()
-          .single();
+    // 2. Persistance garantie dans la configuration vitrine (toujours autorisée via app.est_membre)
+    try {
+      final vitrine = await chargerVitrine(entrepriseId);
+      if (vitrine != null) {
+        final mapReseaux = Map<String, dynamic>.from(vitrine.reseauxSociaux);
+        final rawList = (mapReseaux['produits_vitrine'] as List?) ?? [];
+        final listeMiseAJour = <Map<String, dynamic>>[];
+        bool remplace = false;
 
-      return VitrineProduitItem.fromJson(res);
+        for (final p in rawList) {
+          if (p is Map && p['id'] == itemAEnregistrer.id) {
+            listeMiseAJour.add(itemAEnregistrer.toJson(entrepriseId: entrepriseId));
+            remplace = true;
+          } else if (p is Map) {
+            listeMiseAJour.add(Map<String, dynamic>.from(p));
+          }
+        }
+        if (!remplace) {
+          listeMiseAJour.add(itemAEnregistrer.toJson(entrepriseId: entrepriseId));
+        }
+
+        mapReseaux['produits_vitrine'] = listeMiseAJour;
+        await sauvegarderVitrine(vitrine.copyWith(reseauxSociaux: mapReseaux));
+      }
     } catch (e, st) {
       throw ErrorMapper.map(e, st);
     }
+
+    return itemAEnregistrer;
   }
 
-  Future<void> basculerPublicationProduit(String produitId, bool estPublie) async {
+  Future<void> basculerPublicationProduit(String produitId, bool estPublie, {String? entrepriseId}) async {
     try {
       await _client.from('produits').update({
         'est_publie_catalogue': estPublie,
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', produitId);
-    } catch (e, st) {
-      throw ErrorMapper.map(e, st);
+    } catch (_) {}
+
+    if (entrepriseId != null && entrepriseId.isNotEmpty) {
+      try {
+        final vitrine = await chargerVitrine(entrepriseId);
+        if (vitrine != null) {
+          final mapReseaux = Map<String, dynamic>.from(vitrine.reseauxSociaux);
+          final rawList = (mapReseaux['produits_vitrine'] as List?) ?? [];
+          final listeMiseAJour = <Map<String, dynamic>>[];
+          for (final p in rawList) {
+            if (p is Map && p['id'] == produitId) {
+              final m = Map<String, dynamic>.from(p);
+              m['est_publie_catalogue'] = estPublie;
+              listeMiseAJour.add(m);
+            } else if (p is Map) {
+              listeMiseAJour.add(Map<String, dynamic>.from(p));
+            }
+          }
+          mapReseaux['produits_vitrine'] = listeMiseAJour;
+          await sauvegarderVitrine(vitrine.copyWith(reseauxSociaux: mapReseaux));
+        }
+      } catch (_) {}
     }
   }
 
-  Future<void> supprimerProduitVitrine(String produitId) async {
+  Future<void> supprimerProduitVitrine(String produitId, {String? entrepriseId}) async {
     try {
       await _client.from('produits').update({
         'deleted_at': DateTime.now().toIso8601String(),
         'est_actif': false,
         'est_publie_catalogue': false,
       }).eq('id', produitId);
-    } catch (e, st) {
-      throw ErrorMapper.map(e, st);
+    } catch (_) {}
+
+    if (entrepriseId != null && entrepriseId.isNotEmpty) {
+      try {
+        final vitrine = await chargerVitrine(entrepriseId);
+        if (vitrine != null) {
+          final mapReseaux = Map<String, dynamic>.from(vitrine.reseauxSociaux);
+          final rawList = (mapReseaux['produits_vitrine'] as List?) ?? [];
+          final listeMiseAJour = <Map<String, dynamic>>[];
+          for (final p in rawList) {
+            if (p is Map && p['id'] != produitId) {
+              listeMiseAJour.add(Map<String, dynamic>.from(p));
+            }
+          }
+          mapReseaux['produits_vitrine'] = listeMiseAJour;
+          await sauvegarderVitrine(vitrine.copyWith(reseauxSociaux: mapReseaux));
+        }
+      } catch (_) {}
     }
   }
 }

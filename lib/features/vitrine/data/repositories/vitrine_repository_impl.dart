@@ -150,12 +150,12 @@ class VitrineRepositoryImpl implements VitrineRepository {
   }
 
   @override
-  Future<void> basculerPublicationProduit(String produitId, bool estPublie) {
-    return _remote.basculerPublicationProduit(produitId, estPublie);
+  Future<void> basculerPublicationProduit(String produitId, bool estPublie, {String? entrepriseId}) {
+    return _remote.basculerPublicationProduit(produitId, estPublie, entrepriseId: entrepriseId);
   }
 
   @override
-  Future<void> supprimerProduitVitrine(String produitId) {
-    return _remote.supprimerProduitVitrine(produitId);
+  Future<void> supprimerProduitVitrine(String produitId, {String? entrepriseId}) {
+    return _remote.supprimerProduitVitrine(produitId, entrepriseId: entrepriseId);
   }
 }

@@ -266,13 +266,17 @@ class VitrineProduitsAdminNotifier extends AsyncNotifier<List<VitrineProduitItem
   }
 
   Future<void> basculerPublication(String produitId, bool estPublie) async {
-    await ref.read(vitrineRepositoryProvider).basculerPublicationProduit(produitId, estPublie);
+    final ctx = ref.read(contexteActifProvider);
+    final entrepriseId = ctx?.entreprise?.id;
+    await ref.read(vitrineRepositoryProvider).basculerPublicationProduit(produitId, estPublie, entrepriseId: entrepriseId);
     ref.invalidateSelf();
     ref.invalidate(vitrineActuelleProvider);
   }
 
   Future<void> supprimerProduit(String produitId) async {
-    await ref.read(vitrineRepositoryProvider).supprimerProduitVitrine(produitId);
+    final ctx = ref.read(contexteActifProvider);
+    final entrepriseId = ctx?.entreprise?.id;
+    await ref.read(vitrineRepositoryProvider).supprimerProduitVitrine(produitId, entrepriseId: entrepriseId);
     ref.invalidateSelf();
     ref.invalidate(vitrineActuelleProvider);
   }

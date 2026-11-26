@@ -45,6 +45,20 @@ class VitrinePubliqueData {
       for (final pr in (json['produits'] as List?) ?? const [])
         if (pr is Map) ProduitCataloguePublic.fromJson(pr.cast<String, dynamic>()),
     ];
+
+    // Intégrer les produits ajoutés spécifiquement dans la vitrine si non présents
+    final prodsVitrine = (vJson['reseaux_sociaux'] as Map?)?['produits_vitrine'];
+    if (prodsVitrine is List) {
+      for (final pv in prodsVitrine) {
+        if (pv is Map) {
+          final estPublie = (pv['est_publie_catalogue'] as bool?) ?? (pv['est_publie'] as bool?) ?? true;
+          final id = pv['id'] as String? ?? '';
+          if (estPublie && !prods.any((p) => p.id == id)) {
+            prods.add(ProduitCataloguePublic.fromJson(pv.cast<String, dynamic>()));
+          }
+        }
+      }
+    }
     final colls = [
       for (final c in (json['collections'] as List?) ?? const [])
         if (c is Map) CollectionPublique.fromJson(c.cast<String, dynamic>()),
