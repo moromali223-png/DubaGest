@@ -66,6 +66,11 @@ class VitrineActuelleNotifier extends AsyncNotifier<VitrineConfig?> {
         telephone: profil?.telephone,
         whatsapp: profil?.whatsappCommercial ?? profil?.telephone,
       );
+
+      // Persistance automatique immédiate pour garantir que vitrine.id est généré et que le site public existe
+      try {
+        vitrine = await repo.sauvegarderVitrine(vitrine);
+      } catch (_) {}
     }
     return vitrine;
   }

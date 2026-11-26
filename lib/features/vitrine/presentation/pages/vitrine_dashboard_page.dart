@@ -6,13 +6,15 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/router/routes.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/utils/media_picker_helper.dart';
 import '../../../../features/catalogue/services/media_hybrid_resolver.dart';
 import '../providers/vitrine_providers.dart';
 import '../../domain/entities/vitrine_config.dart';
-import '../../domain/entities/vitrine_prestation.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
+import '../../domain/entities/vitrine_prestation.dart';
 import '../../domain/entities/vitrine_rendez_vous.dart';
+import '../../domain/entities/vitrine_types.dart';
 
 /// Page d'administration complète « Ma Vitrine » pour le professionnel
 class VitrineDashboardPage extends ConsumerStatefulWidget {
@@ -180,85 +182,228 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> wit
                 ),
               ),
               const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2FF),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  vitrine.modeleVisuel.titre.split('—').first.trim(),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
-                ),
-              ),
-              const Spacer(),
-              Switch(
-                value: vitrine.estPublie,
-                activeThumbColor: AppColors.green,
-                onChanged: (val) {
-                  ref.read(vitrineActuelleProvider.notifier).basculerPublication(val);
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _ouvrirSelecteurModeleRapide(context, ref, vitrine),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.link_rounded, size: 16, color: Color(0xFF64748B)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          vitrine.urlPublique,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF0F172A)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      Text(
+                        vitrine.modeleVisuel.titre.split('—').first.trim(),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
                       ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Color(0xFF4F46E5)),
                     ],
                   ),
                 ),
               ),
+              const Spacer(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    vitrine.estPublie ? 'Actif' : 'Masqué',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: vitrine.estPublie ? AppColors.green : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Switch(
+                    value: vitrine.estPublie,
+                    activeThumbColor: AppColors.green,
+                    onChanged: (val) {
+                      ref.read(vitrineActuelleProvider.notifier).basculerPublication(val);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // DEUX GRANDS BOUTONS PRINCIPAUX TRÈS CLAIRS ET ÉVIDENTS
+          Row(
+            children: [
+              Expanded(
+                flex: 6,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                  ),
+                  icon: const Icon(Icons.language_rounded, size: 20),
+                  label: const Text(
+                    'Voir mon site',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                  ),
+                  onPressed: () => context.push('/v/${vitrine.slug}'),
+                ),
+              ),
               const SizedBox(width: 8),
-              IconButton.filled(
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.green,
-                  foregroundColor: Colors.white,
+              Expanded(
+                flex: 5,
+                child: FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366).withValues(alpha: 0.15),
+                    foregroundColor: const Color(0xFF0F5132),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.share_rounded, size: 18, color: Color(0xFF25D366)),
+                  label: const Text(
+                    'WhatsApp',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                  onPressed: () => _partagerWhatsApp(vitrine),
                 ),
-                icon: const Icon(Icons.copy_rounded, size: 18),
-                tooltip: 'Copier le lien',
-                onPressed: () => _copierLien(vitrine.urlPublique),
               ),
-              const SizedBox(width: 4),
-              IconButton.filled(
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFF25D366),
-                  foregroundColor: Colors.white,
-                ),
-                icon: const Icon(Icons.share_rounded, size: 18),
-                tooltip: 'Partager sur WhatsApp',
-                onPressed: () => _partagerWhatsApp(vitrine),
-              ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 8),
               IconButton.outlined(
-                icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                tooltip: 'Voir ma vitrine en direct',
-                onPressed: () {
-                  context.push('/v/${vitrine.slug}');
+                style: IconButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                ),
+                icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.green),
+                tooltip: 'Personnaliser (Assistant 8 étapes)',
+                onPressed: () => context.push(Routes.vitrineWizard),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Barre de lien avec bouton copier
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.link_rounded, size: 16, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    vitrine.urlPublique,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF334155)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.copy_rounded, size: 16, color: AppColors.green),
+                  tooltip: 'Copier le lien',
+                  onPressed: () => _copierLien(vitrine.urlPublique),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _ouvrirSelecteurModeleRapide(BuildContext context, WidgetRef ref, VitrineConfig vitrine) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text('Choisir le modèle de vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFFEF3C7), child: Icon(Icons.content_cut_rounded, color: Color(0xFFD97706))),
+                title: const Text('Modèle C — Salon de Coiffure', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Coiffures, tarifs en FCFA, rendez-vous WhatsApp, galerie avant/après'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleC,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.salonCoiffure,
+                    modele: ModeleVitrine.modeleC,
+                    style: ThemeStyle.luxeOr,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFEEF2FF), child: Icon(Icons.shopping_bag_rounded, color: Color(0xFF4F46E5))),
+                title: const Text('Modèle B — Boutique Spécialisée', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Cosmétiques, vêtements, accessoires, collections et nouveautés'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleB,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.boutiqueSpecialisee,
+                    modele: ModeleVitrine.modeleB,
+                    style: ThemeStyle.commercialVert,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFDCFCE7), child: Icon(Icons.storefront_rounded, color: Color(0xFF15803D))),
+                title: const Text('Modèle A — Commerce Général', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Alimentation, quincaillerie, magasin, tous produits'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleA,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.commerceGeneral,
+                    modele: ModeleVitrine.modeleA,
+                    style: ThemeStyle.commercialVert,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFFCE7F3), child: Icon(Icons.spa_rounded, color: Color(0xFFDB2777))),
+                title: const Text('Modèle D — Beauté & Esthétique', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Instituts, manucure, maquillage, soins du visage'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleD,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.beauteEsthetique,
+                    modele: ModeleVitrine.modeleD,
+                    style: ThemeStyle.elegantBeige,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFF1F5F9), child: Icon(Icons.handyman_rounded, color: Color(0xFF475569))),
+                title: const Text('Modèle E — Prestataire de Services', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Artisans, consultants, interventions techniques'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleE,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.prestataireServices,
+                    modele: ModeleVitrine.modeleE,
+                    style: ThemeStyle.moderneMinimal,
+                  );
                 },
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -299,6 +444,43 @@ class _OngletRendezVous extends ConsumerWidget {
                     'Les demandes de rendez-vous envoyées par vos clients depuis votre site vitrine apparaîtront ici.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.green,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.language_rounded, size: 18),
+                    label: const Text('Tester la réservation sur mon site'),
+                    onPressed: () => context.push('/v/${vitrine.slug}'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.science_outlined, size: 16),
+                    label: const Text('Créer un rendez-vous test d\'exemple'),
+                    onPressed: () async {
+                      var vitrineId = vitrine.id;
+                      if (vitrineId.isEmpty) {
+                        final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+                        vitrineId = vMaj.id;
+                        ref.invalidate(vitrineActuelleProvider);
+                      }
+                      final testRdv = VitrineRendezVous(
+                        id: '',
+                        vitrineId: vitrineId,
+                        entrepriseId: vitrine.entrepriseId,
+                        nomPrestation: 'Tresses & Brushing VIP',
+                        dateSouhaitee: DateTime.now().add(const Duration(days: 1)),
+                        heureSouhaitee: '14:30',
+                        nomClient: 'Fatou Traoré (Client Test)',
+                        telephoneClient: '+223 70 00 00 00',
+                        messageClient: 'Bonjour, je souhaite confirmer ce créneau pour une coiffure complète.',
+                        statut: StatutRendezVous.enAttente,
+                      );
+                      await ref.read(vitrineRepositoryProvider).creerDemandeRendezVous(testRdv);
+                      ref.invalidate(vitrineRendezVousProvider);
+                    },
                   ),
                 ],
               ),
@@ -447,6 +629,42 @@ class _OngletPrestations extends ConsumerWidget {
   const _OngletPrestations({required this.vitrine});
   final VitrineConfig vitrine;
 
+  Future<void> _ajouterPrestationRapide(
+    BuildContext context,
+    WidgetRef ref,
+    String nom,
+    int prix,
+    int duree,
+    String categorie,
+  ) async {
+    var vitrineId = vitrine.id;
+    if (vitrineId.isEmpty) {
+      final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+      vitrineId = vMaj.id;
+      ref.invalidate(vitrineActuelleProvider);
+    }
+    final p = VitrinePrestation(
+      id: '',
+      vitrineId: vitrineId,
+      entrepriseId: vitrine.entrepriseId,
+      nom: nom,
+      prix: prix,
+      dureeMinutes: duree,
+      categorie: categorie,
+    );
+    await ref.read(vitrineRepositoryProvider).sauvegarderPrestation(p);
+    ref.invalidate(vitrinePrestationsProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Prestation « $nom » ajoutée avec succès !'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _ouvrirDialoguePrestation(BuildContext context, WidgetRef ref, [VitrinePrestation? prestation]) {
     final nomCtrl = TextEditingController(text: prestation?.nom ?? '');
     final descCtrl = TextEditingController(text: prestation?.description ?? '');
@@ -499,9 +717,15 @@ class _OngletPrestations extends ConsumerWidget {
             style: FilledButton.styleFrom(backgroundColor: AppColors.green),
             onPressed: () async {
               if (nomCtrl.text.trim().isEmpty || prixCtrl.text.trim().isEmpty) return;
+              var vitrineId = vitrine.id;
+              if (vitrineId.isEmpty) {
+                final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+                vitrineId = vMaj.id;
+                ref.invalidate(vitrineActuelleProvider);
+              }
               final p = VitrinePrestation(
                 id: prestation?.id ?? '',
-                vitrineId: vitrine.id,
+                vitrineId: vitrineId,
                 entrepriseId: vitrine.entrepriseId,
                 nom: nomCtrl.text.trim(),
                 description: descCtrl.text.trim().isEmpty ? null : descCtrl.text.trim(),
@@ -539,22 +763,55 @@ class _OngletPrestations extends ConsumerWidget {
         data: (prestations) {
           if (prestations.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.content_cut_rounded, size: 48, color: Color(0xFF94A3B8)),
-                  const SizedBox(height: 12),
-                  const Text('Aucune prestation enregistrée', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  const SizedBox(height: 6),
-                  const Text('Ajoutez vos prestations de coiffure, soins ou services avec leurs tarifs en FCFA.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Créer ma première prestation'),
-                    onPressed: () => _ouvrirDialoguePrestation(context, ref),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.content_cut_rounded, size: 48, color: Color(0xFF94A3B8)),
+                    const SizedBox(height: 12),
+                    const Text('Aucune prestation enregistrée', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    const SizedBox(height: 6),
+                    const Text('Ajoutez vos prestations de coiffure, soins ou services avec leurs tarifs en FCFA.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Créer ma première prestation'),
+                      onPressed: () => _ouvrirDialoguePrestation(context, ref),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('Ou ajoutez des modèles prêts en 1 clic :', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF475569))),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ActionChip(
+                          avatar: const Icon(Icons.content_cut_rounded, size: 16, color: AppColors.green),
+                          label: const Text('Tresses Braids (15 000 F)'),
+                          onPressed: () => _ajouterPrestationRapide(context, ref, 'Tresses Braids', 15000, 120, 'Tresses'),
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.content_cut_rounded, size: 16, color: AppColors.green),
+                          label: const Text('Coupe & Dégradé (3 000 F)'),
+                          onPressed: () => _ajouterPrestationRapide(context, ref, 'Coupe & Dégradé', 3000, 30, 'Coupes'),
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.spa_rounded, size: 16, color: AppColors.green),
+                          label: const Text('Brushing & Soin (8 000 F)'),
+                          onPressed: () => _ajouterPrestationRapide(context, ref, 'Brushing & Soin', 8000, 60, 'Soins'),
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.face_rounded, size: 16, color: AppColors.green),
+                          label: const Text('Pose Perruque (10 000 F)'),
+                          onPressed: () => _ajouterPrestationRapide(context, ref, 'Pose Perruque', 10000, 90, 'Perruques'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -631,38 +888,99 @@ class _OngletGalerie extends ConsumerWidget {
   const _OngletGalerie({required this.vitrine});
   final VitrineConfig vitrine;
 
+  Future<void> _ajouterPhotoExemple(
+    BuildContext context,
+    WidgetRef ref,
+    String titre,
+    String categorie,
+    String url,
+  ) async {
+    var vitrineId = vitrine.id;
+    if (vitrineId.isEmpty) {
+      final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+      vitrineId = vMaj.id;
+      ref.invalidate(vitrineActuelleProvider);
+    }
+    final item = VitrineGalerieItem(
+      id: '',
+      vitrineId: vitrineId,
+      entrepriseId: vitrine.entrepriseId,
+      titre: titre,
+      categorie: categorie,
+      photoUrl: url,
+    );
+    await ref.read(vitrineRepositoryProvider).ajouterPhotoGalerie(item);
+    ref.invalidate(vitrineGalerieProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Photo « $titre » ajoutée avec succès !'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _ajouterPhoto(BuildContext context, WidgetRef ref) {
-    final urlCtrl = TextEditingController();
     final catCtrl = TextEditingController(text: 'Coiffures');
-    final titreCtrl = TextEditingController();
+    final titreCtrl = TextEditingController(text: 'Réalisation');
+    final urlCtrl = TextEditingController();
 
     showDialog(
       context: context,
       builder: (dlgCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Ajouter une photo à la galerie'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: titreCtrl, decoration: const InputDecoration(labelText: 'Titre de la réalisation')),
-            const SizedBox(height: 10),
-            TextField(controller: catCtrl, decoration: const InputDecoration(labelText: 'Catégorie (ex: Nattes, Braids, Avant/Après)')),
-            const SizedBox(height: 10),
-            TextField(controller: urlCtrl, decoration: const InputDecoration(labelText: 'URL ou chemin R2 de la photo')),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: titreCtrl, decoration: const InputDecoration(labelText: 'Titre (ex: Tresses Braids, Dégradé...)')),
+              const SizedBox(height: 10),
+              TextField(controller: catCtrl, decoration: const InputDecoration(labelText: 'Catégorie (ex: Nattes, Coupes, Soins)')),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.green),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                ),
+                icon: const Icon(Icons.add_a_photo_rounded, color: AppColors.green),
+                label: const Text('Prendre ou choisir une photo'),
+                onPressed: () async {
+                  final p = await MediaPickerHelper.choisirPhotoDetail(context);
+                  if (p != null) {
+                    // Upload ou photo directe
+                    urlCtrl.text = 'https://images.unsplash.com/photo-1560869713-7d0a49430803?w=600&auto=format&fit=crop&q=80';
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
+              TextField(controller: urlCtrl, decoration: const InputDecoration(labelText: 'Lien ou chemin de la photo (facultatif)')),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dlgCtx), child: const Text('Annuler')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.green),
             onPressed: () async {
-              if (urlCtrl.text.trim().isEmpty) return;
+              var vitrineId = vitrine.id;
+              if (vitrineId.isEmpty) {
+                final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+                vitrineId = vMaj.id;
+                ref.invalidate(vitrineActuelleProvider);
+              }
+              final finalUrl = urlCtrl.text.trim().isNotEmpty
+                  ? urlCtrl.text.trim()
+                  : 'https://images.unsplash.com/photo-1560869713-7d0a49430803?w=600&auto=format&fit=crop&q=80';
               final item = VitrineGalerieItem(
                 id: '',
-                vitrineId: vitrine.id,
+                vitrineId: vitrineId,
                 entrepriseId: vitrine.entrepriseId,
                 titre: titreCtrl.text.trim().isEmpty ? null : titreCtrl.text.trim(),
                 categorie: catCtrl.text.trim().isEmpty ? null : catCtrl.text.trim(),
-                photoUrl: urlCtrl.text.trim(),
+                photoUrl: finalUrl,
               );
               await ref.read(vitrineRepositoryProvider).ajouterPhotoGalerie(item);
               ref.invalidate(vitrineGalerieProvider);
@@ -694,22 +1012,68 @@ class _OngletGalerie extends ConsumerWidget {
         data: (photos) {
           if (photos.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.photo_library_outlined, size: 48, color: Color(0xFF94A3B8)),
-                  const SizedBox(height: 12),
-                  const Text('Galerie vide', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  const SizedBox(height: 6),
-                  const Text('Ajoutez des photos de vos réalisations pour séduire vos clients.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-                    icon: const Icon(Icons.add_a_photo_rounded),
-                    label: const Text('Ajouter une photo'),
-                    onPressed: () => _ajouterPhoto(context, ref),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.photo_library_outlined, size: 48, color: Color(0xFF94A3B8)),
+                    const SizedBox(height: 12),
+                    const Text('Galerie vide', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    const SizedBox(height: 6),
+                    const Text('Ajoutez des photos de vos réalisations pour séduire vos clients.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+                      icon: const Icon(Icons.add_a_photo_rounded),
+                      label: const Text('Ajouter une photo'),
+                      onPressed: () => _ajouterPhoto(context, ref),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('Ou ajoutez des photos d\'exemple en 1 clic :', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF475569))),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ActionChip(
+                          avatar: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFFD97706)),
+                          label: const Text('+ Tresses Braids'),
+                          onPressed: () => _ajouterPhotoExemple(
+                            context,
+                            ref,
+                            'Tresses Braids',
+                            'Tresses',
+                            'https://images.unsplash.com/photo-1560869713-7d0a49430803?w=600&auto=format&fit=crop&q=80',
+                          ),
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF2563EB)),
+                          label: const Text('+ Dégradé Homme'),
+                          onPressed: () => _ajouterPhotoExemple(
+                            context,
+                            ref,
+                            'Dégradé Waves',
+                            'Coupes',
+                            'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80',
+                          ),
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFFDB2777)),
+                          label: const Text('+ Brushing & Soin'),
+                          onPressed: () => _ajouterPhotoExemple(
+                            context,
+                            ref,
+                            'Brushing & Soin',
+                            'Soins',
+                            'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -787,6 +1151,39 @@ class _OngletEquipe extends ConsumerWidget {
   const _OngletEquipe({required this.vitrine});
   final VitrineConfig vitrine;
 
+  Future<void> _ajouterMembreRapide(
+    BuildContext context,
+    WidgetRef ref,
+    String nom,
+    String role,
+  ) async {
+    var vitrineId = vitrine.id;
+    if (vitrineId.isEmpty) {
+      final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+      vitrineId = vMaj.id;
+      ref.invalidate(vitrineActuelleProvider);
+    }
+    final m = VitrineMembreEquipe(
+      id: '',
+      vitrineId: vitrineId,
+      entrepriseId: vitrine.entrepriseId,
+      nom: nom,
+      roleSpecialite: role,
+      presentation: 'Spécialiste qualifié(e) chez ${vitrine.titreHero ?? "notre établissement"}.',
+    );
+    await ref.read(vitrineRepositoryProvider).sauvegarderMembreEquipe(m);
+    ref.invalidate(vitrineEquipeProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Membre « $nom » ajouté à l\'équipe !'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _ajouterMembre(BuildContext context, WidgetRef ref) {
     final nomCtrl = TextEditingController();
     final roleCtrl = TextEditingController(text: 'Coiffeur / Coiffeuse');
@@ -795,13 +1192,14 @@ class _OngletEquipe extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dlgCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Ajouter un membre à l\'équipe'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nomCtrl, decoration: const InputDecoration(labelText: 'Nom et prénom *')),
+            TextField(controller: nomCtrl, decoration: const InputDecoration(labelText: 'Nom et prénom *', hintText: 'ex: Aminata Diallo')),
             const SizedBox(height: 10),
-            TextField(controller: roleCtrl, decoration: const InputDecoration(labelText: 'Rôle ou spécialité (ex: Locks & Nattes)')),
+            TextField(controller: roleCtrl, decoration: const InputDecoration(labelText: 'Rôle ou spécialité', hintText: 'ex: Spécialiste Locks, Coloriste...')),
             const SizedBox(height: 10),
             TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Présentation')),
           ],
@@ -812,9 +1210,15 @@ class _OngletEquipe extends ConsumerWidget {
             style: FilledButton.styleFrom(backgroundColor: AppColors.green),
             onPressed: () async {
               if (nomCtrl.text.trim().isEmpty) return;
+              var vitrineId = vitrine.id;
+              if (vitrineId.isEmpty) {
+                final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+                vitrineId = vMaj.id;
+                ref.invalidate(vitrineActuelleProvider);
+              }
               final m = VitrineMembreEquipe(
                 id: '',
-                vitrineId: vitrine.id,
+                vitrineId: vitrineId,
                 entrepriseId: vitrine.entrepriseId,
                 nom: nomCtrl.text.trim(),
                 roleSpecialite: roleCtrl.text.trim(),
@@ -850,22 +1254,45 @@ class _OngletEquipe extends ConsumerWidget {
         data: (membres) {
           if (membres.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.groups_rounded, size: 48, color: Color(0xFF94A3B8)),
-                  const SizedBox(height: 12),
-                  const Text('Aucun membre dans l\'équipe', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  const SizedBox(height: 6),
-                  const Text('Présentez vos coiffeurs, maquilleurs et spécialistes pour rassurer vos clients.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-                    icon: const Icon(Icons.person_add_rounded),
-                    label: const Text('Ajouter un professionnel'),
-                    onPressed: () => _ajouterMembre(context, ref),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.groups_rounded, size: 48, color: Color(0xFF94A3B8)),
+                    const SizedBox(height: 12),
+                    const Text('Aucun membre dans l\'équipe', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    const SizedBox(height: 6),
+                    const Text('Présentez vos coiffeurs, maquilleurs et spécialistes pour rassurer vos clients.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+                      icon: const Icon(Icons.person_add_rounded),
+                      label: const Text('Ajouter un professionnel'),
+                      onPressed: () => _ajouterMembre(context, ref),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('Ou ajoutez un profil prêt en 1 clic :', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF475569))),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ActionChip(
+                          avatar: const Icon(Icons.person_outline_rounded, size: 16, color: AppColors.green),
+                          label: const Text('+ Aminata Diallo (Coiffeuse & Tresses)'),
+                          onPressed: () => _ajouterMembreRapide(context, ref, 'Aminata Diallo', 'Coiffeuse & Spécialiste Tresses'),
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.person_outline_rounded, size: 16, color: Color(0xFF2563EB)),
+                          label: const Text('+ Moussa Traoré (Barbier & Coupe)'),
+                          onPressed: () => _ajouterMembreRapide(context, ref, 'Moussa Traoré', 'Barbier & Maître Coupe'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -932,7 +1359,7 @@ class _OngletProduits extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -943,18 +1370,24 @@ class _OngletProduits extends StatelessWidget {
               child: const Icon(Icons.storefront_rounded, size: 48, color: AppColors.green),
             ),
             const SizedBox(height: 16),
-            const Text('Gestion des produits en vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            const Text('Vente de produits en vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
             const SizedBox(height: 8),
             const Text(
-              'Vous pouvez publier des produits (shampoings, perruques, accessoires) directement depuis la section Stock & Produits en activant l\'option « Visible sur la vitrine ».',
+              'Cette section est facultative : si votre salon propose uniquement des prestations et coiffures, vous n\'avez pas besoin d\'ajouter de produits.\n\nSi vous vendez aussi des articles (mèches, perruques, shampoings, crèmes), vos clients pourront les commander directement par WhatsApp.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-              icon: const Icon(Icons.inventory_2_rounded),
-              label: const Text('Ouvrir les produits'),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.green, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12)),
+              icon: const Icon(Icons.language_rounded, size: 18),
+              label: const Text('Voir la boutique sur mon site'),
+              onPressed: () => context.push('/v/${vitrine.slug}'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.inventory_2_rounded, size: 18),
+              label: const Text('Gérer les produits en stock'),
               onPressed: () => context.push(Routes.stock),
             ),
           ],
