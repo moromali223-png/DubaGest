@@ -6,6 +6,7 @@ import '../../domain/entities/vitrine_demande_visite.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
 import '../../domain/entities/vitrine_prestation.dart';
+import '../../domain/entities/vitrine_produit_item.dart';
 import '../../domain/entities/vitrine_publique_data.dart';
 import '../../domain/entities/vitrine_rendez_vous.dart';
 
@@ -370,6 +371,66 @@ class VitrineRemoteDataSource {
         data.remove('id');
       }
       await _client.from('vitrine_demandes_visite').insert(data);
+    } catch (e, st) {
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  // --- GESTION DES PRODUITS DE LA VITRINE ---
+
+  Future<List<VitrineProduitItem>> chargerProduitsVitrine(String entrepriseId) async {
+    try {
+      final res = await _client
+          .from('produits')
+          .select()
+          .eq('entreprise_id', entrepriseId)
+          .isFilter('deleted_at', null)
+          .order('created_at', ascending: false);
+
+      return (res as List).map((j) => VitrineProduitItem.fromJson(j as Map<String, dynamic>)).toList();
+    } catch (e, st) {
+      if (_isTableOrSchemaCacheError(e)) {
+        return const [];
+      }
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  Future<VitrineProduitItem> sauvegarderProduitVitrine(VitrineProduitItem item, String entrepriseId) async {
+    try {
+      final data = item.toJson(entrepriseId: entrepriseId);
+      data['updated_at'] = DateTime.now().toIso8601String();
+
+      final res = await _client
+          .from('produits')
+          .upsert(data)
+          .select()
+          .single();
+
+      return VitrineProduitItem.fromJson(res);
+    } catch (e, st) {
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  Future<void> basculerPublicationProduit(String produitId, bool estPublie) async {
+    try {
+      await _client.from('produits').update({
+        'est_publie_catalogue': estPublie,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', produitId);
+    } catch (e, st) {
+      throw ErrorMapper.map(e, st);
+    }
+  }
+
+  Future<void> supprimerProduitVitrine(String produitId) async {
+    try {
+      await _client.from('produits').update({
+        'deleted_at': DateTime.now().toIso8601String(),
+        'est_actif': false,
+        'est_publie_catalogue': false,
+      }).eq('id', produitId);
     } catch (e, st) {
       throw ErrorMapper.map(e, st);
     }

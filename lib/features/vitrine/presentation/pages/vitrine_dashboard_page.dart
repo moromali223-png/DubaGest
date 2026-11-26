@@ -15,6 +15,7 @@ import '../../domain/entities/vitrine_demande_visite.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
 import '../../domain/entities/vitrine_prestation.dart';
+import '../../domain/entities/vitrine_produit_item.dart';
 import '../../domain/entities/vitrine_rendez_vous.dart';
 import '../../domain/entities/vitrine_types.dart';
 import 'vitrine_publique_page.dart';
@@ -1428,45 +1429,769 @@ class _OngletEquipe extends ConsumerWidget {
 // ONGLET 5 : PRODUITS EN VITRINE
 // =============================================================================
 
-class _OngletProduits extends StatelessWidget {
+class _OngletProduits extends ConsumerWidget {
   const _OngletProduits({required this.vitrine});
   final VitrineConfig vitrine;
 
+  void _ouvrirDialogueProduit(BuildContext context, [VitrineProduitItem? produit]) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _DialogueAjoutOuModifProduitVitrine(vitrine: vitrine, produit: produit),
+    );
+  }
+
+  Future<void> _chargerExemplesDemo(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(vitrineProduitsAdminProvider.notifier);
+    
+    // Détection de la typologie d'exemples selon l'activité
+    final isTech = vitrine.typeActivite == TypeActivite.boutiqueTech || vitrine.modeleVisuel == ModeleVitrine.modeleB;
+    final isBeauty = vitrine.typeActivite == TypeActivite.cosmetiqueBeaute || vitrine.typeActivite == TypeActivite.salonCoiffure;
+
+    final exemples = isBeauty
+        ? [
+            const VitrineProduitItem(
+              id: '',
+              nom: 'Crème Hydratante Bio Éclat Karité',
+              description: 'Formule 100% naturelle enrichie au beurre de karité et aloe vera.',
+              prix: 8500,
+              prixBarre: 12000,
+              photoUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80',
+              estPublie: true,
+            ),
+            const VitrineProduitItem(
+              id: '',
+              nom: 'Sérum Réparateur Nuit Argan Pur',
+              description: 'Nourrit en profondeur, régénère et apporte un éclat radieux au réveil.',
+              prix: 14000,
+              prixBarre: 18000,
+              photoUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&q=80',
+              estPublie: true,
+            ),
+            const VitrineProduitItem(
+              id: '',
+              nom: 'Perruque Lace Front HD Ondulée 24"',
+              description: 'Mèches 100% Raw Hair vierges, dentelle invisible indétectable.',
+              prix: 75000,
+              prixBarre: 95000,
+              photoUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80',
+              estPublie: true,
+            ),
+            const VitrineProduitItem(
+              id: '',
+              nom: 'Shampoing Clarifiant Sans Sulfate',
+              description: 'Nettoie en douceur sans agresser le cuir chevelu. Idéal pour mèches.',
+              prix: 6500,
+              photoUrl: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&q=80',
+              estPublie: true,
+            ),
+          ]
+        : isTech
+            ? [
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Écouteurs Wireless ANC Pro 2',
+                  description: 'Réduction de bruit active, autonomie 30h, son spatial haute fidélité.',
+                  prix: 18500,
+                  prixBarre: 25000,
+                  photoUrl: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Smartwatch Ultra Sport Active',
+                  description: 'Écran AMOLED HD, suivi cardiaque, sommeil, notifications WhatsApp.',
+                  prix: 28000,
+                  prixBarre: 38000,
+                  photoUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Enceinte Portable Bluetooth BoomBass',
+                  description: 'Waterproof IPX7, basses profondes 360°, batterie 20h non-stop.',
+                  prix: 22000,
+                  prixBarre: 30000,
+                  photoUrl: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Power Bank Rapide 20 000 mAh 65W',
+                  description: 'Recharge express pour smartphones, iPhone, tablettes et PC portables.',
+                  prix: 14500,
+                  prixBarre: 19000,
+                  photoUrl: 'https://images.unsplash.com/photo-1609592806596-b38466632488?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Station de Charge 3-en-1 Sans Fil',
+                  description: 'Charge simultanément votre téléphone, montre et écouteurs sans fil.',
+                  prix: 16000,
+                  prixBarre: 22000,
+                  photoUrl: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Drone Compact 4K Ultra HD',
+                  description: 'Stabilisation 3 axes, retour automatique GPS, double batterie incluse.',
+                  prix: 55000,
+                  prixBarre: 75000,
+                  photoUrl: 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=600&q=80',
+                  estPublie: true,
+                ),
+              ]
+            : [
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Pack Tendance Mode & Style',
+                  description: 'Qualité premium, finitions soignées, disponible en plusieurs tailles.',
+                  prix: 15000,
+                  prixBarre: 20000,
+                  photoUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Chaussures Sneaker Urban Confort',
+                  description: 'Semelle ergonomique respirante, style urbain intemporel.',
+                  prix: 22000,
+                  prixBarre: 28000,
+                  photoUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Sac Élégance Cuir Citadin',
+                  description: 'Design épuré, compartiments multiples pour ordinateur et effets.',
+                  prix: 25000,
+                  prixBarre: 35000,
+                  photoUrl: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80',
+                  estPublie: true,
+                ),
+                const VitrineProduitItem(
+                  id: '',
+                  nom: 'Lunettes de Soleil Polarisées UV400',
+                  description: 'Protection totale contre les reflets et UV, monture ultra-légère.',
+                  prix: 9500,
+                  prixBarre: 14000,
+                  photoUrl: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&q=80',
+                  estPublie: true,
+                ),
+              ];
+
+    for (final ex in exemples) {
+      await notifier.sauvegarderProduit(ex);
+    }
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${exemples.length} produits exemples ajoutés avec succès !'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncProduits = ref.watch(vitrineProduitsAdminProvider);
+
+    return asyncProduits.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
+              const SizedBox(height: 12),
+              Text('Erreur de chargement des produits : $err', textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => ref.invalidate(vitrineProduitsAdminProvider),
+                child: const Text('Réessayer'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (produits) {
+        final totalPublies = produits.where((p) => p.estPublie).length;
+
+        return Column(
           children: [
+            // Barre d'actions supérieure claire et proéminente
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-              child: const Icon(Icons.storefront_rounded, size: 48, color: AppColors.green),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Catalogue de vente en vitrine',
+                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
+                      ),
+                      Text(
+                        '$totalPublies produit(s) en ligne sur ${produits.length} au total',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('➕ Ajouter un produit', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                        onPressed: () => _ouvrirDialogueProduit(context),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.outlined(
+                        icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF4F46E5), size: 18),
+                        tooltip: 'Charger des produits modèles démo',
+                        onPressed: () => _chargerExemplesDemo(context, ref),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            const Text('Vente de produits en vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-            const SizedBox(height: 8),
-            const Text(
-              'Cette section est facultative : si votre salon propose uniquement des prestations et coiffures, vous n\'avez pas besoin d\'ajouter de produits.\n\nSi vous vendez aussi des articles (mèches, perruques, shampoings, crèmes), vos clients pourront les commander directement par WhatsApp.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.green, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12)),
-              icon: const Icon(Icons.language_rounded, size: 18),
-              label: const Text('Voir la boutique sur mon site'),
-              onPressed: () => context.push('/v/${vitrine.slug}'),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.inventory_2_rounded, size: 18),
-              label: const Text('Gérer les produits en stock'),
-              onPressed: () => context.push(Routes.stock),
+
+            // Liste des produits ou état vide incitatif
+            Expanded(
+              child: produits.isEmpty
+                  ? Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                              child: const Icon(Icons.storefront_rounded, size: 54, color: AppColors.green),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Aucun produit dans votre catalogue vitrine',
+                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Ajoutez directement vos articles (téléphones, accessoires, vêtements, perruques, soins...) avec photo et prix en FCFA.\nVos clients pourront les commander en un clic sur WhatsApp !',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                                label: const Text('Ajouter mon premier produit', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                                onPressed: () => _ouvrirDialogueProduit(context),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF4F46E5),
+                                  side: const BorderSide(color: Color(0xFF818CF8)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                icon: const Icon(Icons.auto_awesome_rounded, size: 20),
+                                label: const Text('⚡ Charger 6 produits démo de qualité', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                onPressed: () => _chargerExemplesDemo(context, ref),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: produits.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (ctx, i) {
+                        final p = produits[i];
+                        return _CarteProduitVitrine(
+                          produit: p,
+                          onEditer: () => _ouvrirDialogueProduit(context, p),
+                          onBasculerPublie: (val) {
+                            ref.read(vitrineProduitsAdminProvider.notifier).basculerPublication(p.id, val);
+                          },
+                          onSupprimer: () async {
+                            final conf = await showDialog<bool>(
+                              context: context,
+                              builder: (c) => AlertDialog(
+                                title: const Text('Retirer ce produit ?'),
+                                content: Text('Voulez-vous retirer "${p.nom}" de votre vitrine ?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Annuler')),
+                                  FilledButton(
+                                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                                    onPressed: () => Navigator.pop(c, true),
+                                    child: const Text('Retirer'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (conf == true) {
+                              await ref.read(vitrineProduitsAdminProvider.notifier).supprimerProduit(p.id);
+                            }
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+class _CarteProduitVitrine extends StatelessWidget {
+  const _CarteProduitVitrine({
+    required this.produit,
+    required this.onEditer,
+    required this.onBasculerPublie,
+    required this.onSupprimer,
+  });
+
+  final VitrineProduitItem produit;
+  final VoidCallback onEditer;
+  final ValueChanged<bool> onBasculerPublie;
+  final VoidCallback onSupprimer;
+
+  @override
+  Widget build(BuildContext context) {
+    final photo = produit.photoPrincipale;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: produit.estPublie ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Photo du produit
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 72,
+              height: 72,
+              child: photo != null && photo.isNotEmpty
+                  ? Image.network(
+                      MediaHybridResolver.resolvePublicUrl(photo),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        color: const Color(0xFFF1F5F9),
+                        child: const Icon(Icons.broken_image_rounded, color: Color(0xFF94A3B8)),
+                      ),
+                    )
+                  : Container(
+                      color: const Color(0xFFF1F5F9),
+                      child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF94A3B8), size: 32),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // Détails du produit
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  produit.nom,
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (produit.description != null && produit.description!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    produit.description!,
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      '${produit.prix} FCFA',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.green),
+                    ),
+                    if (produit.aPromotion) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '${produit.prixBarre} F',
+                        style: const TextStyle(
+                          decoration: TextDecoration.lineThrough,
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(4)),
+                        child: const Text('PROMO', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w900, fontSize: 9)),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      produit.estPublie ? 'Visible en ligne' : 'Masqué',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: produit.estPublie ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Transform.scale(
+                      scale: 0.75,
+                      child: Switch(
+                        value: produit.estPublie,
+                        activeThumbColor: AppColors.green,
+                        onChanged: onBasculerPublie,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF475569)),
+                      tooltip: 'Modifier',
+                      onPressed: onEditer,
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                      tooltip: 'Retirer',
+                      onPressed: onSupprimer,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DialogueAjoutOuModifProduitVitrine extends ConsumerStatefulWidget {
+  const _DialogueAjoutOuModifProduitVitrine({required this.vitrine, this.produit});
+  final VitrineConfig vitrine;
+  final VitrineProduitItem? produit;
+
+  @override
+  ConsumerState<_DialogueAjoutOuModifProduitVitrine> createState() => _DialogueAjoutOuModifProduitVitrineState();
+}
+
+class _DialogueAjoutOuModifProduitVitrineState extends ConsumerState<_DialogueAjoutOuModifProduitVitrine> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nomCtrl;
+  late final TextEditingController _prixCtrl;
+  late final TextEditingController _prixBarreCtrl;
+  late final TextEditingController _photoUrlCtrl;
+  late final TextEditingController _descCtrl;
+  bool _estPublie = true;
+  bool _enSauvegarde = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.produit;
+    _nomCtrl = TextEditingController(text: p?.nom ?? '');
+    _prixCtrl = TextEditingController(text: p != null ? p.prix.toString() : '');
+    _prixBarreCtrl = TextEditingController(text: p?.prixBarre != null ? p!.prixBarre.toString() : '');
+    _photoUrlCtrl = TextEditingController(text: p?.photoPrincipale ?? '');
+    _descCtrl = TextEditingController(text: p?.description ?? '');
+    _estPublie = p?.estPublie ?? true;
+  }
+
+  @override
+  void dispose() {
+    _nomCtrl.dispose();
+    _prixCtrl.dispose();
+    _prixBarreCtrl.dispose();
+    _photoUrlCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _choisirPhotoLocale() async {
+    final res = await MediaPickerHelper.choisirPhotoDetail(context);
+    if (res != null) {
+      setState(() => _photoUrlCtrl.text = 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=600&auto=format&fit=crop&q=80');
+    }
+  }
+
+  void _choisirPhotoSuggestion(String url) {
+    setState(() => _photoUrlCtrl.text = url);
+  }
+
+  Future<void> _validerEtEnregistrer() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final prix = int.tryParse(_prixCtrl.text.trim()) ?? 0;
+    final prixBarre = int.tryParse(_prixBarreCtrl.text.trim());
+
+    setState(() => _enSauvegarde = true);
+
+    final item = VitrineProduitItem(
+      id: widget.produit?.id ?? '',
+      nom: _nomCtrl.text.trim(),
+      description: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
+      prix: prix,
+      prixBarre: prixBarre,
+      photoUrl: _photoUrlCtrl.text.trim().isNotEmpty ? _photoUrlCtrl.text.trim() : null,
+      estPublie: _estPublie,
+    );
+
+    try {
+      await ref.read(vitrineProduitsAdminProvider.notifier).sauvegarderProduit(item);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.produit == null ? 'Produit ajouté et publié en vitrine !' : 'Produit mis à jour !'),
+            backgroundColor: AppColors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _enSauvegarde = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final estModif = widget.produit != null;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    estModif ? 'Modifier le produit' : 'Ajouter un produit en vitrine',
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Nom
+              TextFormField(
+                controller: _nomCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Nom du produit *',
+                  hintText: 'Ex: Écouteurs sans fil Pro, Robe Wax, Perruque HD',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.shopping_bag_outlined),
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Veuillez saisir un nom' : null,
+              ),
+              const SizedBox(height: 12),
+
+              // Prix et Promo
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _prixCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Prix public (FCFA) *',
+                        hintText: 'Ex: 15000',
+                        border: OutlineInputBorder(),
+                        suffixText: 'FCFA',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Prix requis';
+                        if (int.tryParse(v.trim()) == null) return 'Prix invalide';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _prixBarreCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Prix barré (promo)',
+                        hintText: 'Ex: 20000',
+                        border: OutlineInputBorder(),
+                        suffixText: 'FCFA',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Photo
+              TextFormField(
+                controller: _photoUrlCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Photo (URL ou fichier)',
+                  hintText: 'https://... ou fichier local',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.photo_outlined),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.add_photo_alternate_rounded, color: AppColors.green),
+                    tooltip: 'Choisir depuis l\'appareil',
+                    onPressed: _choisirPhotoLocale,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Suggestions de photos prédéfinies de qualité pro
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  ActionChip(
+                    avatar: const Icon(Icons.headphones_rounded, size: 14),
+                    label: const Text('Audio', style: TextStyle(fontSize: 11)),
+                    onPressed: () => _choisirPhotoSuggestion('https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&q=80'),
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.watch_rounded, size: 14),
+                    label: const Text('Montre', style: TextStyle(fontSize: 11)),
+                    onPressed: () => _choisirPhotoSuggestion('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80'),
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.spa_rounded, size: 14),
+                    label: const Text('Cosmétique', style: TextStyle(fontSize: 11)),
+                    onPressed: () => _choisirPhotoSuggestion('https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80'),
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.checkroom_rounded, size: 14),
+                    label: const Text('Mode', style: TextStyle(fontSize: 11)),
+                    onPressed: () => _choisirPhotoSuggestion('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&q=80'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Description
+              TextFormField(
+                controller: _descCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Description publique',
+                  hintText: 'Points forts, caractéristiques, garantie...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Publication switch
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Publier immédiatement sur la vitrine', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                subtitle: const Text('Le produit sera visible par vos clients et commandable par WhatsApp', style: TextStyle(fontSize: 11)),
+                value: _estPublie,
+                activeThumbColor: AppColors.green,
+                onChanged: (v) => setState(() => _estPublie = v),
+              ),
+              const SizedBox(height: 16),
+
+              // Bouton Enregistrer
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _enSauvegarde ? null : _validerEtEnregistrer,
+                  child: _enSauvegarde
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(
+                          estModif ? 'Enregistrer les modifications' : 'Ajouter et publier en vitrine',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2130,7 +2855,7 @@ class _StudioPrevisualisationDialogState extends State<_StudioPrevisualisationDi
     final v = widget.vitrine;
 
     return Dialog(
-      insetPadding: const EdgeInsets.all(12),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       backgroundColor: Colors.transparent,
       child: Center(
         child: Container(
@@ -2146,113 +2871,231 @@ class _StudioPrevisualisationDialogState extends State<_StudioPrevisualisationDi
           ),
           child: Column(
             children: [
-              // 1. Barre d'outils du studio
+              // 1. Barre d'outils du studio (Adaptive & Anti-débordement)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.preview_rounded, color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Studio de Prévisualisation • Vérifiez votre site avant de partager',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SegmentedButton<int>(
-                      segments: const [
-                        ButtonSegment(value: 0, icon: Icon(Icons.smartphone_rounded, size: 16), label: Text('Mobile', style: TextStyle(fontSize: 11))),
-                        ButtonSegment(value: 1, icon: Icon(Icons.tablet_rounded, size: 16), label: Text('Tablette', style: TextStyle(fontSize: 11))),
-                        ButtonSegment(value: 2, icon: Icon(Icons.computer_rounded, size: 16), label: Text('PC', style: TextStyle(fontSize: 11))),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmall = constraints.maxWidth < 620;
+
+                    if (isSmall) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.preview_rounded, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Studio de Prévisualisation',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            width: double.infinity,
+                            child: SegmentedButton<int>(
+                              segments: const [
+                                ButtonSegment(value: 0, icon: Icon(Icons.smartphone_rounded, size: 14), label: Text('Mobile', style: TextStyle(fontSize: 10))),
+                                ButtonSegment(value: 1, icon: Icon(Icons.tablet_rounded, size: 14), label: Text('Tablette', style: TextStyle(fontSize: 10))),
+                                ButtonSegment(value: 2, icon: Icon(Icons.computer_rounded, size: 14), label: Text('PC', style: TextStyle(fontSize: 10))),
+                              ],
+                              selected: {_modeEcran},
+                              onSelectionChanged: (val) => setState(() => _modeEcran = val.first),
+                              style: SegmentedButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                backgroundColor: const Color(0xFF1E293B),
+                                selectedBackgroundColor: AppColors.green,
+                                foregroundColor: Colors.white,
+                                selectedForegroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        const Icon(Icons.preview_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Studio de Prévisualisation • Vérifiez votre site avant de partager',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SegmentedButton<int>(
+                          segments: const [
+                            ButtonSegment(value: 0, icon: Icon(Icons.smartphone_rounded, size: 16), label: Text('Mobile', style: TextStyle(fontSize: 11))),
+                            ButtonSegment(value: 1, icon: Icon(Icons.tablet_rounded, size: 16), label: Text('Tablette', style: TextStyle(fontSize: 11))),
+                            ButtonSegment(value: 2, icon: Icon(Icons.computer_rounded, size: 16), label: Text('PC', style: TextStyle(fontSize: 11))),
+                          ],
+                          selected: {_modeEcran},
+                          onSelectionChanged: (val) => setState(() => _modeEcran = val.first),
+                          style: SegmentedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E293B),
+                            selectedBackgroundColor: AppColors.green,
+                            foregroundColor: Colors.white,
+                            selectedForegroundColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
                       ],
-                      selected: {_modeEcran},
-                      onSelectionChanged: (val) => setState(() => _modeEcran = val.first),
-                      style: SegmentedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E293B),
-                        selectedBackgroundColor: AppColors.green,
-                        foregroundColor: Colors.white,
-                        selectedForegroundColor: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
 
-              // 2. Rendu interactif en direct
+              // 2. Rendu interactif en direct (Cadre adaptatif à la largeur disponible)
               Expanded(
-                child: Container(
-                  color: const Color(0xFF0B1120),
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.all(12),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    width: _largeurCadre,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(_modeEcran == 0 ? 32 : 12),
-                      border: Border.all(color: Colors.black, width: _modeEcran == 0 ? 8 : 4),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 24),
-                      ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: VitrinePubliquePage(slug: v.slug),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxDispo = constraints.maxWidth - 16;
+                    final cadreW = maxDispo < _largeurCadre ? maxDispo : _largeurCadre;
+
+                    return Container(
+                      color: const Color(0xFF0B1120),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(8),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        width: cadreW,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(_modeEcran == 0 ? 28 : 12),
+                          border: Border.all(color: Colors.black, width: _modeEcran == 0 ? 6 : 3),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 24),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: VitrinePubliquePage(slug: v.slug),
+                      ),
+                    );
+                  },
                 ),
               ),
 
-              // 3. Barre inférieure d'actions de partage
+              // 3. Barre inférieure d'actions de partage (100% Anti-débordement)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: const BoxDecoration(
                   color: Color(0xFF0F172A),
                   border: Border(top: BorderSide(color: Color(0xFF1E293B))),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Lien public : ${v.urlPublique}',
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFF475569)),
-                      ),
-                      icon: const Icon(Icons.copy_rounded, size: 16),
-                      label: const Text('Copier le lien'),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: v.urlPublique));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Lien copié dans le presse-papier !'), backgroundColor: AppColors.green),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 10),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
-                      icon: const Icon(Icons.share_rounded, size: 16),
-                      label: const Text('Partager sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        final texte = 'Bonjour ! Découvrez notre site officiel ici : ${v.urlPublique}';
-                        launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}'), mode: LaunchMode.externalApplication);
-                      },
-                    ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmall = constraints.maxWidth < 620;
+
+                    if (isSmall) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Lien public : ${v.urlPublique}',
+                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(color: Color(0xFF475569)),
+                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                  ),
+                                  icon: const Icon(Icons.copy_rounded, size: 14),
+                                  label: const Text('Copier', style: TextStyle(fontSize: 12)),
+                                  onPressed: () {
+                                    Clipboard.setData(ClipboardData(text: v.urlPublique));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Lien copié dans le presse-papier !'), backgroundColor: AppColors.green),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFF25D366),
+                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                  ),
+                                  icon: const Icon(Icons.share_rounded, size: 14),
+                                  label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    final texte = 'Bonjour ! Découvrez notre site officiel ici : ${v.urlPublique}';
+                                    launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}'), mode: LaunchMode.externalApplication);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Lien public : ${v.urlPublique}',
+                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0xFF475569)),
+                          ),
+                          icon: const Icon(Icons.copy_rounded, size: 16),
+                          label: const Text('Copier le lien'),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: v.urlPublique));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Lien copié dans le presse-papier !'), backgroundColor: AppColors.green),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                          icon: const Icon(Icons.share_rounded, size: 16),
+                          label: const Text('Partager sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            final texte = 'Bonjour ! Découvrez notre site officiel ici : ${v.urlPublique}';
+                            launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}'), mode: LaunchMode.externalApplication);
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],

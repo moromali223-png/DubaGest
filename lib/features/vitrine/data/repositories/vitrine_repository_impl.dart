@@ -4,6 +4,7 @@ import '../../domain/entities/vitrine_demande_visite.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
 import '../../domain/entities/vitrine_prestation.dart';
+import '../../domain/entities/vitrine_produit_item.dart';
 import '../../domain/entities/vitrine_publique_data.dart';
 import '../../domain/entities/vitrine_rendez_vous.dart';
 import '../../domain/repositories/vitrine_repository.dart';
@@ -134,5 +135,27 @@ class VitrineRepositoryImpl implements VitrineRepository {
   @override
   Future<void> creerDemandeVisite(VitrineDemandeVisite demande) {
     return _remote.creerDemandeVisite(demande);
+  }
+
+  // --- PRODUITS EN VITRINE ---
+
+  @override
+  Future<List<VitrineProduitItem>> chargerProduitsVitrine(String entrepriseId) {
+    return _remote.chargerProduitsVitrine(entrepriseId);
+  }
+
+  @override
+  Future<VitrineProduitItem> sauvegarderProduitVitrine(VitrineProduitItem item, String entrepriseId) {
+    return _remote.sauvegarderProduitVitrine(item, entrepriseId);
+  }
+
+  @override
+  Future<void> basculerPublicationProduit(String produitId, bool estPublie) {
+    return _remote.basculerPublicationProduit(produitId, estPublie);
+  }
+
+  @override
+  Future<void> supprimerProduitVitrine(String produitId) {
+    return _remote.supprimerProduitVitrine(produitId);
   }
 }

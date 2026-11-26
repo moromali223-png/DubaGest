@@ -4,6 +4,7 @@ import '../entities/vitrine_demande_visite.dart';
 import '../entities/vitrine_galerie_item.dart';
 import '../entities/vitrine_membre_equipe.dart';
 import '../entities/vitrine_prestation.dart';
+import '../entities/vitrine_produit_item.dart';
 import '../entities/vitrine_publique_data.dart';
 import '../entities/vitrine_rendez_vous.dart';
 
@@ -42,4 +43,10 @@ abstract class VitrineRepository {
   Future<List<VitrineDemandeVisite>> chargerDemandesVisite(String entrepriseId);
   Future<VitrineDemandeVisite> changerStatutDemandeVisite(String id, StatutDemandeVisite statut);
   Future<void> creerDemandeVisite(VitrineDemandeVisite demande);
+
+  // --- PRODUITS EN VITRINE ---
+  Future<List<VitrineProduitItem>> chargerProduitsVitrine(String entrepriseId);
+  Future<VitrineProduitItem> sauvegarderProduitVitrine(VitrineProduitItem item, String entrepriseId);
+  Future<void> basculerPublicationProduit(String produitId, bool estPublie);
+  Future<void> supprimerProduitVitrine(String produitId);
 }

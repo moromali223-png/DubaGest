@@ -12,6 +12,7 @@ import '../../domain/entities/vitrine_demande_visite.dart';
 import '../../domain/entities/vitrine_galerie_item.dart';
 import '../../domain/entities/vitrine_membre_equipe.dart';
 import '../../domain/entities/vitrine_prestation.dart';
+import '../../domain/entities/vitrine_produit_item.dart';
 import '../../domain/entities/vitrine_publique_data.dart';
 import '../../domain/entities/vitrine_rendez_vous.dart';
 import '../../domain/entities/vitrine_types.dart';
@@ -240,3 +241,40 @@ class VitrineDemandesVisiteNotifier extends AsyncNotifier<List<VitrineDemandeVis
 final vitrinePubliqueDataProvider = FutureProvider.family<VitrinePubliqueData, String>((ref, slugOuId) {
   return ref.watch(vitrineRepositoryProvider).chargerVitrinePublique(slugOuId);
 });
+
+/// Produits de l'entreprise affichés ou gérés pour la vitrine
+final vitrineProduitsAdminProvider = AsyncNotifierProvider<VitrineProduitsAdminNotifier, List<VitrineProduitItem>>(
+  VitrineProduitsAdminNotifier.new,
+);
+
+class VitrineProduitsAdminNotifier extends AsyncNotifier<List<VitrineProduitItem>> {
+  @override
+  Future<List<VitrineProduitItem>> build() async {
+    final ctx = ref.watch(contexteActifProvider);
+    final entrepriseId = ctx?.entreprise?.id;
+    if (entrepriseId == null) return const [];
+    return ref.watch(vitrineRepositoryProvider).chargerProduitsVitrine(entrepriseId);
+  }
+
+  Future<void> sauvegarderProduit(VitrineProduitItem item) async {
+    final ctx = ref.read(contexteActifProvider);
+    final entrepriseId = ctx?.entreprise?.id;
+    if (entrepriseId == null) return;
+    await ref.read(vitrineRepositoryProvider).sauvegarderProduitVitrine(item, entrepriseId);
+    ref.invalidateSelf();
+    ref.invalidate(vitrineActuelleProvider);
+  }
+
+  Future<void> basculerPublication(String produitId, bool estPublie) async {
+    await ref.read(vitrineRepositoryProvider).basculerPublicationProduit(produitId, estPublie);
+    ref.invalidateSelf();
+    ref.invalidate(vitrineActuelleProvider);
+  }
+
+  Future<void> supprimerProduit(String produitId) async {
+    await ref.read(vitrineRepositoryProvider).supprimerProduitVitrine(produitId);
+    ref.invalidateSelf();
+    ref.invalidate(vitrineActuelleProvider);
+  }
+}
+

@@ -2,11 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_types.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_config.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_prestation.dart';
-import 'package:dubagest/features/vitrine/domain/entities/vitrine_galerie_item.dart';
-import 'package:dubagest/features/vitrine/domain/entities/vitrine_membre_equipe.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_rendez_vous.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_bien_immobilier.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_demande_visite.dart';
+import 'package:dubagest/features/vitrine/domain/entities/vitrine_produit_item.dart';
 import 'package:dubagest/features/vitrine/domain/entities/vitrine_publique_data.dart';
 import 'package:dubagest/features/catalogue/services/media_hybrid_resolver.dart';
 
@@ -262,6 +261,32 @@ void main() {
       expect(data.biens.first.nbChambres, 4);
       expect(data.biens.first.surfaceM2, 320.0);
       expect(data.equipe.length, 1);
+    });
+
+    test('12. Sérialisation et désérialisation VitrineProduitItem', () {
+      const prod = VitrineProduitItem(
+        id: 'p-100',
+        nom: 'Écouteurs Pro Sans Fil',
+        description: 'Réduction active du bruit et autonomie 30h',
+        prix: 45000,
+        prixBarre: 60000,
+        photoUrl: 'https://images.unsplash.com/photo-example',
+        estPublie: true,
+      );
+
+      final json = prod.toJson(entrepriseId: 'ent-123');
+      expect(json['id'], 'p-100');
+      expect(json['entreprise_id'], 'ent-123');
+      expect(json['nom'], 'Écouteurs Pro Sans Fil');
+      expect(json['prix_detail'], 45000);
+      expect(json['prix_barre'], 60000);
+      expect(json['est_publie_catalogue'], true);
+
+      final decoded = VitrineProduitItem.fromJson(json);
+      expect(decoded.id, prod.id);
+      expect(decoded.nom, prod.nom);
+      expect(decoded.prixFormate, '45 000 FCFA');
+      expect(decoded.aPromotion, isTrue);
     });
   });
 }
