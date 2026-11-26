@@ -51,8 +51,8 @@ class ReactivezCompteBottomSheet extends ConsumerStatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.78),
-      isDismissible: false,
-      enableDrag: false,
+      isDismissible: true,
+      enableDrag: true,
       builder: (ctx) => ReactivezCompteBottomSheet(
         initialPlanCode: initialPlanCode,
         startAtStep: startAtStep,
@@ -167,18 +167,33 @@ class _ReactivezCompteBottomSheetState extends ConsumerState<ReactivezCompteBott
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Poignée discrète
-                      Center(
-                        child: Container(
-                          width: 42,
-                          height: 4.5,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(2.5),
+                      // Barre supérieure avec poignée et bouton fermer
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const SizedBox(width: 40),
+                          Container(
+                            width: 42,
+                            height: 4.5,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(2.5),
+                            ),
                           ),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, color: _textMuted),
+                            tooltip: 'Fermer',
+                            onPressed: () {
+                              if (widget.onClose != null) {
+                                widget.onClose!();
+                              } else if (Navigator.of(context).canPop()) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 12),
 
                       // En-tête officiel selon Image 1 & Image 2
                       const Text(
@@ -294,7 +309,34 @@ class _ReactivezCompteBottomSheetState extends ConsumerState<ReactivezCompteBott
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+
+        // Bouton pour continuer / consulter sans abonnement
+        OutlinedButton.icon(
+          key: const Key('btn-voir-sans-abonnement'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _textWhite,
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          ),
+          icon: const Icon(Icons.visibility_outlined, size: 18),
+          label: const Text(
+            'Consulter ma vitrine & mes données sans abonnement',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          onPressed: () {
+            if (widget.onClose != null) {
+              widget.onClose!();
+            } else if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
+        const SizedBox(height: 12),
 
         // Bouton secondaire rouge : "Se déconnecter"
         TextButton(
