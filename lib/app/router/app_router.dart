@@ -33,6 +33,9 @@ import '../../features/recherche/presentation/recherche_page.dart';
 import '../../features/tableau_de_bord/presentation/tableau_de_bord_page.dart';
 import '../../features/entreprise/presentation/pages/create_company_page.dart';
 import '../../features/catalogue/presentation/pages/boutique_publique_page.dart';
+import '../../features/vitrine/presentation/pages/vitrine_dashboard_page.dart';
+import '../../features/vitrine/presentation/pages/vitrine_wizard_page.dart';
+import '../../features/vitrine/presentation/pages/vitrine_publique_page.dart';
 import '../../features/invitations/presentation/pages/join_company_page.dart';
 import '../../features/invitations/presentation/providers/invitations_providers.dart';
 import '../../features/authentication/presentation/providers/auth_providers.dart';
@@ -254,11 +257,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.boutique,
-        builder: (_, state) => BoutiquePubliquePage(slug: state.pathParameters['slug'] ?? ''),
+        builder: (_, state) => VitrinePubliquePage(slug: state.pathParameters['slug'] ?? ''),
       ),
       GoRoute(
         path: Routes.boutiqueCourt,
-        builder: (_, state) => BoutiquePubliquePage(slug: state.pathParameters['slug'] ?? ''),
+        builder: (_, state) => VitrinePubliquePage(slug: state.pathParameters['slug'] ?? ''),
+      ),
+      GoRoute(
+        path: Routes.vitrineCourt,
+        builder: (_, state) => VitrinePubliquePage(slug: state.pathParameters['slug'] ?? ''),
       ),
       GoRoute(path: Routes.blocked, builder: (_, _) => const ContexteBloquePage()),
 
@@ -839,6 +846,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.about,
             builder: (_, _) => const AProposPage(),
+          ),
+          GoRoute(
+            path: Routes.maVitrine,
+            builder: (_, _) => const VitrineDashboardPage(),
+          ),
+          GoRoute(
+            path: Routes.vitrineWizard,
+            builder: (_, _) => const VitrineWizardPage(),
           ),
           GoRoute(
             path: Routes.settings,

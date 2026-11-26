@@ -116,6 +116,14 @@ class AppMenuDrawer extends ConsumerWidget {
                   }
                 }),
 
+            const _Titre('Site Web & Vitrine'),
+            _Ligne(
+              key: const Key('menu-ma-vitrine'),
+              icon: Icons.storefront_rounded,
+              label: '🎨 Ma Vitrine Professionnelle',
+              onTap: () => aller(Routes.maVitrine),
+            ),
+
             if (nav.modulesAdministration.isNotEmpty) ...[
               _Titre(l10n.navAdministration),
               for (final m in nav.modulesAdministration)

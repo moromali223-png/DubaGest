@@ -121,6 +121,14 @@ class QuickActionSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
+            item(
+              icon: Icons.storefront_rounded,
+              color: AppColors.green,
+              background: AppColors.greenSoft,
+              title: 'Ma Vitrine & Site Web',
+              subtitle: 'Gérer mon site, mes prestations et mes rendez-vous',
+              onTap: () => context.push(Routes.maVitrine),
+            ),
             if (hasCommerce || (nav?.venteDisponible ?? false))
               item(
                 icon: Icons.point_of_sale_outlined,

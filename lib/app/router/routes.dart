@@ -16,8 +16,12 @@ abstract final class Routes {
   static const joinCompany = '/join-company';
   static const boutique = '/boutique/:slug';
   static const boutiqueCourt = '/c/:slug';
+  static const vitrineCourt = '/v/:slug';
+  static const maVitrine = '/vitrine';
+  static const vitrineWizard = '/vitrine/editeur';
   static String boutiqueUrl(String slug) => '/boutique/$slug';
   static String boutiqueCourtUrl(String slug) => '/c/$slug';
+  static String vitrineUrl(String slug) => '/v/$slug';
   static const blocked = '/blocked';
   static const home = '/';
   static const administration = '/admin';
@@ -188,7 +192,10 @@ abstract final class Routes {
   static const publicRoutes = {login, register, forgotPassword, joinCompany};
 
   static bool estRouteBoutiquePublique(String loc) =>
-      loc.startsWith('/boutique/') || loc.startsWith('/c/') || loc == '/boutique';
+      loc.startsWith('/boutique/') ||
+      loc.startsWith('/c/') ||
+      loc.startsWith('/v/') ||
+      loc == '/boutique';
 
   /// Accessibles à un compte connecté sans entreprise.
   static const sansEntreprise = {onboarding, createCompany, joinCompany};

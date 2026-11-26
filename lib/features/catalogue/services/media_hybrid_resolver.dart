@@ -127,6 +127,45 @@ abstract final class MediaHybridResolver {
     return 'r2:photos/$entrepriseId/$produitId/$uuid.$extension';
   }
 
+  /// Génère un chemin de stockage V2 pour la bannière ou le logo de la vitrine
+  static String createR2VitrineMedia({
+    required String entrepriseId,
+    required String type, // 'banniere', 'logo', 'presentation'
+    String extension = 'jpg',
+  }) {
+    final uuid = const Uuid().v4();
+    return 'r2:vitrines/$entrepriseId/$type/$uuid.$extension';
+  }
+
+  /// Génère un chemin de stockage V2 pour une photo de prestation ou soin
+  static String createR2PrestationPhotoPath({
+    required String entrepriseId,
+    required String prestationId,
+    String extension = 'jpg',
+  }) {
+    final uuid = const Uuid().v4();
+    return 'r2:prestations/$entrepriseId/$prestationId/$uuid.$extension';
+  }
+
+  /// Génère un chemin de stockage V2 pour une photo de réalisation (galerie)
+  static String createR2GaleriePhotoPath({
+    required String entrepriseId,
+    String extension = 'jpg',
+  }) {
+    final uuid = const Uuid().v4();
+    return 'r2:galerie/$entrepriseId/$uuid.$extension';
+  }
+
+  /// Génère un chemin de stockage V2 pour un membre d'équipe
+  static String createR2EquipePhotoPath({
+    required String entrepriseId,
+    required String membreId,
+    String extension = 'jpg',
+  }) {
+    final uuid = const Uuid().v4();
+    return 'r2:equipe/$entrepriseId/$membreId/$uuid.$extension';
+  }
+
   /// Génère un chemin de stockage V2 pour un enregistrement vocal (60s max) Cloudflare R2.
   static String createR2AudioPath({
     required String entrepriseId,
