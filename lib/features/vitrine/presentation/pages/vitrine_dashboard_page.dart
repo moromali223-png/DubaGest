@@ -19,6 +19,7 @@ import '../../domain/entities/vitrine_produit_item.dart';
 import '../../domain/entities/vitrine_rendez_vous.dart';
 import '../../domain/entities/vitrine_types.dart';
 import 'vitrine_publique_page.dart';
+import 'vitrine_personnalisation_page.dart';
 
 /// Page d'administration complète « Ma Vitrine » pour le professionnel
 class VitrineDashboardPage extends ConsumerStatefulWidget {
@@ -46,6 +47,12 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _ouvrirPagePersonnalisation(BuildContext context, VitrineConfig vitrine) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (ctx) => VitrinePersonnalisationPage(vitrine: vitrine)),
+    );
   }
 
   void _ouvrirStudioPrevisualisation(BuildContext context, VitrineConfig vitrine) {
@@ -372,305 +379,91 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
     required int nbPrestations,
     required int nbBiens,
   }) {
-    final pct = _calculerProgression(vitrine, nbProduits: nbProduits, nbPrestations: nbPrestations, nbBiens: nbBiens);
-    final isCommerce = vitrine.typeActivite.domaine == DomaineActivite.commerce;
-    final isServices = vitrine.typeActivite.domaine == DomaineActivite.services;
-
-    final tabLogo = isCommerce ? 2 : (isServices ? 4 : 3);
-    final tabContenu = 0;
-    final tabAPropos = isCommerce ? 3 : (isServices ? 5 : 4);
-    final tabContact = isCommerce ? 3 : (isServices ? 5 : 4);
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-      decoration: const BoxDecoration(
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          // Ligne 1 : Statut, sélecteur rapide de modèle, switch actif & menu
-          Row(
-            children: [
-              Expanded(
-                child: Row(
+          // Pastille statut
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: vitrine.estPublie ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: vitrine.estPublie ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: vitrine.estPublie ? const Color(0xFF16A34A) : const Color(0xFF64748B),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            vitrine.estPublie ? 'EN LIGNE' : 'BROUILLON',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: vitrine.estPublie ? const Color(0xFF15803D) : const Color(0xFF475569),
-                            ),
-                          ),
-                        ],
+                    Text(
+                      vitrine.estPublie ? 'En ligne' : 'Brouillon',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                        color: vitrine.estPublie ? const Color(0xFF15803D) : const Color(0xFF64748B),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => _ouvrirSelecteurModeleRapide(context, ref, vitrine),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFC7D2FE)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              vitrine.modeleVisuel.titre.split('—').first.trim(),
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
-                            ),
-                            const SizedBox(width: 2),
-                            const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Color(0xFF4F46E5)),
-                          ],
-                        ),
-                      ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '• ${vitrine.modeleVisuel.titre.split('—').first.trim()}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    vitrine.estPublie ? 'Actif' : 'Masqué',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: vitrine.estPublie ? AppColors.green : const Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Switch(
-                    value: vitrine.estPublie,
-                    activeThumbColor: AppColors.green,
-                    onChanged: (val) {
-                      ref.read(vitrineActuelleProvider.notifier).basculerPublication(val);
-                    },
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF475569), size: 20),
-                    onSelected: (val) {
-                      if (val == 'plein_ecran') {
-                        context.push('/v/${vitrine.slug}');
-                      } else if (val == 'wizard') {
-                        context.push(Routes.vitrineWizard);
-                      } else if (val == 'refresh') {
-                        ref.invalidate(vitrineActuelleProvider);
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: 'plein_ecran',
-                        child: Row(
-                          children: [
-                            Icon(Icons.open_in_browser_rounded, size: 18, color: AppColors.green),
-                            SizedBox(width: 8),
-                            Text('Ouvrir en plein écran'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'wizard',
-                        child: Row(
-                          children: [
-                            Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF4F46E5)),
-                            SizedBox(width: 8),
-                            Text('Assistant IA complet (8 étapes)'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'refresh',
-                        child: Row(
-                          children: [
-                            Icon(Icons.refresh_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text('Actualiser la vitrine'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Ligne 2 : Carte « Votre site » compacte (Lien + Copier + WhatsApp + Aperçu)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.link_rounded, size: 16, color: Color(0xFF64748B)),
-                const SizedBox(width: 6),
-                Expanded(
+                const SizedBox(height: 2),
+                InkWell(
+                  onTap: () => _copierLien(vitrine.urlPublique),
                   child: Text(
                     vitrine.urlPublique,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF334155)),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), decoration: TextDecoration.underline),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.copy_rounded, size: 16, color: AppColors.green),
-                  tooltip: 'Copier le lien',
-                  onPressed: () => _copierLien(vitrine.urlPublique),
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.share_rounded, size: 16, color: Color(0xFF25D366)),
-                  tooltip: 'Partager sur WhatsApp',
-                  onPressed: () => _partagerWhatsApp(vitrine),
-                ),
-                const SizedBox(width: 4),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    visualDensity: VisualDensity.compact,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  icon: const Icon(Icons.preview_rounded, size: 14),
-                  label: const Text('👁️ Aperçu', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-                  onPressed: () => _ouvrirStudioPrevisualisation(context, vitrine),
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
-
-          // Ligne 3 : Progression (Votre vitrine est prête à X %)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Votre vitrine est prête à $pct%',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF1E293B)),
-              ),
-              Text(
-                pct == 100 ? '🎉 Prête à vendre !' : 'Complétez les 4 étapes',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: pct == 100 ? AppColors.green : const Color(0xFF64748B),
-                ),
-              ),
-            ],
+          const SizedBox(width: 4),
+          // Bouton Aperçu
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.preview_rounded, size: 20, color: Color(0xFF0F172A)),
+            tooltip: 'Aperçu du site',
+            onPressed: () => _ouvrirStudioPrevisualisation(context, vitrine),
           ),
-          const SizedBox(height: 5),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: pct / 100.0,
-              minHeight: 5,
-              backgroundColor: const Color(0xFFE2E8F0),
-              color: pct == 100 ? AppColors.green : (pct >= 50 ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)),
+          const SizedBox(width: 4),
+          // Bouton Personnaliser (ouvre la page dédiée avec UI/UX moderne)
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF0F172A),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              visualDensity: VisualDensity.compact,
             ),
-          ),
-          const SizedBox(height: 8),
-
-          // Jalons interactifs (redirigent vers l'onglet correspondant)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildJalonChip(
-                  label: '1. Logo',
-                  valide: vitrine.logoUrl != null && vitrine.logoUrl!.trim().isNotEmpty,
-                  onTap: () => DefaultTabController.of(context).animateTo(tabLogo),
-                ),
-                const SizedBox(width: 6),
-                _buildJalonChip(
-                  label: isCommerce ? '2. Produits ($nbProduits)' : (isServices ? '2. Services ($nbPrestations)' : '2. Biens ($nbBiens)'),
-                  valide: (isCommerce ? nbProduits : (isServices ? nbPrestations : nbBiens)) > 0,
-                  onTap: () => DefaultTabController.of(context).animateTo(tabContenu),
-                ),
-                const SizedBox(width: 6),
-                _buildJalonChip(
-                  label: '3. À propos',
-                  valide: vitrine.description != null && vitrine.description!.trim().isNotEmpty,
-                  onTap: () => DefaultTabController.of(context).animateTo(tabAPropos),
-                ),
-                const SizedBox(width: 6),
-                _buildJalonChip(
-                  label: '4. Contact',
-                  valide: vitrine.whatsapp != null && vitrine.whatsapp!.trim().isNotEmpty,
-                  onTap: () => DefaultTabController.of(context).animateTo(tabContact),
-                ),
-              ],
-            ),
+            icon: const Icon(Icons.tune_rounded, size: 14),
+            label: const Text('Personnaliser', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11)),
+            onPressed: () => _ouvrirPagePersonnalisation(context, vitrine),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildJalonChip({
-    required String label,
-    required bool valide,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: valide ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: valide ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              valide ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
-              size: 13,
-              color: valide ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: valide ? const Color(0xFF15803D) : const Color(0xFF475569),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
