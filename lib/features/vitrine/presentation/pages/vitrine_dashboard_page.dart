@@ -825,7 +825,6 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
       ),
     );
   }
-  }
 }
 // =============================================================================
 // ONGLET 1 : GESTION DES RENDEZ-VOUS
