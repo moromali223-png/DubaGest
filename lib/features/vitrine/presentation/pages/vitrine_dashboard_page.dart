@@ -41,7 +41,7 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
   }
 
   Future<void> _partagerWhatsApp(VitrineConfig vitrine) async {
-    final texte = 'Bonjour ! Découvrez notre site vitrine officiel chez *${vitrine.titreHero ?? vitrine.nomBoutique}* ici : ${vitrine.urlPublique}';
+    final texte = 'Bonjour ! Découvrez notre site vitrine officiel chez *${vitrine.titreHero ?? 'DubaGest'}* ici : ${vitrine.urlPublique}';
     final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -69,11 +69,21 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
       score += 25;
     }
     // 4. Contact direct (25%)
-    if ((vitrine.contactWhatsapp != null && vitrine.contactWhatsapp!.trim().isNotEmpty) ||
+    if ((vitrine.whatsapp != null && vitrine.whatsapp!.trim().isNotEmpty) ||
         (vitrine.telephone != null && vitrine.telephone!.trim().isNotEmpty)) {
       score += 25;
     }
     return score;
+  }
+
+  void _ouvrirFormulaireBien(BuildContext context, WidgetRef ref, VitrineConfig vitrine) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _DialogueAjoutBien(vitrine: vitrine),
+    );
   }
 
   void _ouvrirDialogueAjoutProduit(BuildContext context, VitrineConfig vitrine) {
@@ -168,7 +178,7 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
                 backgroundColor: const Color(0xFFF8FAFC),
                 appBar: AppBar(
                   title: Text(
-                    vitrine.nomBoutique.isNotEmpty ? vitrine.nomBoutique : 'Ma Vitrine Pro',
+                    vitrine.titreHero?.isNotEmpty == true ? vitrine.titreHero! : 'Ma Vitrine Pro',
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
                   ),
                   backgroundColor: Colors.white,
@@ -616,7 +626,7 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
                 const SizedBox(width: 6),
                 _buildJalonChip(
                   label: '4. Contact',
-                  valide: vitrine.contactWhatsapp != null && vitrine.contactWhatsapp!.trim().isNotEmpty,
+                  valide: vitrine.whatsapp != null && vitrine.whatsapp!.trim().isNotEmpty,
                   onTap: () => DefaultTabController.of(context).animateTo(tabContact),
                 ),
               ],
@@ -2121,8 +2131,7 @@ class _OngletProduitsState extends ConsumerState<_OngletProduits> {
                             Text(
                               query.isNotEmpty || _filtre != 'tous'
                                   ? 'Essayez de réinitialiser la recherche ou le filtre.'
-                                  : 'Ajoutez directement vos articles avec photo et prix en FCFA.
-Vos clients pourront les commander en un clic sur WhatsApp !',
+                                  : 'Ajoutez directement vos articles avec photo et prix en FCFA.\nVos clients pourront les commander en un clic sur WhatsApp !',
                               textAlign: TextAlign.center,
                               style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
                             ),
@@ -2663,12 +2672,12 @@ class _OngletApparenceState extends ConsumerState<_OngletApparence> {
   void initState() {
     super.initState();
     final v = widget.vitrine;
-    _titreHeroCtrl = TextEditingController(text: v.titreHero ?? v.nomBoutique);
+    _titreHeroCtrl = TextEditingController(text: v.titreHero ?? '');
     _sloganCtrl = TextEditingController(text: v.slogan ?? '');
     _logoUrlCtrl = TextEditingController(text: v.logoUrl ?? '');
-    _banniereUrlCtrl = TextEditingController(text: v.imageBanniere ?? '');
+    _banniereUrlCtrl = TextEditingController(text: v.banniereUrl ?? '');
     _modeleChoisi = v.modeleVisuel;
-    _styleChoisi = v.style;
+    _styleChoisi = v.themeStyle;
     _sections = v.sections;
   }
 
@@ -2692,9 +2701,9 @@ class _OngletApparenceState extends ConsumerState<_OngletApparence> {
       titreHero: _titreHeroCtrl.text.trim().isNotEmpty ? _titreHeroCtrl.text.trim() : null,
       slogan: _sloganCtrl.text.trim().isNotEmpty ? _sloganCtrl.text.trim() : null,
       logoUrl: _logoUrlCtrl.text.trim().isNotEmpty ? _logoUrlCtrl.text.trim() : null,
-      imageBanniere: _banniereUrlCtrl.text.trim().isNotEmpty ? _banniereUrlCtrl.text.trim() : null,
+      banniereUrl: _banniereUrlCtrl.text.trim().isNotEmpty ? _banniereUrlCtrl.text.trim() : null,
       modeleVisuel: _modeleChoisi,
-      style: _styleChoisi,
+      themeStyle: _styleChoisi,
       sections: _sections,
     );
 
@@ -2736,14 +2745,14 @@ class _OngletApparenceState extends ConsumerState<_OngletApparence> {
                       child: const Icon(Icons.storefront_rounded, color: Color(0xFF15803D), size: 20),
                     ),
                     const SizedBox(width: 10),
-                    const Text('Identité & Bannière d'Accueil', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                    const Text('Identité & Bannière d\'Accueil', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                   ],
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
                   controller: _titreHeroCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Grand titre d'accroche (Hero) *',
+                    labelText: 'Grand titre d\'accroche (Hero) *',
                     hintText: 'Ex: Le temple du High-Tech, Maison de Beauté VIP',
                     border: OutlineInputBorder(),
                   ),
@@ -2925,27 +2934,19 @@ class _OngletApparenceState extends ConsumerState<_OngletApparence> {
                 const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Bannière Hero d'Accueil', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  title: const Text('Bannière Hero d\'Accueil', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                   subtitle: const Text('Grande photo de couverture avec slogan et boutons WhatsApp', style: TextStyle(fontSize: 11)),
-                  value: _sections.hero,
+                  value: _sections.accueil,
                   activeThumbColor: AppColors.green,
-                  onChanged: (v) => setState(() => _sections = _sections.copyWith(hero: v)),
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(accueil: v)),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Bandeau de Réassurance', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                  subtitle: const Text('4 icônes : Livraison rapide, Paiement sécurisé, Retours, Support', style: TextStyle(fontSize: 11)),
-                  value: _sections.reassurance,
+                  title: const Text('Prestations & Services', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: const Text('Coiffures, soins, rendez-vous et interventions', style: TextStyle(fontSize: 11)),
+                  value: _sections.prestations,
                   activeThumbColor: AppColors.green,
-                  onChanged: (v) => setState(() => _sections = _sections.copyWith(reassurance: v)),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Catégories & Rayons', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                  subtitle: const Text('Pastilles rondes avec icônes par catégorie', style: TextStyle(fontSize: 11)),
-                  value: _sections.categories,
-                  activeThumbColor: AppColors.green,
-                  onChanged: (v) => setState(() => _sections = _sections.copyWith(categories: v)),
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(prestations: v, tarifs: v)),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
@@ -2966,7 +2967,7 @@ class _OngletApparenceState extends ConsumerState<_OngletApparence> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Avis & Témoignages Clients', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                  subtitle: const Text('Cartes d'avis 5 étoiles pour inspirer confiance', style: TextStyle(fontSize: 11)),
+                  subtitle: const Text('Cartes d\'avis 5 étoiles pour inspirer confiance', style: TextStyle(fontSize: 11)),
                   value: _sections.temoignages,
                   activeThumbColor: AppColors.green,
                   onChanged: (v) => setState(() => _sections = _sections.copyWith(temoignages: v)),
@@ -2991,7 +2992,7 @@ class _OngletApparenceState extends ConsumerState<_OngletApparence> {
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : const Icon(Icons.check_circle_rounded),
             label: Text(
-              _enSauvegarde ? 'Enregistrement en cours...' : 'Enregistrer l'apparence',
+              _enSauvegarde ? 'Enregistrement en cours...' : 'Enregistrer l\'apparence',
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
             ),
             onPressed: _enSauvegarde ? null : _enregistrerApparence,
@@ -3032,14 +3033,13 @@ class _OngletInfosBoutiqueState extends ConsumerState<_OngletInfosBoutique> {
 
     _descCtrl = TextEditingController(text: v.description ?? '');
     _telCtrl = TextEditingController(text: v.telephone ?? '');
-    _whatsappCtrl = TextEditingController(text: v.contactWhatsapp ?? '');
-    _adresseCtrl = TextEditingController(text: v.adressePhysique ?? '');
+    _whatsappCtrl = TextEditingController(text: v.whatsapp ?? '');
+    _adresseCtrl = TextEditingController(text: v.adresse ?? '');
     _villeCtrl = TextEditingController(text: v.ville ?? '');
     _facebookCtrl = TextEditingController(text: r['facebook']?.toString() ?? '');
     _instagramCtrl = TextEditingController(text: r['instagram']?.toString() ?? '');
     _tiktokCtrl = TextEditingController(text: r['tiktok']?.toString() ?? '');
-    _horairesCtrl = TextEditingController(text: r['horaires']?.toString() ?? 'Lundi - Samedi : 08h30 - 20h00
-Dimanche : 10h00 - 18h00');
+    _horairesCtrl = TextEditingController(text: r['horaires']?.toString() ?? 'Lundi - Samedi : 08h30 - 20h00\nDimanche : 10h00 - 18h00');
     _paiementCtrl = TextEditingController(text: r['paiement']?.toString() ?? 'Orange Money, Wave, Espèces à la livraison');
     _livraisonCtrl = TextEditingController(text: r['livraison']?.toString() ?? 'Livraison rapide à Bamako en 2h. Expédition en région sous 24h.');
   }
@@ -3062,7 +3062,7 @@ Dimanche : 10h00 - 18h00');
 
   void _remplirTexteType() {
     final act = widget.vitrine.typeActivite;
-    final nom = widget.vitrine.nomBoutique.isNotEmpty ? widget.vitrine.nomBoutique : 'notre établissement';
+    final nom = (widget.vitrine.titreHero ?? '').isNotEmpty ? (widget.vitrine.titreHero ?? '') : 'notre établissement';
     if (act == TypeActivite.salonCoiffure || act == TypeActivite.beauteEsthetique) {
       _descCtrl.text = 'Bienvenue chez $nom, votre salon de référence pour sublimer votre beauté. Nous sommes spécialisés dans les tresses soignées, la pose de perruques invisibles et les soins capillaires personnalisés avec des produits haut de gamme.';
     } else if (act == TypeActivite.boutiqueTech) {
@@ -3087,8 +3087,8 @@ Dimanche : 10h00 - 18h00');
     final maj = v.copyWith(
       description: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
       telephone: _telCtrl.text.trim().isNotEmpty ? _telCtrl.text.trim() : null,
-      contactWhatsapp: _whatsappCtrl.text.trim().isNotEmpty ? _whatsappCtrl.text.trim() : null,
-      adressePhysique: _adresseCtrl.text.trim().isNotEmpty ? _adresseCtrl.text.trim() : null,
+      whatsapp: _whatsappCtrl.text.trim().isNotEmpty ? _whatsappCtrl.text.trim() : null,
+      adresse: _adresseCtrl.text.trim().isNotEmpty ? _adresseCtrl.text.trim() : null,
       ville: _villeCtrl.text.trim().isNotEmpty ? _villeCtrl.text.trim() : null,
       reseauxSociaux: reseaux,
     );
@@ -3273,7 +3273,7 @@ Dimanche : 10h00 - 18h00');
                   controller: _horairesCtrl,
                   maxLines: 2,
                   decoration: const InputDecoration(
-                    labelText: 'Horaires d'ouverture',
+                    labelText: 'Horaires d\'ouverture',
                     hintText: 'Ex: Lundi - Samedi : 08h30 - 20h00',
                     border: OutlineInputBorder(),
                   ),

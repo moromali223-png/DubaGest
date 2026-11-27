@@ -1417,6 +1417,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
       case TypeActivite.salonCoiffure:
         return 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1400&q=80';
       case TypeActivite.cosmetiqueBeaute:
+      case TypeActivite.beauteEsthetique:
         return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1400&q=80';
       case TypeActivite.boutiqueTech:
         return 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1400&q=80';
@@ -1438,6 +1439,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
       case TypeActivite.salonCoiffure:
         return 'Salon de coiffure & soins capillaires d\'exception. Prenez rendez-vous en ligne ou contactez-nous sur WhatsApp.';
       case TypeActivite.cosmetiqueBeaute:
+      case TypeActivite.beauteEsthetique:
         return 'Institut de beauté & soins de la peau. Produits certifiés, rituels bien-être et conseils sur-mesure.';
       case TypeActivite.boutiqueTech:
         return 'Smartphones, accessoires & gadgets high-tech certifiés. Expédition express et garantie sur tous nos articles.';
