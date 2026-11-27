@@ -220,16 +220,12 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
       return _buildModeleHavenlyImmobilier(data, isDesktop, width);
     } else if (vitrine.modeleVisuel == ModeleVitrine.modeleC || vitrine.typeActivite == TypeActivite.salonCoiffure) {
       return _buildModeleLuxeStudioCoiffure(data, isDesktop, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleB || vitrine.typeActivite == TypeActivite.boutiqueTech) {
-      if (!isDesktop) return _buildModeleTechNestMobile(data, width);
-      return _buildModeleGizmoHubTech(data, isDesktop, width);
     } else if (vitrine.modeleVisuel == ModeleVitrine.modeleD || vitrine.typeActivite == TypeActivite.cosmetiqueBeaute) {
       return _buildModeleHollisCosmetique(data, isDesktop, width);
     }
 
-    // Par défaut : Modèle TechNest sur mobile, TechVerse/MobileX sur grand écran
-    if (!isDesktop) return _buildModeleTechNestMobile(data, width);
-    return _buildModeleTechVerseCommerce(data, isDesktop, width);
+    // Modèle MobileX de référence (Smartphones, Tech & Accessoires haute conversion)
+    return _buildModeleMobileX(data, isDesktop, width);
   }
 
   // ===========================================================================
@@ -2144,6 +2140,1032 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
         ),
       ),
     );
+  }
+
+  // ===========================================================================
+  // MODÈLE MOBILEX : SMARTPHONES & HIGH-TECH HAUTE CONVERSION (RÉFÉRENCE OFFICIELLE)
+  // ===========================================================================
+
+  Widget _buildModeleMobileX(VitrinePubliqueData data, bool isDesktop, double width) {
+    final vitrine = data.vitrine;
+    final tousProduits = data.produits.isNotEmpty ? data.produits : _obtenirProduitsModelesMobileX(vitrine);
+
+    // Filtrage dynamique selon la recherche ou catégorie
+    final produitsFiltres = tousProduits.where((p) {
+      if (_rechercheProduit.trim().isNotEmpty) {
+        final q = _rechercheProduit.trim().toLowerCase();
+        final matchNom = p.nom.toLowerCase().contains(q);
+        final matchDesc = p.description?.toLowerCase().contains(q) ?? false;
+        if (!matchNom && !matchDesc) return false;
+      }
+      if (_categorieFiltre != null && _categorieFiltre!.isNotEmpty) {
+        final cat = _categorieFiltre!.toLowerCase();
+        final match = p.nom.toLowerCase().contains(cat) || (p.description?.toLowerCase().contains(cat) ?? false);
+        if (!match) return false;
+      }
+      return true;
+    }).toList();
+
+    final nomBoutique = (vitrine.titreHero != null && vitrine.titreHero!.isNotEmpty)
+        ? vitrine.titreHero!
+        : 'DubaMali';
+
+    return Container(
+      color: Colors.white,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Top utility bar sombre
+            _buildMobileXTopUtilityBar(vitrine, isDesktop),
+
+            // 2. Barre de navigation principale avec logo orange et liens
+            _buildMobileXNavBar(vitrine, nomBoutique, isDesktop),
+
+            // 3. Hero Section MobileX (Latest Smartphones. Ultimate Performance.)
+            _buildMobileXHeroSection(vitrine, nomBoutique, isDesktop, width),
+
+            // 4. Shop by Category (Smartphones, Tablets, Smartwatches, Accessories, Cases, Chargers)
+            _buildMobileXShopByCategory(isDesktop),
+
+            // 5. Limited Time Deal: Best Deals on Top Brands (Carte sombre avec marques Apple, Samsung, etc.)
+            _buildMobileXBrandsDealBanner(vitrine, nomBoutique, isDesktop),
+
+            // 6. Popular Products Grid
+            _buildMobileXPopularProducts(produitsFiltres, vitrine, isDesktop),
+
+            // 7. Why Choose Us (4 piliers d'excellence)
+            _buildMobileXWhyChooseUs(isDesktop),
+
+            // 8. Newsletter & Notification bar
+            _buildMobileXNewsletterBar(vitrine, isDesktop),
+
+            // 9. Footer complet
+            _buildMobileXFooter(vitrine, isDesktop),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- 1. Top Utility Bar MobileX ---
+  Widget _buildMobileXTopUtilityBar(VitrineConfig vitrine, bool isDesktop) {
+    final adresse = (vitrine.adresse != null && vitrine.adresse!.isNotEmpty) ? vitrine.adresse! : 'Bamako, Mali';
+    final tel = (vitrine.whatsapp ?? vitrine.telephone ?? '+223 74 66 08 26');
+
+    return Container(
+      color: const Color(0xFF0F172A),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 7),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined, color: Color(0xFF94A3B8), size: 13),
+              const SizedBox(width: 4),
+              Text(
+                adresse,
+                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+              if (isDesktop) ...[
+                const SizedBox(width: 18),
+                const Icon(Icons.local_shipping_outlined, color: Color(0xFF94A3B8), size: 13),
+                const SizedBox(width: 4),
+                const Text(
+                  'Livraison Express partout à Bamako & Régions',
+                  style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ],
+          ),
+          Row(
+            children: [
+              const Icon(Icons.phone_outlined, color: Color(0xFF94A3B8), size: 13),
+              const SizedBox(width: 4),
+              Text(
+                tel,
+                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+              if (isDesktop) ...[
+                const SizedBox(width: 14),
+                const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF22C55E), size: 13),
+                const SizedBox(width: 4),
+                const Text('WhatsApp 7j/7', style: TextStyle(color: Color(0xFF86EFAC), fontSize: 11, fontWeight: FontWeight.w700)),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 2. Main NavBar MobileX ---
+  Widget _buildMobileXNavBar(VitrineConfig vitrine, String nomBoutique, bool isDesktop) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 12),
+      child: Row(
+        children: [
+          // Monogram Logo Orange & Marque
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEA580C), // Orange vibrant MobileX
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.phone_iphone_rounded, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    nomBoutique,
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A), letterSpacing: -0.3),
+                  ),
+                  const Text(
+                    'YOUR WORLD, CONNECTED',
+                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.6),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          if (isDesktop) ...[
+            const Spacer(),
+            // Navigation Links Desktop
+            _buildNavTabItem('HOME', true, () => _scrollTo(_keyPrestations)),
+            _buildNavTabItem('SHOP', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('BRANDS', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('ACCESSORIES', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('DEALS', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('ABOUT US', false, () => _scrollTo(_keyContact)),
+            _buildNavTabItem('CONTACT', false, () => _scrollTo(_keyContact)),
+          ],
+
+          const Spacer(),
+
+          // Actions Recherche & Panier
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.search_rounded, color: Color(0xFF0F172A), size: 22),
+                tooltip: 'Rechercher',
+                onPressed: () => _scrollTo(_keyProduits),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chat_outlined, color: Color(0xFF22C55E), size: 22),
+                tooltip: 'WhatsApp direct',
+                onPressed: () {
+                  final clean = (vitrine.whatsapp ?? vitrine.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
+                  launchUrl(Uri.parse('https://wa.me/$clean'), mode: LaunchMode.externalApplication);
+                },
+              ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF0F172A), size: 22),
+                    tooltip: 'Panier',
+                    onPressed: () => _scrollTo(_keyProduits),
+                  ),
+                  if (_totalArticlesPanier > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: Color(0xFFEA580C), shape: BoxShape.circle),
+                        child: Text('$_totalArticlesPanier', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavTabItem(String label, bool actif, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+                color: actif ? const Color(0xFFEA580C) : const Color(0xFF334155),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 2,
+              width: actif ? 20 : 0,
+              color: const Color(0xFFEA580C),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- 3. Hero Section MobileX ---
+  Widget _buildMobileXHeroSection(VitrineConfig vitrine, String nomBoutique, bool isDesktop, double screenWidth) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF8FAFC), // Fond clair & épuré
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 40 : 16,
+              vertical: isDesktop ? 48 : 24,
+            ),
+            child: isDesktop
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: _buildHeroLeftContent(vitrine, nomBoutique),
+                      ),
+                      const SizedBox(width: 32),
+                      Expanded(
+                        flex: 5,
+                        child: _buildHeroRightVisual(isDesktop),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeroLeftContent(vitrine, nomBoutique),
+                      const SizedBox(height: 20),
+                      _buildHeroRightVisual(isDesktop),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroLeftContent(VitrineConfig vitrine, String nomBoutique) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Tag New Arrival
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF7ED),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFFFDBA74)),
+          ),
+          child: const Text(
+            'NEW ARRIVAL',
+            style: TextStyle(color: Color(0xFFEA580C), fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.8),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Grand Titre MobileX
+        RichText(
+          text: const TextSpan(
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+              height: 1.15,
+              letterSpacing: -0.5,
+            ),
+            children: [
+              TextSpan(text: 'Latest Smartphones.\n'),
+              TextSpan(
+                text: 'Ultimate Performance.',
+                style: TextStyle(color: Color(0xFFEA580C)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Description
+        const Text(
+          'Experience next-level speed, stunning design, and innovation like never before. Découvrez le meilleur de la technologie mobile à Bamako.',
+          style: TextStyle(color: Color(0xFF64748B), fontSize: 13.5, height: 1.5),
+        ),
+        const SizedBox(height: 20),
+
+        // Deux boutons d'action
+        Row(
+          children: [
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEA580C),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                elevation: 2,
+              ),
+              icon: const Text('SHOP NOW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, letterSpacing: 0.5)),
+              label: const Icon(Icons.arrow_forward_rounded, size: 16),
+              onPressed: () {
+                final clean = (vitrine.whatsapp ?? vitrine.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
+                final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour ! Je souhaite commander un smartphone chez $nomBoutique.") }');
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF0F172A),
+                side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                backgroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => _scrollTo(_keyProduits),
+              child: const Text('EXPLORE MORE', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Bandeau micro-rassurance (4 items)
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: const [
+            _MicroReassuranceItem(Icons.verified_rounded, '100% Original Products'),
+            _MicroReassuranceItem(Icons.local_shipping_outlined, 'Livraison Express'),
+            _MicroReassuranceItem(Icons.sync_rounded, 'Retours Garantis 48h'),
+            _MicroReassuranceItem(Icons.security_rounded, 'Paiement Sécurisé'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeroRightVisual(bool isDesktop) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Cercle d'arrière-plan doux
+        Container(
+          width: isDesktop ? 340 : 280,
+          height: isDesktop ? 340 : 280,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFFE2E8F0).withValues(alpha: 0.6),
+          ),
+        ),
+        // Image des smartphones premium
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.network(
+            'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&q=80',
+            height: isDesktop ? 360 : 260,
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => const Icon(Icons.phone_iphone_rounded, size: 140, color: Color(0xFFEA580C)),
+          ),
+        ),
+        // Badge flottant UP TO 25% OFF
+        Positioned(
+          top: 10,
+          right: 10,
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFFDBA74), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFFEA580C).withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('UP TO', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+                Text('25%', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFEA580C), height: 1)),
+                Text('OFF', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- 4. "SHOP BY CATEGORY" MobileX ---
+  Widget _buildMobileXShopByCategory(bool isDesktop) {
+    final categories = [
+      ('Smartphones', 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&q=80'),
+      ('Tablets', 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&q=80'),
+      ('Smartwatches', 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80'),
+      ('Accessories', 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=300&q=80'),
+      ('Cases & Covers', 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=300&q=80'),
+      ('Chargers', 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=300&q=80'),
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 24),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'SHOP BY CATEGORY',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.5),
+              ),
+              InkWell(
+                onTap: () => _scrollTo(_keyProduits),
+                child: const Row(
+                  children: [
+                    Text('VIEW ALL CATEGORIES', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFFEA580C))),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFFEA580C)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final cat in categories)
+                  Container(
+                    width: isDesktop ? 160 : 130,
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            cat.$2,
+                            width: isDesktop ? 80 : 64,
+                            height: isDesktop ? 80 : 64,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, _, _) => const Icon(Icons.phone_android_rounded, size: 40, color: Color(0xFF94A3B8)),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          cat.$1,
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF0F172A)),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 5. "LIMITED TIME DEAL: Best Deals on Top Brands" MobileX ---
+  Widget _buildMobileXBrandsDealBanner(VitrineConfig vitrine, String nomBoutique, bool isDesktop) {
+    final marques = [
+      ('Apple', 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300&q=80'),
+      ('Samsung', 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=300&q=80'),
+      ('OnePlus', 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&q=80'),
+      ('Xiaomi', 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=300&q=80'),
+      ('Google', 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=300&q=80'),
+    ];
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 16),
+      padding: EdgeInsets.all(isDesktop ? 24 : 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 16, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Colonne gauche texte & CTA
+              Expanded(
+                flex: isDesktop ? 3 : 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'LIMITED TIME DEAL',
+                      style: TextStyle(color: Color(0xFFF97316), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.8),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Best Deals on\nTop Brands',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 19, height: 1.2),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Grab amazing offers on your favorite smartphones.',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFEA580C),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      ),
+                      onPressed: () {
+                        final clean = (vitrine.whatsapp ?? vitrine.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
+                        final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour ! Je souhaite découvrir les meilleures offres sur les marques smartphones.") }');
+                        launchUrl(uri, mode: LaunchMode.externalApplication);
+                      },
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('SHOP DEALS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_rounded, size: 13),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Vitrine centrale des smartphones de marque
+              Expanded(
+                flex: isDesktop ? 7 : 7,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final m in marques)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Column(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  m.$2,
+                                  width: 60,
+                                  height: 80,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, _, _) => const Icon(Icons.phone_android_rounded, color: Colors.white70, size: 50),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(m.$1, style: const TextStyle(color: Colors.white70, fontSize: 9.5, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Badge -30% OFF à droite
+              if (isDesktop)
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFEA580C)),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('UP TO', style: TextStyle(fontSize: 8, color: Colors.white70)),
+                      Text('30%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFFEA580C), height: 1)),
+                      Text('OFF', style: TextStyle(fontSize: 8, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 6. "POPULAR PRODUCTS" MobileX Grid ---
+  Widget _buildMobileXPopularProducts(List<ProduitCataloguePublic> produits, VitrineConfig vitrine, bool isDesktop) {
+    return Container(
+      key: _keyProduits,
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 24),
+      color: const Color(0xFFF8FAFC),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'POPULAR PRODUCTS',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.5),
+              ),
+              InkWell(
+                onTap: () => _scrollTo(_keyProduits),
+                child: const Row(
+                  children: [
+                    Text('VIEW ALL PRODUCTS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFFEA580C))),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFFEA580C)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isDesktop ? 5 : 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: isDesktop ? 0.68 : 0.62,
+            ),
+            itemCount: produits.length,
+            itemBuilder: (ctx, i) {
+              final p = produits[i];
+              final qte = _panier[p.id] ?? 0;
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                  ],
+                ),
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Image Produit
+                    Expanded(
+                      child: Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: (p.photoPrincipale != null && p.photoPrincipale!.isNotEmpty)
+                              ? Image.network(
+                                  MediaHybridResolver.resolvePublicUrl(p.photoPrincipale!),
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, _, _) => const Icon(Icons.phone_iphone_rounded, size: 50, color: Color(0xFF94A3B8)),
+                                )
+                              : const Icon(Icons.phone_iphone_rounded, size: 50, color: Color(0xFF94A3B8)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Nom du produit
+                    SizedBox(
+                      height: 32,
+                      child: Text(
+                        p.nom,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A), height: 1.25),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Prix FCFA
+                    Text(
+                      _formaterPrix(p.prix),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Note 5 étoiles or & Bouton panier
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 13),
+                            Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 13),
+                            Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 13),
+                            Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 13),
+                            Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 13),
+                          ],
+                        ),
+                        InkWell(
+                          onTap: () => _ajouterAuPanier(p.id),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: qte > 0 ? const Color(0xFFEA580C) : const Color(0xFFF1F5F9),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Icon(
+                              Icons.shopping_cart_outlined,
+                              color: qte > 0 ? Colors.white : const Color(0xFF334155),
+                              size: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 7. "WHY CHOOSE US?" MobileX ---
+  Widget _buildMobileXWhyChooseUs(bool isDesktop) {
+    final items = [
+      (Icons.people_alt_outlined, 'Trusted by Thousands', '50,000+ happy customers trust our service.'),
+      (Icons.verified_outlined, 'Best Prices Guaranteed', 'Find the best prices on the latest mobiles.'),
+      (Icons.support_agent_rounded, 'Expert Support', 'Get help from our experts anytime you need.'),
+      (Icons.shield_outlined, 'Warranty & Genuine', 'Official warranty on all products.'),
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 32),
+      color: Colors.white,
+      child: Column(
+        children: [
+          const Text(
+            'WHY CHOOSE US?',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.8),
+          ),
+          const SizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isDesktop ? 4 : 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: isDesktop ? 2.2 : 1.8,
+            ),
+            itemCount: items.length,
+            itemBuilder: (ctx, i) {
+              final it = items[i];
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFFDBA74)),
+                    ),
+                    child: Icon(it.$1, color: const Color(0xFFEA580C), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(it.$2, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text(it.$3, style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 8. Newsletter & Contacts Bar MobileX ---
+  Widget _buildMobileXNewsletterBar(VitrineConfig vitrine, bool isDesktop) {
+    return Container(
+      color: const Color(0xFF0B0F19),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Row(
+            children: [
+              Expanded(
+                flex: isDesktop ? 5 : 6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('STAY UPDATED', style: TextStyle(color: Color(0xFFEA580C), fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                    SizedBox(height: 4),
+                    Text('Subscribe to our Newsletter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                    SizedBox(height: 2),
+                    Text('Get the latest updates on new arrivals, exclusive deals and special offers.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: isDesktop ? 4 : 5,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: const TextField(
+                          style: TextStyle(fontSize: 11),
+                          decoration: InputDecoration(
+                            hintText: 'Enter your email',
+                            hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFEA580C),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      ),
+                      onPressed: () {},
+                      child: const Text('SUBSCRIBE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- 9. Footer MobileX ---
+  Widget _buildMobileXFooter(VitrineConfig vitrine, bool isDesktop) {
+    return Container(
+      color: const Color(0xFF070B14),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 30),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      vitrine.titreHero ?? 'DubaMali',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.white),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Votre destination officielle pour les smartphones de prestige, accessoires haute performance et service client d\'excellence à Bamako.',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('PAIEMENT SÉCURISÉ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    children: [
+                      _buildPaymentPill('Orange Money'),
+                      _buildPaymentPill('Wave'),
+                      _buildPaymentPill('Cash'),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: Color(0xFF1E293B)),
+          const SizedBox(height: 12),
+          Text(
+            '© 2026 ${vitrine.titreHero ?? "DubaMali"}. Tous droits réservés • Propulsé par DubaGest V2',
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 10.5),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentPill(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: const Color(0xFF334155)),
+      ),
+      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w700)),
+    );
+  }
+
+  // --- Produits Modèles MobileX ---
+  List<ProduitCataloguePublic> _obtenirProduitsModelesMobileX(VitrineConfig vitrine) {
+    return const [
+      ProduitCataloguePublic(
+        id: 'mx_p1',
+        nom: 'Apple iPhone 15 Pro Titanium',
+        description: 'Puce A17 Pro, boîtier en titane naturel, capteur photo 48 Mpx.',
+        prix: 650000,
+        prixBarre: 750000,
+        photos: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500&q=80'],
+      ),
+      ProduitCataloguePublic(
+        id: 'mx_p2',
+        nom: 'Samsung Galaxy S24 Ultra Titanium',
+        description: 'Galaxy AI intégré, zoom 100x Space Zoom, stylet S Pen inclus.',
+        prix: 580000,
+        prixBarre: 680000,
+        photos: ['https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&q=80'],
+      ),
+      ProduitCataloguePublic(
+        id: 'mx_p3',
+        nom: 'OnePlus 12R 5G Ultra Speed',
+        description: 'Écran 120Hz ProXDR, recharge ultra-rapide 100W SUPERVOOC.',
+        prix: 320000,
+        photos: ['https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&q=80'],
+      ),
+      ProduitCataloguePublic(
+        id: 'mx_p4',
+        nom: 'Xiaomi 14 Ultra Leica Pro',
+        description: 'Optique professionnelle Leica Summilux, capteur 1 pouce.',
+        prix: 490000,
+        photos: ['https://images.unsplash.com/photo-1580910051074-3eb694886505?w=500&q=80'],
+      ),
+      ProduitCataloguePublic(
+        id: 'mx_p5',
+        nom: 'Google Pixel 8 Pro AI Master',
+        description: 'Puce Google Tensor G3, fonctionnalités photo exclusives IA.',
+        prix: 420000,
+        photos: ['https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&q=80'],
+      ),
+    ];
   }
 
   Widget _buildModeleTechVerseCommerce(VitrinePubliqueData data, bool isDesktop, double width) {
@@ -4104,3 +5126,25 @@ class _DialogueDemandeVisiteState extends State<_DialogueDemandeVisite> {
     );
   }
 }
+
+class _MicroReassuranceItem extends StatelessWidget {
+  const _MicroReassuranceItem(this.icon, this.label);
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFFEA580C)),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+        ),
+      ],
+    );
+  }
+}
+
