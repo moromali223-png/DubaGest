@@ -159,7 +159,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
         ),
         data: (data) => _buildVitrineComplete(data),
       ),
-      bottomNavigationBar: (!isDesktop && (asyncData.value?.vitrine.typeActivite.domaine == DomaineActivite.commerce || asyncData.value?.vitrine.typeActivite == TypeActivite.boutiqueTech || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleA || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleB))
+      bottomNavigationBar: (!isDesktop && (asyncData.value?.vitrine.typeActivite.domaine == DomaineActivite.commerce || asyncData.value?.vitrine.typeActivite == TypeActivite.boutiqueTech || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleA || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleB || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleD || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleE || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleG || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleH))
           ? _buildTechNestBottomNav(asyncData.value)
           : (_totalArticlesPanier > 0
               ? Container(
@@ -215,25 +215,26 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
     final width = MediaQuery.sizeOf(context).width;
     final isDesktop = width >= 900;
 
-    // Aiguillage selon le modèle visuel ou le domaine
-    if (vitrine.modeleVisuel == ModeleVitrine.modeleF || vitrine.typeActivite.domaine == DomaineActivite.immobilier) {
-      return _buildModeleHavenlyImmobilier(data, isDesktop, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleC || vitrine.typeActivite == TypeActivite.salonCoiffure) {
-      return _buildModeleLuxeStudioCoiffure(data, isDesktop, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleB) {
-      return _buildModeleTechNestMobile(data, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleD) {
-      return _buildModeleAsteraMode(data, isDesktop, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleE) {
-      return _buildModeleAndShopFashion(data, isDesktop, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleG) {
-      return _buildModeleShopEaseGeneral(data, isDesktop, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleH) {
-      return _buildModeleNovaTrendStreetwear(data, isDesktop, width);
+    // Aiguillage STRICT et prioritaire selon le modèle visuel choisi par le commerçant
+    switch (vitrine.modeleVisuel) {
+      case ModeleVitrine.modeleB:
+        return _buildModeleTechNestMobile(data, width);
+      case ModeleVitrine.modeleD:
+        return _buildModeleAsteraMode(data, isDesktop, width);
+      case ModeleVitrine.modeleE:
+        return _buildModeleAndShopFashion(data, isDesktop, width);
+      case ModeleVitrine.modeleG:
+        return _buildModeleShopEaseGeneral(data, isDesktop, width);
+      case ModeleVitrine.modeleH:
+        return _buildModeleNovaTrendStreetwear(data, isDesktop, width);
+      case ModeleVitrine.modeleC:
+        return _buildModeleLuxeStudioCoiffure(data, isDesktop, width);
+      case ModeleVitrine.modeleF:
+        return _buildModeleHavenlyImmobilier(data, isDesktop, width);
+      case ModeleVitrine.modeleA:
+      default:
+        return _buildModeleMobileX(data, isDesktop, width);
     }
-
-    // Par défaut : Modèle 1 — MobileX (Smartphones, High-Tech & Accessoires)
-    return _buildModeleMobileX(data, isDesktop, width);
   }
 
   // ===========================================================================

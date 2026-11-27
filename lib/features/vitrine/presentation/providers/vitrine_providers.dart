@@ -136,7 +136,14 @@ class VitrineActuelleNotifier extends AsyncNotifier<VitrineConfig?> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(vitrineRepositoryProvider);
-      return await repo.sauvegarderVitrine(config);
+      final res = await repo.sauvegarderVitrine(config);
+      if (config.slug.isNotEmpty) {
+        ref.invalidate(vitrinePubliqueDataProvider(config.slug));
+      }
+      if (config.id.isNotEmpty) {
+        ref.invalidate(vitrinePubliqueDataProvider(config.id));
+      }
+      return res;
     });
   }
 

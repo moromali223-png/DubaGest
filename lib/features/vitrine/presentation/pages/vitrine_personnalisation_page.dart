@@ -213,7 +213,9 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
   }
 
 
-  void _ouvrirApercuDirect() {
+  Future<void> _ouvrirApercuDirect() async {
+    await _enregistrerTout(afficherNotification: false);
+    if (!mounted) return;
     showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.85),
@@ -271,6 +273,27 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
     );
   }
 
+  Future<void> _selectionnerEtAppliquerModele(_ModeleECommerceItem item) async {
+    setState(() {
+      _modeleChoisi = item.modele;
+      _titreHeroCtrl.text = item.titreHeroDefaut;
+      _sloganCtrl.text = item.sloganDefaut;
+      _styleChoisi = item.styleRecommande;
+    });
+    // Enregistrement immédiat pour mise à jour instantanée du site et des aperçus
+    await _enregistrerTout(afficherNotification: false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✨ ${item.nomCourt} activé avec succès ! Design et textes appliqués.'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   void _appliquerSuggestionsModele(_ModeleECommerceItem item) {
     setState(() {
       _modeleChoisi = item.modele;
@@ -278,9 +301,10 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
       _sloganCtrl.text = item.sloganDefaut;
       _styleChoisi = item.styleRecommande;
     });
+    _enregistrerTout(afficherNotification: false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Réglages recommandés pour ${item.nomCourt} appliqués ! Rendez-vous dans les onglets suivants pour continuer.'),
+        content: Text('Réglages recommandés pour ${item.nomCourt} appliqués !'),
         backgroundColor: AppColors.green,
         behavior: SnackBarBehavior.floating,
       ),
@@ -304,7 +328,7 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
     setState(() {});
   }
 
-  Future<void> _enregistrerTout() async {
+  Future<void> _enregistrerTout({bool afficherNotification = true}) async {
     setState(() => _enSauvegarde = true);
     final v = widget.vitrine;
     final reseaux = Map<String, dynamic>.from(v.reseauxSociaux);
@@ -335,13 +359,15 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
     await ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
     if (mounted) {
       setState(() => _enSauvegarde = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Toutes les personnalisations ont été enregistrées avec succès !'),
-          backgroundColor: AppColors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (afficherNotification) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Toutes les personnalisations ont été enregistrées avec succès !'),
+            backgroundColor: AppColors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -785,7 +811,7 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
     final estSelectionne = _modeleChoisi == item.modele;
 
     return InkWell(
-      onTap: () => setState(() => _modeleChoisi = item.modele),
+      onTap: () => _selectionnerEtAppliquerModele(item),
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -858,7 +884,7 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
                     ),
-                    onPressed: () => setState(() => _modeleChoisi = item.modele),
+                    onPressed: () => _selectionnerEtAppliquerModele(item),
                     child: const Text('Choisir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                   ),
               ],
