@@ -32,6 +32,9 @@ class VitrinePubliquePage extends ConsumerStatefulWidget {
 }
 
 class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
+  String _rechercheProduit = '';
+  String? _categorieFiltre;
+  int _ongletMobileIndex = 0;
   // Panier de commande pour les produits
   final Map<String, int> _panier = {};
 
@@ -132,6 +135,8 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
   @override
   Widget build(BuildContext context) {
     final asyncData = ref.watch(vitrinePubliqueDataProvider(widget.slug));
+    final width = MediaQuery.sizeOf(context).width;
+    final isDesktop = width >= 900;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -154,52 +159,54 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
         ),
         data: (data) => _buildVitrineComplete(data),
       ),
-      bottomNavigationBar: _totalArticlesPanier > 0
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -2)),
-                ],
-              ),
-              child: SafeArea(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.shopping_bag_rounded, color: Color(0xFF15803D)),
+      bottomNavigationBar: (!isDesktop && (asyncData.value?.vitrine.typeActivite.domaine == DomaineActivite.commerce || asyncData.value?.vitrine.typeActivite == TypeActivite.boutiqueTech || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleA || asyncData.value?.vitrine.modeleVisuel == ModeleVitrine.modeleB))
+          ? _buildTechNestBottomNav(asyncData.value)
+          : (_totalArticlesPanier > 0
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -2)),
+                    ],
+                  ),
+                  child: SafeArea(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.shopping_bag_rounded, color: Color(0xFF15803D)),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('$_totalArticlesPanier article(s) dans le panier', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                              const Text('Prêt à commander par WhatsApp', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                          icon: const Icon(Icons.send_rounded, size: 16),
+                          label: const Text('Commander (WhatsApp)'),
+                          onPressed: () {
+                            final v = asyncData.value?.vitrine;
+                            final p = asyncData.value?.produits ?? [];
+                            if (v != null) _commanderWhatsAppPanier(vitrine: v, produits: p);
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('$_totalArticlesPanier article(s) dans le panier', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                          const Text('Prêt à commander par WhatsApp', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
-                      icon: const Icon(Icons.send_rounded, size: 16),
-                      label: const Text('Commander (WhatsApp)'),
-                      onPressed: () {
-                        final v = asyncData.value?.vitrine;
-                        final p = asyncData.value?.produits ?? [];
-                        if (v != null) _commanderWhatsAppPanier(vitrine: v, produits: p);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : null,
+                  ),
+                )
+              : null),
     );
   }
 
@@ -214,12 +221,14 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
     } else if (vitrine.modeleVisuel == ModeleVitrine.modeleC || vitrine.typeActivite == TypeActivite.salonCoiffure) {
       return _buildModeleLuxeStudioCoiffure(data, isDesktop, width);
     } else if (vitrine.modeleVisuel == ModeleVitrine.modeleB || vitrine.typeActivite == TypeActivite.boutiqueTech) {
+      if (!isDesktop) return _buildModeleTechNestMobile(data, width);
       return _buildModeleGizmoHubTech(data, isDesktop, width);
     } else if (vitrine.modeleVisuel == ModeleVitrine.modeleD || vitrine.typeActivite == TypeActivite.cosmetiqueBeaute) {
       return _buildModeleHollisCosmetique(data, isDesktop, width);
     }
 
-    // Par défaut : Modèle A (TechVerse / Commerce Général)
+    // Par défaut : Modèle TechNest sur mobile, TechVerse/MobileX sur grand écran
+    if (!isDesktop) return _buildModeleTechNestMobile(data, width);
     return _buildModeleTechVerseCommerce(data, isDesktop, width);
   }
 
@@ -941,6 +950,1201 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
   // ===========================================================================
   // MODÈLE A : TECHVERSE (COMMERCE GÉNÉRAL, PROMOTIONS & POPULAIRES)
   // ===========================================================================
+
+  // ===========================================================================
+  // MODÈLE EXCLUSIF TECHNEST MOBILE (STYLE HAUTE FIDÉLITÉ TECH ACCESSORIES)
+  // ===========================================================================
+
+  Widget _buildModeleTechNestMobile(VitrinePubliqueData data, double screenWidth) {
+    final vitrine = data.vitrine;
+    final style = vitrine.themeStyle;
+    final tousProduits = data.produits.isNotEmpty ? data.produits : _obtenirProduitsModelesParDefaut(vitrine);
+
+    // Filtrage dynamique selon la recherche ou catégorie sélectionnée
+    final produitsFiltres = tousProduits.where((p) {
+      if (_rechercheProduit.trim().isNotEmpty) {
+        final q = _rechercheProduit.trim().toLowerCase();
+        final matchNom = p.nom.toLowerCase().contains(q);
+        final matchDesc = p.description?.toLowerCase().contains(q) ?? false;
+        if (!matchNom && !matchDesc) return false;
+      }
+      if (_categorieFiltre != null && _categorieFiltre!.isNotEmpty) {
+        final cat = _categorieFiltre!.toLowerCase();
+        final match = p.nom.toLowerCase().contains(cat) || (p.description?.toLowerCase().contains(cat) ?? false);
+        if (!match) return false;
+      }
+      return true;
+    }).toList();
+
+    final nomBoutique = (vitrine.titreHero != null && vitrine.titreHero!.isNotEmpty)
+        ? vitrine.titreHero!
+        : 'DubaMali';
+
+    return Container(
+      color: const Color(0xFFF8FAFC),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Header mobile TechNest (Menu, Logo & Slogan, Notif, Panier)
+            _buildTechNestHeader(vitrine, nomBoutique),
+
+            // 2. Barre de recherche et filtre circulaire
+            _buildTechNestSearchBar(),
+
+            // 3. Hero Banner Card TechNest (Everyday Tech / Smart Accessories)
+            _buildTechNestHeroCard(vitrine, nomBoutique),
+
+            // 4. Catégories rondes TechNest (Shop by Category)
+            _buildTechNestCategoryCircles(),
+
+            // 5. Section "Trending Accessories" (Cartes horizontales avec notes étoiles et prix FCFA)
+            _buildTechNestTrendingSection(tousProduits, vitrine),
+
+            // 6. Bannière promotionnelle TechNest ("Limited Time Offer - Up to 30% Off")
+            _buildTechNestPromoBanner(vitrine),
+
+            // 7. Grille Catalogue complet de la boutique
+            _buildTechNestCatalogueGrid(produitsFiltres, vitrine, style),
+
+            // 8. Why Choose Us (4 Piliers Réassurance 2x2)
+            _buildTechNestReassurance(),
+
+            // 9. Avis clients vérifiés & Contact boutique
+            _buildTechNestReviewsAndContact(vitrine, style),
+
+            // 10. Footer complet
+            _buildFooter(vitrine, style),
+
+            // Espacement pour la barre de navigation inférieure fixe
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- 1. Header Mobile TechNest ---
+  Widget _buildTechNestHeader(VitrineConfig vitrine, String nomBoutique) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        children: [
+          // Menu Hamburger
+          IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A), size: 24),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => _scrollTo(_keyContact),
+          ),
+          const SizedBox(width: 8),
+
+          // Logo & Titre & Slogan
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (vitrine.logoUrl != null && vitrine.logoUrl!.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      MediaHybridResolver.resolvePublicUrl(vitrine.logoUrl!),
+                      width: 24,
+                      height: 24,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(Icons.bolt_rounded, color: Color(0xFF2563EB), size: 24),
+                    ),
+                  )
+                else
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 18),
+                  ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        nomBoutique,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), height: 1.1),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Text(
+                        'SMART ACCESSORIES. BETTER LIFE.',
+                        style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Cloche notifications/promos avec badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF0F172A), size: 22),
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _scrollTo(_keyProduits),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(3.5),
+                  decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
+                  child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w900)),
+                ),
+              ),
+            ],
+          ),
+
+          // Panier avec badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined, color: Color(0xFF0F172A), size: 22),
+                visualDensity: VisualDensity.compact,
+                onPressed: () {
+                  final v = vitrine;
+                  if (v.whatsapp != null && v.whatsapp!.isNotEmpty) {
+                    final clean = v.whatsapp!.replaceAll(RegExp(r'[^0-9]'), '');
+                    launchUrl(Uri.parse('https://wa.me/$clean'), mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+              if (_totalArticlesPanier > 0)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Color(0xFF2563EB), shape: BoxShape.circle),
+                    child: Text('$_totalArticlesPanier', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 2. Barre de Recherche TechNest ---
+  Widget _buildTechNestSearchBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                children: [
+                  const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      onChanged: (val) => setState(() => _rechercheProduit = val),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        hintText: 'Search accessories, chargers, audio, hubs...',
+                        hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  if (_rechercheProduit.isNotEmpty)
+                    GestureDetector(
+                      onTap: () => setState(() => _rechercheProduit = ''),
+                      child: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8), size: 16),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Bouton filtre circulaire
+          InkWell(
+            onTap: () => setState(() => _categorieFiltre = null),
+            borderRadius: BorderRadius.circular(22),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 1)),
+                ],
+              ),
+              child: const Icon(Icons.tune_rounded, color: Color(0xFF0F172A), size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 3. Hero Banner Card TechNest ---
+  Widget _buildTechNestHeroCard(VitrineConfig vitrine, String nomBoutique) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF070E22), // Bleu Nuit Profond
+            Color(0xFF0F172A), // Ardoise foncée
+            Color(0xFF132247), // Bleu électrique sombre
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.35), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1D4ED8).withValues(alpha: 0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Colonne gauche : Textes & Bouton SHOP NOW
+              Expanded(
+                flex: 6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'EVERYDAY TECH',
+                      style: TextStyle(
+                        color: Color(0xFF60A5FA),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'SMART ACCESSORIES\nFOR EVERY NEED.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16.5,
+                        height: 1.22,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Premium quality. Latest technology. Designed to power your lifestyle.',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 10.5,
+                        height: 1.35,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () {
+                        final clean = (vitrine.whatsapp ?? vitrine.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
+                        final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour $nomBoutique ! Je souhaite commander depuis votre catalogue Tech.")}');
+                        launchUrl(uri, mode: LaunchMode.externalApplication);
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2)),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'SHOP NOW',
+                              style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 13),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Colonne droite : Montage visuel 3D TechNest avec aura lumineuse
+              Expanded(
+                flex: 5,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Aura bleue fluorescente
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withValues(alpha: 0.45),
+                            blurRadius: 32,
+                            spreadRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Image des gadgets tech
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&q=80',
+                        height: 120,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(Icons.headphones_rounded, color: Colors.white, size: 70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // 3 points indicateurs de carrousel
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 16,
+                height: 4.5,
+                decoration: BoxDecoration(color: const Color(0xFF3B82F6), borderRadius: BorderRadius.circular(3)),
+              ),
+              const SizedBox(width: 5),
+              Container(
+                width: 4.5,
+                height: 4.5,
+                decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 5),
+              Container(
+                width: 4.5,
+                height: 4.5,
+                decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 4. Catégories Circulaires TechNest ---
+  Widget _buildTechNestCategoryCircles() {
+    final categories = [
+      ('Chargers', Icons.power_rounded),
+      ('Cables', Icons.cable_rounded),
+      ('Audio', Icons.headphones_rounded),
+      ('Power Banks', Icons.battery_charging_full_rounded),
+      ('Hubs & Docks', Icons.usb_rounded),
+      ('Phone Cases', Icons.phone_android_rounded),
+      ('Accessories', Icons.category_rounded),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            for (final cat in categories)
+              Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _categorieFiltre = (_categorieFiltre == cat.$1) ? null : cat.$1;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(30),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: _categorieFiltre == cat.$1 ? const Color(0xFFEFF6FF) : Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _categorieFiltre == cat.$1 ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                            width: _categorieFiltre == cat.$1 ? 2 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+                          ],
+                        ),
+                        child: Icon(
+                          cat.$2,
+                          color: _categorieFiltre == cat.$1 ? const Color(0xFF2563EB) : const Color(0xFF334155),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        cat.$1,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: _categorieFiltre == cat.$1 ? FontWeight.w800 : FontWeight.w600,
+                          color: _categorieFiltre == cat.$1 ? const Color(0xFF2563EB) : const Color(0xFF475569),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- 5. Trending Accessories (TechNest Horizontal Cards) ---
+  Widget _buildTechNestTrendingSection(List<ProduitCataloguePublic> produits, VitrineConfig vitrine) {
+    // 3 produits tendances vedettes
+    final vedettes = [
+      (
+        'BESTSELLER',
+        const Color(0xFF2563EB),
+        'AirPods Pro 2nd Gen with MagSafe Case',
+        18500,
+        'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=400&q=80',
+        '4.8 (1.2K+)',
+      ),
+      (
+        'TRENDING',
+        const Color(0xFF7C3AED),
+        'USB-C 8-in-1 Hub 4K HDMI, 100W PD',
+        14500,
+        'https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=400&q=80',
+        '4.7 (968+)',
+      ),
+      (
+        'POPULAR',
+        const Color(0xFF059669),
+        '20000mAh Fast Charging Power Bank',
+        12000,
+        'https://images.unsplash.com/photo-1609592806596-b38466632488?w=400&q=80',
+        '4.6 (743+)',
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Trending Accessories',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF0F172A)),
+                ),
+                InkWell(
+                  onTap: () => _scrollTo(_keyProduits),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('View All', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Color(0xFF2563EB))),
+                      SizedBox(width: 3),
+                      Icon(Icons.arrow_forward_rounded, color: Color(0xFF2563EB), size: 13),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                for (final item in vedettes)
+                  Container(
+                    width: 155,
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Badge Tag
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: item.$2,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            item.$1,
+                            style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w900, letterSpacing: 0.4),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Image produit centrée
+                        Center(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              item.$5,
+                              width: 90,
+                              height: 90,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => const Icon(Icons.shopping_bag_outlined, size: 50, color: Color(0xFF94A3B8)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Titre du produit
+                        SizedBox(
+                          height: 32,
+                          child: Text(
+                            item.$3,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF0F172A), height: 1.25),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Note étoiles
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 13),
+                            const SizedBox(width: 3),
+                            Text(item.$6, style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Prix et Bouton Panier Circulaire Bleu
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _formaterPrix(item.$4),
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: Color(0xFF0F172A)),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                final clean = (vitrine.whatsapp ?? vitrine.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
+                                final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour ! Je souhaite commander : ${item.$3} au prix de ${_formaterPrix(item.$4)}") }');
+                                launchUrl(uri, mode: LaunchMode.externalApplication);
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF2563EB),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 6. Promo Banner Card TechNest ("Limited Time Offer") ---
+  Widget _buildTechNestPromoBanner(VitrineConfig vitrine) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF060B19),
+            Color(0xFF0F172A),
+            Color(0xFF1E293B),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Textes Promo
+          Expanded(
+            flex: 6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'LIMITED TIME OFFER',
+                  style: TextStyle(color: Color(0xFF60A5FA), fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'UP TO 30% OFF',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'On selected accessories & tech gear',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        final clean = (vitrine.whatsapp ?? vitrine.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
+                        final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour ! Je souhaite profiter de la promo -30% sur les accessoires tech.") }');
+                        launchUrl(uri, mode: LaunchMode.externalApplication);
+                      },
+                      borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('EXPLORE DEALS', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 12),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1D4ED8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        'SAVE\nBIG',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white, fontSize: 7.5, fontWeight: FontWeight.w900, height: 1),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Image promo
+          Expanded(
+            flex: 4,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&q=80',
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const Icon(Icons.bolt_rounded, color: Colors.white, size: 48),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 7. Grille Catalogue Complet TechNest ---
+  Widget _buildTechNestCatalogueGrid(List<ProduitCataloguePublic> produits, VitrineConfig vitrine, ThemeStyle style) {
+    return Container(
+      key: _keyProduits,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Catalogue Boutique',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF0F172A)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Text(
+                  '${produits.length} article(s)',
+                  style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 11, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.62,
+            ),
+            itemCount: produits.length,
+            itemBuilder: (ctx, i) {
+              final p = produits[i];
+              final qte = _panier[p.id] ?? 0;
+              final aPromo = p.prixBarre != null && p.prixBarre! > p.prix;
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Photo avec badge
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (p.photoPrincipale != null && p.photoPrincipale!.isNotEmpty)
+                            Image.network(
+                              MediaHybridResolver.resolvePublicUrl(p.photoPrincipale!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                color: const Color(0xFFF8FAFC),
+                                child: const Center(child: Icon(Icons.shopping_bag_outlined, color: Color(0xFF94A3B8))),
+                              ),
+                            )
+                          else
+                            Container(
+                              color: const Color(0xFFF8FAFC),
+                              child: const Center(child: Icon(Icons.shopping_bag_outlined, color: Color(0xFF94A3B8))),
+                            ),
+                          if (aPromo)
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDC2626),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text('PROMO', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w900)),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    // Détails
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: 32,
+                            child: Text(
+                              p.nom,
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A), height: 1.25),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Note 5 étoiles
+                          const Row(
+                            children: [
+                              Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 12),
+                              SizedBox(width: 2),
+                              Text('5.0 (Vérifié)', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+
+                          // Prix et Bouton
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _formaterPrix(p.prix),
+                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF0F172A)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (aPromo)
+                                      Text(
+                                        _formaterPrix(p.prixBarre!, false),
+                                        style: const TextStyle(decoration: TextDecoration.lineThrough, color: Color(0xFF94A3B8), fontSize: 9.5),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (qte == 0)
+                                InkWell(
+                                  onTap: () => _ajouterAuPanier(p.id),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF2563EB),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.add_shopping_cart_rounded, color: Colors.white, size: 15),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () => _retirerDuPanier(p.id),
+                                        child: const Icon(Icons.remove_rounded, size: 14, color: Color(0xFF15803D)),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                                        child: Text('$qte', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF15803D))),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () => _ajouterAuPanier(p.id),
+                                        child: const Icon(Icons.add_rounded, size: 14, color: Color(0xFF15803D)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 8. Why Choose Us (4 Piliers Réassurance TechNest) ---
+  Widget _buildTechNestReassurance() {
+    final piliers = [
+      (Icons.local_shipping_outlined, 'Livraison Express', 'À domicile à Bamako & régions'),
+      (Icons.security_outlined, 'Paiement Sécurisé', 'Orange Money, Wave & Cash'),
+      (Icons.published_with_changes_rounded, 'Retours Faciles', 'Échange garanti sous 48h'),
+      (Icons.headset_mic_outlined, 'Support 7j/7', 'Assistance WhatsApp directe'),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('POURQUOI NOUS CHOISIR', style: TextStyle(color: Color(0xFF2563EB), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+          const SizedBox(height: 6),
+          const Text('La garantie d\'un achat 100% serein', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A))),
+          const SizedBox(height: 14),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.2,
+            ),
+            itemCount: piliers.length,
+            itemBuilder: (ctx, i) {
+              final p = piliers[i];
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
+                      child: Icon(p.$1, color: const Color(0xFF2563EB), size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(p.$2, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10.5, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(p.$3, style: const TextStyle(fontSize: 8.5, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- 9. Avis & Contact TechNest ---
+  Widget _buildTechNestReviewsAndContact(VitrineConfig vitrine, ThemeStyle style) {
+    return Column(
+      children: [
+        _buildSectionAvisClients(style, false),
+        _buildSectionAPropos(vitrine, style),
+        _buildSectionContact(vitrine, style, key: _keyContact),
+      ],
+    );
+  }
+
+  // --- 10. Sticky Bottom Navigation Bar (TechNest Style) ---
+  Widget _buildTechNestBottomNav(VitrinePubliqueData? data) {
+    final v = data?.vitrine;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, -3)),
+        ],
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // 1. Home
+              _buildBottomNavItem(
+                icon: Icons.home_rounded,
+                label: 'Home',
+                actif: _ongletMobileIndex == 0,
+                onTap: () {
+                  setState(() => _ongletMobileIndex = 0);
+                  _scrollTo(_keyPrestations); // Scroll to top
+                },
+              ),
+
+              // 2. Categories
+              _buildBottomNavItem(
+                icon: Icons.grid_view_rounded,
+                label: 'Categories',
+                actif: _ongletMobileIndex == 1,
+                onTap: () {
+                  setState(() => _ongletMobileIndex = 1);
+                  _scrollTo(_keyProduits);
+                },
+              ),
+
+              // 3. Shop (Centre surélevé bleu TechNest)
+              GestureDetector(
+                onTap: () {
+                  if (v != null && data != null && _totalArticlesPanier > 0) {
+                    _commanderWhatsAppPanier(vitrine: v, produits: data.produits);
+                  } else {
+                    _scrollTo(_keyProduits);
+                  }
+                },
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 24),
+                      if (_totalArticlesPanier > 0)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+                            child: Text('$_totalArticlesPanier', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 4. Deals
+              _buildBottomNavItem(
+                icon: Icons.local_offer_outlined,
+                label: 'Deals',
+                actif: _ongletMobileIndex == 2,
+                onTap: () {
+                  setState(() => _ongletMobileIndex = 2);
+                  _scrollTo(_keyProduits);
+                },
+              ),
+
+              // 5. WhatsApp / Account
+              _buildBottomNavItem(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: 'WhatsApp',
+                actif: _ongletMobileIndex == 3,
+                iconColor: const Color(0xFF25D366),
+                onTap: () {
+                  setState(() => _ongletMobileIndex = 3);
+                  if (v != null) {
+                    final clean = (v.whatsapp ?? v.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
+                    launchUrl(Uri.parse('https://wa.me/$clean'), mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavItem({
+    required IconData icon,
+    required String label,
+    required bool actif,
+    required VoidCallback onTap,
+    Color? iconColor,
+  }) {
+    final color = iconColor ?? (actif ? const Color(0xFF2563EB) : const Color(0xFF64748B));
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: actif ? FontWeight.w800 : FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildModeleTechVerseCommerce(VitrinePubliqueData data, bool isDesktop, double width) {
     final vitrine = data.vitrine;
