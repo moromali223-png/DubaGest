@@ -41,7 +41,7 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
   }
 
   Future<void> _partagerWhatsApp(VitrineConfig vitrine) async {
-    final texte = 'Bonjour ! Découvrez notre site vitrine officiel chez *${vitrine.titreHero ?? "DubaGest"}* ici : ${vitrine.urlPublique}';
+    final texte = 'Bonjour ! Découvrez notre site vitrine officiel chez *${vitrine.titreHero ?? vitrine.nomBoutique}* ici : ${vitrine.urlPublique}';
     final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -56,136 +56,323 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
     );
   }
 
+  int _calculerProgression(VitrineConfig vitrine, {required int nbProduits, required int nbPrestations, required int nbBiens}) {
+    int score = 0;
+    // 1. Logo ou photo de marque (25%)
+    if (vitrine.logoUrl != null && vitrine.logoUrl!.trim().isNotEmpty) score += 25;
+    // 2. Contenu au catalogue (25%)
+    final totalArticles = (nbProduits > 0) || (nbPrestations > 0) || (nbBiens > 0);
+    if (totalArticles) score += 25;
+    // 3. Histoire & Slogan (25%)
+    if ((vitrine.description != null && vitrine.description!.trim().isNotEmpty) ||
+        (vitrine.slogan != null && vitrine.slogan!.trim().isNotEmpty)) {
+      score += 25;
+    }
+    // 4. Contact direct (25%)
+    if ((vitrine.contactWhatsapp != null && vitrine.contactWhatsapp!.trim().isNotEmpty) ||
+        (vitrine.telephone != null && vitrine.telephone!.trim().isNotEmpty)) {
+      score += 25;
+    }
+    return score;
+  }
+
+  void _ouvrirDialogueAjoutProduit(BuildContext context, VitrineConfig vitrine) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _DialogueAjoutOuModifProduitVitrine(vitrine: vitrine),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final asyncVitrine = ref.watch(vitrineActuelleProvider);
+    final asyncProduits = ref.watch(vitrineProduitsAdminProvider);
+    final asyncPrestations = ref.watch(vitrinePrestationsProvider);
+    final asyncBiens = ref.watch(vitrineBiensProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          'Ma Vitrine Professionnelle',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.preview_rounded, color: Color(0xFF0F172A)),
-            tooltip: 'Prévisualiser le site',
-            onPressed: () {
-              final v = asyncVitrine.value;
-              if (v != null) _ouvrirStudioPrevisualisation(context, v);
+    final nbProduits = asyncProduits.value?.length ?? 0;
+    final nbPrestations = asyncPrestations.value?.length ?? 0;
+    final nbBiens = asyncBiens.value?.length ?? 0;
+
+    return asyncVitrine.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, _) => Scaffold(body: Center(child: Text('Erreur : $err'))),
+      data: (vitrine) {
+        if (vitrine == null) {
+          return const Scaffold(body: Center(child: Text('Aucune vitrine configurée.')));
+        }
+
+        final isImmo = vitrine.typeActivite.domaine == DomaineActivite.immobilier;
+        final isServices = vitrine.typeActivite.domaine == DomaineActivite.services;
+
+        List<Tab> tabs;
+        List<Widget> views;
+
+        if (isImmo) {
+          tabs = const [
+            Tab(icon: Icon(Icons.home_work_rounded, size: 18), text: 'Biens Immobiliers'),
+            Tab(icon: Icon(Icons.event_available_rounded, size: 18), text: 'Demandes de Visite'),
+            Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Photos'),
+            Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Apparence & Modèle'),
+            Tab(icon: Icon(Icons.info_outline_rounded, size: 18), text: 'Infos Agence'),
+          ];
+          views = [
+            _OngletBiensImmobiliers(vitrine: vitrine),
+            _OngletDemandesVisite(vitrine: vitrine),
+            _OngletGalerie(vitrine: vitrine),
+            _OngletApparence(vitrine: vitrine),
+            _OngletInfosBoutique(vitrine: vitrine),
+          ];
+        } else if (isServices) {
+          tabs = const [
+            Tab(icon: Icon(Icons.content_cut_rounded, size: 18), text: 'Prestations & Tarifs'),
+            Tab(icon: Icon(Icons.calendar_today_rounded, size: 18), text: 'Rendez-vous'),
+            Tab(icon: Icon(Icons.shopping_bag_rounded, size: 18), text: 'Produits / Vente'),
+            Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Réalisations'),
+            Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Apparence & Modèle'),
+            Tab(icon: Icon(Icons.info_outline_rounded, size: 18), text: 'Infos Salon'),
+          ];
+          views = [
+            _OngletPrestations(vitrine: vitrine),
+            _OngletRendezVous(vitrine: vitrine),
+            _OngletProduits(vitrine: vitrine),
+            _OngletGalerie(vitrine: vitrine),
+            _OngletApparence(vitrine: vitrine),
+            _OngletInfosBoutique(vitrine: vitrine),
+          ];
+        } else {
+          // Domaine Commerce
+          tabs = const [
+            Tab(icon: Icon(Icons.storefront_rounded, size: 18), text: 'Produits en vitrine'),
+            Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Réalisations'),
+            Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Apparence & Modèle'),
+            Tab(icon: Icon(Icons.store_rounded, size: 18), text: 'Infos Boutique'),
+          ];
+          views = [
+            _OngletProduits(vitrine: vitrine),
+            _OngletGalerie(vitrine: vitrine),
+            _OngletApparence(vitrine: vitrine),
+            _OngletInfosBoutique(vitrine: vitrine),
+          ];
+        }
+
+        return DefaultTabController(
+          key: ValueKey('${vitrine.typeActivite.domaine.code}_${tabs.length}'),
+          length: tabs.length,
+          child: Builder(
+            builder: (ctx) {
+              return Scaffold(
+                backgroundColor: const Color(0xFFF8FAFC),
+                appBar: AppBar(
+                  title: Text(
+                    vitrine.nomBoutique.isNotEmpty ? vitrine.nomBoutique : 'Ma Vitrine Pro',
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                  ),
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF0F172A),
+                  elevation: 0,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.preview_rounded, color: Color(0xFF0F172A)),
+                      tooltip: 'Aperçu en direct',
+                      onPressed: () => _ouvrirStudioPrevisualisation(context, vitrine),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.green),
+                      tooltip: 'Assistant création & refonte (Wizard)',
+                      onPressed: () => context.push(Routes.vitrineWizard),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded),
+                      tooltip: 'Actualiser',
+                      onPressed: () => ref.invalidate(vitrineActuelleProvider),
+                    ),
+                  ],
+                ),
+                floatingActionButton: FloatingActionButton.extended(
+                  heroTag: 'fab_ajout_vitrine_main',
+                  backgroundColor: AppColors.green,
+                  foregroundColor: Colors.white,
+                  elevation: 3,
+                  icon: const Icon(Icons.add_rounded, size: 22),
+                  label: Text(
+                    isImmo ? 'Ajouter un bien' : (isServices ? 'Ajouter un service' : 'Ajouter un produit'),
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                  onPressed: () {
+                    if (isImmo) {
+                      _ouvrirFormulaireBien(context, ref, vitrine);
+                    } else if (isServices) {
+                      _ouvrirDialoguePrestationDirect(context, ref, vitrine);
+                    } else {
+                      _ouvrirDialogueAjoutProduit(context, vitrine);
+                    }
+                  },
+                ),
+                body: Column(
+                  children: [
+                    // 1. En-tête statut & progression
+                    _buildHeaderStatus(
+                      ctx,
+                      vitrine,
+                      nbProduits: nbProduits,
+                      nbPrestations: nbPrestations,
+                      nbBiens: nbBiens,
+                    ),
+
+                    // 2. Barre d'onglets claire et responsive
+                    Container(
+                      color: Colors.white,
+                      child: TabBar(
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.start,
+                        indicatorColor: AppColors.green,
+                        labelColor: AppColors.green,
+                        unselectedLabelColor: const Color(0xFF64748B),
+                        labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        tabs: tabs,
+                      ),
+                    ),
+
+                    // 3. Contenu de chaque onglet
+                    Expanded(
+                      child: TabBarView(
+                        children: views,
+                      ),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.green),
-            tooltip: 'Assistant création & refonte (Wizard)',
-            onPressed: () => context.push(Routes.vitrineWizard),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Actualiser',
-            onPressed: () => ref.invalidate(vitrineActuelleProvider),
-          ),
-        ],
-      ),
-      body: asyncVitrine.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erreur : $err')),
-        data: (vitrine) {
-          if (vitrine == null) {
-            return const Center(child: Text('Aucune vitrine configurée.'));
-          }
+        );
+      },
+    );
+  }
 
-          List<Tab> tabs;
-          List<Widget> views;
+  void _ouvrirDialoguePrestationDirect(BuildContext context, WidgetRef ref, VitrineConfig vitrine) {
+    final nomCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final prixCtrl = TextEditingController();
+    final dureeCtrl = TextEditingController();
+    final catCtrl = TextEditingController();
 
-          if (vitrine.typeActivite.domaine == DomaineActivite.immobilier) {
-            tabs = const [
-              Tab(icon: Icon(Icons.home_work_rounded, size: 18), text: 'Biens Immobiliers'),
-              Tab(icon: Icon(Icons.event_available_rounded, size: 18), text: 'Demandes de Visite'),
-              Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Photos'),
-              Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'Notre Équipe'),
-              Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Design & Réglages'),
-            ];
-            views = [
-              _OngletBiensImmobiliers(vitrine: vitrine),
-              _OngletDemandesVisite(vitrine: vitrine),
-              _OngletGalerie(vitrine: vitrine),
-              _OngletEquipe(vitrine: vitrine),
-              _OngletReglages(vitrine: vitrine),
-            ];
-          } else if (vitrine.typeActivite.domaine == DomaineActivite.services) {
-            tabs = const [
-              Tab(icon: Icon(Icons.calendar_today_rounded, size: 18), text: 'Rendez-vous'),
-              Tab(icon: Icon(Icons.content_cut_rounded, size: 18), text: 'Prestations & Tarifs'),
-              Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Réalisations'),
-              Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'Notre Équipe'),
-              Tab(icon: Icon(Icons.shopping_bag_rounded, size: 18), text: 'Produits / Wigs'),
-              Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Design & Réglages'),
-            ];
-            views = [
-              _OngletRendezVous(vitrine: vitrine),
-              _OngletPrestations(vitrine: vitrine),
-              _OngletGalerie(vitrine: vitrine),
-              _OngletEquipe(vitrine: vitrine),
-              _OngletProduits(vitrine: vitrine),
-              _OngletReglages(vitrine: vitrine),
-            ];
-          } else {
-            // Domaine Commerce
-            tabs = const [
-              Tab(icon: Icon(Icons.storefront_rounded, size: 18), text: 'Produits en vitrine'),
-              Tab(icon: Icon(Icons.photo_library_rounded, size: 18), text: 'Galerie Réalisations'),
-              Tab(icon: Icon(Icons.tune_rounded, size: 18), text: 'Design & Réglages'),
-            ];
-            views = [
-              _OngletProduits(vitrine: vitrine),
-              _OngletGalerie(vitrine: vitrine),
-              _OngletReglages(vitrine: vitrine),
-            ];
-          }
-
-          return DefaultTabController(
-            key: ValueKey('${vitrine.typeActivite.domaine.code}_${tabs.length}'),
-            length: tabs.length,
-            child: Column(
-              children: [
-                // 1. En-tête statut et lien public
-                _buildHeaderStatus(vitrine),
-
-                // 2. Barre d'onglets adaptée au métier
-                Container(
-                  color: Colors.white,
-                  child: TabBar(
-                    isScrollable: true,
-                    indicatorColor: AppColors.green,
-                    labelColor: AppColors.green,
-                    unselectedLabelColor: const Color(0xFF64748B),
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                    tabs: tabs,
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Ajouter une prestation / soin', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+              const SizedBox(height: 14),
+              TextField(
+                controller: nomCtrl,
+                decoration: const InputDecoration(labelText: 'Nom de la prestation *', hintText: 'Ex: Tresses africaines, Brushing VIP', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: prixCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Tarif (FCFA) *', hintText: '5000', border: OutlineInputBorder(), suffixText: 'FCFA'),
+                    ),
                   ),
-                ),
-
-                // 3. Contenu de chaque onglet
-                Expanded(
-                  child: TabBarView(
-                    children: views,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: dureeCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Durée (min)', hintText: '45', border: OutlineInputBorder(), suffixText: 'min'),
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: catCtrl,
+                decoration: const InputDecoration(labelText: 'Catégorie', hintText: 'Coiffure, Soins, Manucure...', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: descCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Description publique', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.green, padding: const EdgeInsets.symmetric(vertical: 14)),
+                  child: const Text('Enregistrer et publier la prestation', style: TextStyle(fontWeight: FontWeight.w800)),
+                  onPressed: () async {
+                    final nom = nomCtrl.text.trim();
+                    final prix = int.tryParse(prixCtrl.text.trim()) ?? 0;
+                    final duree = int.tryParse(dureeCtrl.text.trim()) ?? 30;
+                    if (nom.isEmpty || prix <= 0) return;
+
+                    Navigator.pop(ctx);
+                    var vitrineId = vitrine.id;
+                    if (vitrineId.isEmpty) {
+                      final vMaj = await ref.read(vitrineRepositoryProvider).sauvegarderVitrine(vitrine);
+                      vitrineId = vMaj.id;
+                      ref.invalidate(vitrineActuelleProvider);
+                    }
+                    final p = VitrinePrestation(
+                      id: '',
+                      vitrineId: vitrineId,
+                      entrepriseId: vitrine.entrepriseId,
+                      nom: nom,
+                      prix: prix,
+                      dureeMinutes: duree,
+                      categorie: catCtrl.text.trim(),
+                      description: descCtrl.text.trim().isNotEmpty ? descCtrl.text.trim() : null,
+                    );
+                    await ref.read(vitrineRepositoryProvider).sauvegarderPrestation(p);
+                    ref.invalidate(vitrinePrestationsProvider);
+                  },
                 ),
-              ],
-            ),
-          );
-        },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildHeaderStatus(VitrineConfig vitrine) {
+  Widget _buildHeaderStatus(
+    BuildContext context,
+    VitrineConfig vitrine, {
+    required int nbProduits,
+    required int nbPrestations,
+    required int nbBiens,
+  }) {
+    final pct = _calculerProgression(vitrine, nbProduits: nbProduits, nbPrestations: nbPrestations, nbBiens: nbBiens);
+    final isCommerce = vitrine.typeActivite.domaine == DomaineActivite.commerce;
+    final isServices = vitrine.typeActivite.domaine == DomaineActivite.services;
+
+    final tabLogo = isCommerce ? 2 : (isServices ? 4 : 3);
+    final tabContenu = 0;
+    final tabAPropos = isCommerce ? 3 : (isServices ? 5 : 4);
+    final tabContact = isCommerce ? 3 : (isServices ? 5 : 4);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
@@ -193,62 +380,68 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Ligne 1 : Statut, sélecteur rapide de modèle, switch actif & menu
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: vitrine.estPublie ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              Expanded(
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: vitrine.estPublie ? const Color(0xFF16A34A) : const Color(0xFF64748B),
-                        shape: BoxShape.circle,
+                        color: vitrine.estPublie ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: vitrine.estPublie ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            vitrine.estPublie ? 'EN LIGNE' : 'BROUILLON',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              color: vitrine.estPublie ? const Color(0xFF15803D) : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      vitrine.estPublie ? 'EN LIGNE' : 'BROUILLON',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: vitrine.estPublie ? const Color(0xFF15803D) : const Color(0xFF475569),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _ouvrirSelecteurModeleRapide(context, ref, vitrine),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFC7D2FE)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              vitrine.modeleVisuel.titre.split('—').first.trim(),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
+                            ),
+                            const SizedBox(width: 2),
+                            const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Color(0xFF4F46E5)),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
-              InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => _ouvrirSelecteurModeleRapide(context, ref, vitrine),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFC7D2FE)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        vitrine.modeleVisuel.titre.split('—').first.trim(),
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5)),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Color(0xFF4F46E5)),
-                    ],
-                  ),
-                ),
-              ),
-              const Spacer(),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -268,84 +461,57 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
                       ref.read(vitrineActuelleProvider.notifier).basculerPublication(val);
                     },
                   ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF475569), size: 20),
+                    onSelected: (val) {
+                      if (val == 'plein_ecran') {
+                        context.push('/v/${vitrine.slug}');
+                      } else if (val == 'wizard') {
+                        context.push(Routes.vitrineWizard);
+                      } else if (val == 'refresh') {
+                        ref.invalidate(vitrineActuelleProvider);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'plein_ecran',
+                        child: Row(
+                          children: [
+                            Icon(Icons.open_in_browser_rounded, size: 18, color: AppColors.green),
+                            SizedBox(width: 8),
+                            Text('Ouvrir en plein écran'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'wizard',
+                        child: Row(
+                          children: [
+                            Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFF4F46E5)),
+                            SizedBox(width: 8),
+                            Text('Assistant IA complet (8 étapes)'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'refresh',
+                        child: Row(
+                          children: [
+                            Icon(Icons.refresh_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('Actualiser la vitrine'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // GRAND BOUTON PROÉMINENT : PRÉVISUALISER MON SITE AVANT DE PARTAGER
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF0F172A),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 2,
-              ),
-              icon: const Icon(Icons.preview_rounded, size: 20),
-              label: const Text(
-                '👁️ Prévisualiser mon site avant de partager',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-              ),
-              onPressed: () => _ouvrirStudioPrevisualisation(context, vitrine),
-            ),
-          ),
-          const SizedBox(height: 10),
-          // DEUX GRANDS BOUTONS PRINCIPAUX TRÈS CLAIRS ET ÉVIDENTS
-          Row(
-            children: [
-              Expanded(
-                flex: 6,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 1,
-                  ),
-                  icon: const Icon(Icons.language_rounded, size: 18),
-                  label: const Text(
-                    'Plein écran web',
-                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                  ),
-                  onPressed: () => context.push('/v/${vitrine.slug}'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 5,
-                child: FilledButton.tonalIcon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366).withValues(alpha: 0.15),
-                    foregroundColor: const Color(0xFF0F5132),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  icon: const Icon(Icons.share_rounded, size: 18, color: Color(0xFF25D366)),
-                  label: const Text(
-                    'WhatsApp',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                  ),
-                  onPressed: () => _partagerWhatsApp(vitrine),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.outlined(
-                style: IconButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  side: const BorderSide(color: Color(0xFFCBD5E1)),
-                ),
-                icon: const Icon(Icons.auto_awesome_rounded, color: AppColors.green),
-                tooltip: 'Personnaliser (Assistant 8 étapes)',
-                onPressed: () => context.push(Routes.vitrineWizard),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Barre de lien avec bouton copier
+          const SizedBox(height: 8),
+
+          // Ligne 2 : Carte « Votre site » compacte (Lien + Copier + WhatsApp + Aperçu)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
@@ -371,10 +537,130 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
                   tooltip: 'Copier le lien',
                   onPressed: () => _copierLien(vitrine.urlPublique),
                 ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.share_rounded, size: 16, color: Color(0xFF25D366)),
+                  tooltip: 'Partager sur WhatsApp',
+                  onPressed: () => _partagerWhatsApp(vitrine),
+                ),
+                const SizedBox(width: 4),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.preview_rounded, size: 14),
+                  label: const Text('👁️ Aperçu', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                  onPressed: () => _ouvrirStudioPrevisualisation(context, vitrine),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Ligne 3 : Progression (Votre vitrine est prête à X %)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Votre vitrine est prête à $pct%',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF1E293B)),
+              ),
+              Text(
+                pct == 100 ? '🎉 Prête à vendre !' : 'Complétez les 4 étapes',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: pct == 100 ? AppColors.green : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: pct / 100.0,
+              minHeight: 5,
+              backgroundColor: const Color(0xFFE2E8F0),
+              color: pct == 100 ? AppColors.green : (pct >= 50 ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Jalons interactifs (redirigent vers l'onglet correspondant)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildJalonChip(
+                  label: '1. Logo',
+                  valide: vitrine.logoUrl != null && vitrine.logoUrl!.trim().isNotEmpty,
+                  onTap: () => DefaultTabController.of(context).animateTo(tabLogo),
+                ),
+                const SizedBox(width: 6),
+                _buildJalonChip(
+                  label: isCommerce ? '2. Produits ($nbProduits)' : (isServices ? '2. Services ($nbPrestations)' : '2. Biens ($nbBiens)'),
+                  valide: (isCommerce ? nbProduits : (isServices ? nbPrestations : nbBiens)) > 0,
+                  onTap: () => DefaultTabController.of(context).animateTo(tabContenu),
+                ),
+                const SizedBox(width: 6),
+                _buildJalonChip(
+                  label: '3. À propos',
+                  valide: vitrine.description != null && vitrine.description!.trim().isNotEmpty,
+                  onTap: () => DefaultTabController.of(context).animateTo(tabAPropos),
+                ),
+                const SizedBox(width: 6),
+                _buildJalonChip(
+                  label: '4. Contact',
+                  valide: vitrine.contactWhatsapp != null && vitrine.contactWhatsapp!.trim().isNotEmpty,
+                  onTap: () => DefaultTabController.of(context).animateTo(tabContact),
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildJalonChip({
+    required String label,
+    required bool valide,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+        decoration: BoxDecoration(
+          color: valide ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: valide ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              valide ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+              size: 13,
+              color: valide ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: valide ? const Color(0xFF15803D) : const Color(0xFF475569),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -485,7 +771,6 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
     );
   }
 }
-
 // =============================================================================
 // ONGLET 1 : GESTION DES RENDEZ-VOUS
 // =============================================================================
@@ -1429,9 +1714,23 @@ class _OngletEquipe extends ConsumerWidget {
 // ONGLET 5 : PRODUITS EN VITRINE
 // =============================================================================
 
-class _OngletProduits extends ConsumerWidget {
+class _OngletProduits extends ConsumerStatefulWidget {
   const _OngletProduits({required this.vitrine});
   final VitrineConfig vitrine;
+
+  @override
+  ConsumerState<_OngletProduits> createState() => _OngletProduitsState();
+}
+
+class _OngletProduitsState extends ConsumerState<_OngletProduits> {
+  final TextEditingController _rechercheCtrl = TextEditingController();
+  String _filtre = 'tous'; // 'tous', 'en_ligne', 'masques', 'en_promo'
+
+  @override
+  void dispose() {
+    _rechercheCtrl.dispose();
+    super.dispose();
+  }
 
   void _ouvrirDialogueProduit(BuildContext context, [VitrineProduitItem? produit]) {
     showModalBottomSheet<void>(
@@ -1439,16 +1738,50 @@ class _OngletProduits extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => _DialogueAjoutOuModifProduitVitrine(vitrine: vitrine, produit: produit),
+      builder: (ctx) => _DialogueAjoutOuModifProduitVitrine(vitrine: widget.vitrine, produit: produit),
     );
+  }
+
+  Future<void> _toutPublier(List<VitrineProduitItem> liste) async {
+    final notifier = ref.read(vitrineProduitsAdminProvider.notifier);
+    final aPublier = liste.where((p) => !p.estPublie).toList();
+    if (aPublier.isEmpty) return;
+    for (final p in aPublier) {
+      await notifier.basculerPublication(p.id, true);
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${aPublier.length} produit(s) publié(s) en ligne avec succès !'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _toutMasquer(List<VitrineProduitItem> liste) async {
+    final notifier = ref.read(vitrineProduitsAdminProvider.notifier);
+    final aMasquer = liste.where((p) => p.estPublie).toList();
+    if (aMasquer.isEmpty) return;
+    for (final p in aMasquer) {
+      await notifier.basculerPublication(p.id, false);
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${aMasquer.length} produit(s) masqué(s) de la vitrine.'),
+          backgroundColor: const Color(0xFF64748B),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _chargerExemplesDemo(BuildContext context, WidgetRef ref) async {
     final notifier = ref.read(vitrineProduitsAdminProvider.notifier);
-    
-    // Détection de la typologie d'exemples selon l'activité
-    final isTech = vitrine.typeActivite == TypeActivite.boutiqueTech || vitrine.modeleVisuel == ModeleVitrine.modeleB;
-    final isBeauty = vitrine.typeActivite == TypeActivite.cosmetiqueBeaute || vitrine.typeActivite == TypeActivite.salonCoiffure;
+    final isTech = widget.vitrine.typeActivite == TypeActivite.boutiqueTech || widget.vitrine.modeleVisuel == ModeleVitrine.modeleB;
+    final isBeauty = widget.vitrine.typeActivite == TypeActivite.cosmetiqueBeaute || widget.vitrine.typeActivite == TypeActivite.salonCoiffure;
 
     final exemples = isBeauty
         ? [
@@ -1600,7 +1933,7 @@ class _OngletProduits extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final asyncProduits = ref.watch(vitrineProduitsAdminProvider);
 
     return asyncProduits.when(
@@ -1625,65 +1958,146 @@ class _OngletProduits extends ConsumerWidget {
       ),
       data: (produits) {
         final totalPublies = produits.where((p) => p.estPublie).length;
+        final totalMasques = produits.length - totalPublies;
+        final totalPromos = produits.where((p) => p.aPromotion && p.prixBarre != null && p.prixBarre! > p.prix).length;
+
+        // Filtrage dynamique
+        final query = _rechercheCtrl.text.trim().toLowerCase();
+        List<VitrineProduitItem> filtres = produits;
+        if (query.isNotEmpty) {
+          filtres = filtres.where((p) =>
+            p.nom.toLowerCase().contains(query) || (p.description?.toLowerCase().contains(query) ?? false)
+          ).toList();
+        }
+        if (_filtre == 'en_ligne') {
+          filtres = filtres.where((p) => p.estPublie).toList();
+        } else if (_filtre == 'masques') {
+          filtres = filtres.where((p) => !p.estPublie).toList();
+        } else if (_filtre == 'en_promo') {
+          filtres = filtres.where((p) => p.aPromotion && p.prixBarre != null && p.prixBarre! > p.prix).toList();
+        }
 
         return Column(
           children: [
-            // Barre d'actions supérieure claire et proéminente
+            // Barre supérieure : Recherche + Filtres + Actions de masse
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
               ),
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Catalogue de vente en vitrine',
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
+                  // Champ de recherche
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: TextField(
+                      controller: _rechercheCtrl,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher parmi vos ${produits.length} produits...',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                        suffixIcon: _rechercheCtrl.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, size: 16),
+                                onPressed: () {
+                                  _rechercheCtrl.clear();
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      Text(
-                        '$totalPublies produit(s) en ligne sur ${produits.length} au total',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                      ),
-                    ],
+                    ),
                   ),
+                  const SizedBox(height: 8),
+
+                  // Chips de filtrage rapide
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterChip('tous', 'Tous (${produits.length})'),
+                        const SizedBox(width: 6),
+                        _buildFilterChip('en_ligne', 'En ligne ($totalPublies)'),
+                        const SizedBox(width: 6),
+                        _buildFilterChip('masques', 'Masqués ($totalMasques)'),
+                        const SizedBox(width: 6),
+                        _buildFilterChip('en_promo', 'En promo ($totalPromos)'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Barre d'actions en masse (Tout publier en 1 clic)
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      Expanded(
+                        child: Text(
+                          '$totalPublies en ligne sur ${produits.length}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                         ),
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('➕ Ajouter un produit', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                        onPressed: () => _ouvrirDialogueProduit(context),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton.outlined(
-                        icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF4F46E5), size: 18),
-                        tooltip: 'Charger des produits modèles démo',
-                        onPressed: () => _chargerExemplesDemo(context, ref),
-                      ),
+                      if (totalMasques > 0)
+                        InkWell(
+                          onTap: () => _toutPublier(produits),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFF86EFAC)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.flash_on_rounded, size: 13, color: Color(0xFF15803D)),
+                                SizedBox(width: 4),
+                                Text('⚡ Tout publier', style: TextStyle(color: Color(0xFF15803D), fontSize: 11, fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      if (totalMasques > 0 && totalPublies > 0) const SizedBox(width: 6),
+                      if (totalPublies > 0)
+                        InkWell(
+                          onTap: () => _toutMasquer(produits),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.visibility_off_outlined, size: 13, color: Color(0xFF64748B)),
+                                SizedBox(width: 4),
+                                Text('Tout masquer', style: TextStyle(color: Color(0xFF475569), fontSize: 11, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ],
               ),
             ),
 
-            // Liste des produits ou état vide incitatif
+            // Liste des produits ou état vide
             Expanded(
-              child: produits.isEmpty
+              child: filtres.isEmpty
                   ? Center(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(24),
@@ -1696,46 +2110,45 @@ class _OngletProduits extends ConsumerWidget {
                               child: const Icon(Icons.storefront_rounded, size: 54, color: AppColors.green),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'Aucun produit dans votre catalogue vitrine',
-                              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                            Text(
+                              query.isNotEmpty || _filtre != 'tous'
+                                  ? 'Aucun produit ne correspond au filtre'
+                                  : 'Aucun produit dans votre catalogue vitrine',
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Ajoutez directement vos articles (téléphones, accessoires, vêtements, perruques, soins...) avec photo et prix en FCFA.\nVos clients pourront les commander en un clic sur WhatsApp !',
+                            Text(
+                              query.isNotEmpty || _filtre != 'tous'
+                                  ? 'Essayez de réinitialiser la recherche ou le filtre.'
+                                  : 'Ajoutez directement vos articles avec photo et prix en FCFA.
+Vos clients pourront les commander en un clic sur WhatsApp !',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
+                              style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, height: 1.4),
                             ),
-                            const SizedBox(height: 24),
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.icon(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.green,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-                                label: const Text('Ajouter mon premier produit', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-                                onPressed: () => _ouvrirDialogueProduit(context),
+                            const SizedBox(height: 20),
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
+                              icon: const Icon(Icons.add_rounded, size: 20),
+                              label: const Text('Ajouter un produit', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                              onPressed: () => _ouvrirDialogueProduit(context),
                             ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF4F46E5),
-                                  side: const BorderSide(color: Color(0xFF818CF8)),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                icon: const Icon(Icons.auto_awesome_rounded, size: 20),
-                                label: const Text('⚡ Charger 6 produits démo de qualité', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                                onPressed: () => _chargerExemplesDemo(context, ref),
+                            const SizedBox(height: 10),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF4F46E5),
+                                side: const BorderSide(color: Color(0xFF818CF8)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
+                              icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                              label: const Text('⚡ Charger 6 produits démo de qualité', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                              onPressed: () => _chargerExemplesDemo(context, ref),
                             ),
                           ],
                         ),
@@ -1743,10 +2156,10 @@ class _OngletProduits extends ConsumerWidget {
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
-                      itemCount: produits.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemCount: filtres.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (ctx, i) {
-                        final p = produits[i];
+                        final p = filtres[i];
                         return _CarteProduitVitrine(
                           produit: p,
                           onEditer: () => _ouvrirDialogueProduit(context, p),
@@ -1782,6 +2195,30 @@ class _OngletProduits extends ConsumerWidget {
       },
     );
   }
+
+  Widget _buildFilterChip(String cle, String label) {
+    final actif = _filtre == cle;
+    return InkWell(
+      onTap: () => setState(() => _filtre = cle),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: actif ? AppColors.green : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: actif ? AppColors.green : const Color(0xFFCBD5E1)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: actif ? FontWeight.w800 : FontWeight.w600,
+            color: actif ? Colors.white : const Color(0xFF475569),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _CarteProduitVitrine extends StatelessWidget {
@@ -1800,6 +2237,7 @@ class _CarteProduitVitrine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final photo = produit.photoPrincipale;
+    final aVraiePromo = produit.aPromotion && produit.prixBarre != null && produit.prixBarre! > produit.prix;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1814,7 +2252,7 @@ class _CarteProduitVitrine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Photo du produit
+          // Photo du produit (carré 72x72)
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: SizedBox(
@@ -1831,28 +2269,29 @@ class _CarteProduitVitrine extends StatelessWidget {
                     )
                   : Container(
                       color: const Color(0xFFF1F5F9),
-                      child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF94A3B8), size: 32),
+                      child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF94A3B8), size: 30),
                     ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
           // Détails du produit
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Titre sur 2 lignes complètes sans coupure prématurée
                 Text(
                   produit.nom,
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A)),
-                  maxLines: 1,
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F172A), height: 1.25),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (produit.description != null && produit.description!.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Text(
                     produit.description!,
-                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1862,16 +2301,16 @@ class _CarteProduitVitrine extends StatelessWidget {
                   children: [
                     Text(
                       '${produit.prix} FCFA',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.green),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.green),
                     ),
-                    if (produit.aPromotion) ...[
-                      const SizedBox(width: 8),
+                    if (aVraiePromo) ...[
+                      const SizedBox(width: 6),
                       Text(
                         '${produit.prixBarre} F',
                         style: const TextStyle(
                           decoration: TextDecoration.lineThrough,
                           color: Color(0xFF94A3B8),
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -1887,16 +2326,16 @@ class _CarteProduitVitrine extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      produit.estPublie ? 'Visible en ligne' : 'Masqué',
+                      produit.estPublie ? 'Visible' : 'Masqué',
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: produit.estPublie ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w700,
+                        color: produit.estPublie ? AppColors.green : const Color(0xFF64748B),
                       ),
                     ),
                     const SizedBox(width: 4),
                     Transform.scale(
-                      scale: 0.75,
+                      scale: 0.8,
                       child: Switch(
                         value: produit.estPublie,
                         activeThumbColor: AppColors.green,
@@ -2202,89 +2641,692 @@ class _DialogueAjoutOuModifProduitVitrineState extends ConsumerState<_DialogueAj
 // ONGLET 6 : RÉGLAGES & SECTIONS
 // =============================================================================
 
-class _OngletReglages extends ConsumerWidget {
-  const _OngletReglages({required this.vitrine});
+class _OngletApparence extends ConsumerStatefulWidget {
+  const _OngletApparence({required this.vitrine});
   final VitrineConfig vitrine;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sections = vitrine.sections;
+  ConsumerState<_OngletApparence> createState() => _OngletApparenceState();
+}
 
+class _OngletApparenceState extends ConsumerState<_OngletApparence> {
+  late final TextEditingController _titreHeroCtrl;
+  late final TextEditingController _sloganCtrl;
+  late final TextEditingController _logoUrlCtrl;
+  late final TextEditingController _banniereUrlCtrl;
+  late ModeleVitrine _modeleChoisi;
+  late ThemeStyle _styleChoisi;
+  late VitrineSections _sections;
+  bool _enSauvegarde = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final v = widget.vitrine;
+    _titreHeroCtrl = TextEditingController(text: v.titreHero ?? v.nomBoutique);
+    _sloganCtrl = TextEditingController(text: v.slogan ?? '');
+    _logoUrlCtrl = TextEditingController(text: v.logoUrl ?? '');
+    _banniereUrlCtrl = TextEditingController(text: v.imageBanniere ?? '');
+    _modeleChoisi = v.modeleVisuel;
+    _styleChoisi = v.style;
+    _sections = v.sections;
+  }
+
+  @override
+  void dispose() {
+    _titreHeroCtrl.dispose();
+    _sloganCtrl.dispose();
+    _logoUrlCtrl.dispose();
+    _banniereUrlCtrl.dispose();
+    super.dispose();
+  }
+
+  void _choisirPresetBanniere(String url) {
+    setState(() => _banniereUrlCtrl.text = url);
+  }
+
+  Future<void> _enregistrerApparence() async {
+    setState(() => _enSauvegarde = true);
+    final v = widget.vitrine;
+    final maj = v.copyWith(
+      titreHero: _titreHeroCtrl.text.trim().isNotEmpty ? _titreHeroCtrl.text.trim() : null,
+      slogan: _sloganCtrl.text.trim().isNotEmpty ? _sloganCtrl.text.trim() : null,
+      logoUrl: _logoUrlCtrl.text.trim().isNotEmpty ? _logoUrlCtrl.text.trim() : null,
+      imageBanniere: _banniereUrlCtrl.text.trim().isNotEmpty ? _banniereUrlCtrl.text.trim() : null,
+      modeleVisuel: _modeleChoisi,
+      style: _styleChoisi,
+      sections: _sections,
+    );
+
+    await ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
+    if (mounted) {
+      setState(() => _enSauvegarde = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Apparence de votre site enregistrée avec succès !'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Carte 1 : Identité & Bannière d'Accueil (Hero)
         Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Sections visibles sur votre site', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.storefront_rounded, color: Color(0xFF15803D), size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text('Identité & Bannière d'Accueil', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _titreHeroCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Grand titre d'accroche (Hero) *',
+                    hintText: 'Ex: Le temple du High-Tech, Maison de Beauté VIP',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _sloganCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Slogan / Phrase de bienvenue',
+                    hintText: 'Ex: La meilleure qualité au meilleur prix à Bamako',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _logoUrlCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'URL du logo',
+                    hintText: 'https://...',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _banniereUrlCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Image de couverture Hero (Haute Définition)',
+                    hintText: 'https://images.unsplash.com/...',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.panorama_outlined),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text('Photos HD prêtes en 1 clic selon votre activité :', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    ActionChip(
+                      avatar: const Icon(Icons.devices_rounded, size: 14),
+                      label: const Text('High-Tech', style: TextStyle(fontSize: 11)),
+                      onPressed: () => _choisirPresetBanniere('https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1600&q=80'),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.checkroom_rounded, size: 14),
+                      label: const Text('Mode', style: TextStyle(fontSize: 11)),
+                      onPressed: () => _choisirPresetBanniere('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80'),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.content_cut_rounded, size: 14),
+                      label: const Text('Coiffure', style: TextStyle(fontSize: 11)),
+                      onPressed: () => _choisirPresetBanniere('https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600&q=80'),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.spa_rounded, size: 14),
+                      label: const Text('Beauté', style: TextStyle(fontSize: 11)),
+                      onPressed: () => _choisirPresetBanniere('https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&q=80'),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.apartment_rounded, size: 14),
+                      label: const Text('Immobilier', style: TextStyle(fontSize: 11)),
+                      onPressed: () => _choisirPresetBanniere('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&q=80'),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.build_rounded, size: 14),
+                      label: const Text('Quincaillerie', style: TextStyle(fontSize: 11)),
+                      onPressed: () => _choisirPresetBanniere('https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=1600&q=80'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Carte 2 : Choix du Modèle Visuel
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.palette_rounded, color: Color(0xFF4F46E5), size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text('Modèle Visuel & Style de Design', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                for (final m in ModeleVitrine.values)
+                  RadioListTile<ModeleVitrine>(
+                    contentPadding: EdgeInsets.zero,
+                    value: m,
+                    groupValue: _modeleChoisi,
+                    title: Text(m.titre, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    subtitle: Text(m.description, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    activeColor: AppColors.green,
+                    onChanged: (v) {
+                      if (v != null) setState(() => _modeleChoisi = v);
+                    },
+                  ),
+                const Divider(),
+                const SizedBox(height: 6),
+                const Text('Palette de couleurs :', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Commercial Vert'),
+                      selected: _styleChoisi == ThemeStyle.commercialVert,
+                      onSelected: (s) => setState(() => _styleChoisi = ThemeStyle.commercialVert),
+                    ),
+                    ChoiceChip(
+                      label: const Text('Luxe Or & Noir'),
+                      selected: _styleChoisi == ThemeStyle.luxeOr,
+                      onSelected: (s) => setState(() => _styleChoisi = ThemeStyle.luxeOr),
+                    ),
+                    ChoiceChip(
+                      label: const Text('Élégant Beige'),
+                      selected: _styleChoisi == ThemeStyle.elegantBeige,
+                      onSelected: (s) => setState(() => _styleChoisi = ThemeStyle.elegantBeige),
+                    ),
+                    ChoiceChip(
+                      label: const Text('Moderne Minimal'),
+                      selected: _styleChoisi == ThemeStyle.moderneMinimal,
+                      onSelected: (s) => setState(() => _styleChoisi = ThemeStyle.moderneMinimal),
+                    ),
+                    ChoiceChip(
+                      label: const Text('Naturel Chaud'),
+                      selected: _styleChoisi == ThemeStyle.naturelChaud,
+                      onSelected: (s) => setState(() => _styleChoisi = ThemeStyle.naturelChaud),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Carte 3 : Organisation des Sections Actives
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.layers_rounded, color: Color(0xFFD97706), size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text('Organisation des Sections', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 SwitchListTile(
-                  title: const Text('Prestations & Tarifs'),
-                  subtitle: const Text('Affiche vos services, coiffures et tarifs'),
-                  value: sections.prestations,
-                  onChanged: (v) {
-                    final maj = vitrine.copyWith(sections: sections.copyWith(prestations: v, tarifs: v));
-                    ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
-                  },
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Bannière Hero d'Accueil', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: const Text('Grande photo de couverture avec slogan et boutons WhatsApp', style: TextStyle(fontSize: 11)),
+                  value: _sections.hero,
+                  activeThumbColor: AppColors.green,
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(hero: v)),
                 ),
                 SwitchListTile(
-                  title: const Text('Produits & Vente'),
-                  subtitle: const Text('Affiche vos articles et panier de commande WhatsApp'),
-                  value: sections.produits,
-                  onChanged: (v) {
-                    final maj = vitrine.copyWith(sections: sections.copyWith(produits: v));
-                    ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
-                  },
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Bandeau de Réassurance', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: const Text('4 icônes : Livraison rapide, Paiement sécurisé, Retours, Support', style: TextStyle(fontSize: 11)),
+                  value: _sections.reassurance,
+                  activeThumbColor: AppColors.green,
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(reassurance: v)),
                 ),
                 SwitchListTile(
-                  title: const Text('Galerie de Réalisations'),
-                  subtitle: const Text('Affiche les photos de vos travaux et avant/après'),
-                  value: sections.galerie,
-                  onChanged: (v) {
-                    final maj = vitrine.copyWith(sections: sections.copyWith(galerie: v));
-                    ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
-                  },
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Catégories & Rayons', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: const Text('Pastilles rondes avec icônes par catégorie', style: TextStyle(fontSize: 11)),
+                  value: _sections.categories,
+                  activeThumbColor: AppColors.green,
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(categories: v)),
                 ),
                 SwitchListTile(
-                  title: const Text('Présentation de l\'Équipe'),
-                  subtitle: const Text('Affiche les professionnels du salon'),
-                  value: sections.equipe,
-                  onChanged: (v) {
-                    final maj = vitrine.copyWith(sections: sections.copyWith(equipe: v));
-                    ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
-                  },
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Produits en Vitrine', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: const Text('Grille de produits avec photos, prix et commandes WhatsApp', style: TextStyle(fontSize: 11)),
+                  value: _sections.produits,
+                  activeThumbColor: AppColors.green,
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(produits: v)),
                 ),
                 SwitchListTile(
-                  title: const Text('Prise de Rendez-vous'),
-                  subtitle: const Text('Permet aux clients de réserver directement'),
-                  value: sections.rdv,
-                  onChanged: (v) {
-                    final maj = vitrine.copyWith(sections: sections.copyWith(rdv: v));
-                    ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
-                  },
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Galerie Photos de Réalisations', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: const Text('Portfolio de vos réalisations et avant/après', style: TextStyle(fontSize: 11)),
+                  value: _sections.galerie,
+                  activeThumbColor: AppColors.green,
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(galerie: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Avis & Témoignages Clients', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  subtitle: const Text('Cartes d'avis 5 étoiles pour inspirer confiance', style: TextStyle(fontSize: 11)),
+                  value: _sections.temoignages,
+                  activeThumbColor: AppColors.green,
+                  onChanged: (v) => setState(() => _sections = _sections.copyWith(temoignages: v)),
                 ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF0F172A),
-            padding: const EdgeInsets.symmetric(vertical: 14),
+
+        // Bouton d'enregistrement
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: _enSauvegarde
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Icon(Icons.check_circle_rounded),
+            label: Text(
+              _enSauvegarde ? 'Enregistrement en cours...' : 'Enregistrer l'apparence',
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+            ),
+            onPressed: _enSauvegarde ? null : _enregistrerApparence,
           ),
-          icon: const Icon(Icons.tune_rounded),
-          label: const Text('Relancer le créateur complet (Wizard 8 étapes)'),
-          onPressed: () => context.push(Routes.vitrineWizard),
         ),
       ],
     );
   }
 }
+
+class _OngletInfosBoutique extends ConsumerStatefulWidget {
+  const _OngletInfosBoutique({required this.vitrine});
+  final VitrineConfig vitrine;
+
+  @override
+  ConsumerState<_OngletInfosBoutique> createState() => _OngletInfosBoutiqueState();
+}
+
+class _OngletInfosBoutiqueState extends ConsumerState<_OngletInfosBoutique> {
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _telCtrl;
+  late final TextEditingController _whatsappCtrl;
+  late final TextEditingController _adresseCtrl;
+  late final TextEditingController _villeCtrl;
+  late final TextEditingController _facebookCtrl;
+  late final TextEditingController _instagramCtrl;
+  late final TextEditingController _tiktokCtrl;
+  late final TextEditingController _horairesCtrl;
+  late final TextEditingController _paiementCtrl;
+  late final TextEditingController _livraisonCtrl;
+  bool _enSauvegarde = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final v = widget.vitrine;
+    final r = v.reseauxSociaux;
+
+    _descCtrl = TextEditingController(text: v.description ?? '');
+    _telCtrl = TextEditingController(text: v.telephone ?? '');
+    _whatsappCtrl = TextEditingController(text: v.contactWhatsapp ?? '');
+    _adresseCtrl = TextEditingController(text: v.adressePhysique ?? '');
+    _villeCtrl = TextEditingController(text: v.ville ?? '');
+    _facebookCtrl = TextEditingController(text: r['facebook']?.toString() ?? '');
+    _instagramCtrl = TextEditingController(text: r['instagram']?.toString() ?? '');
+    _tiktokCtrl = TextEditingController(text: r['tiktok']?.toString() ?? '');
+    _horairesCtrl = TextEditingController(text: r['horaires']?.toString() ?? 'Lundi - Samedi : 08h30 - 20h00
+Dimanche : 10h00 - 18h00');
+    _paiementCtrl = TextEditingController(text: r['paiement']?.toString() ?? 'Orange Money, Wave, Espèces à la livraison');
+    _livraisonCtrl = TextEditingController(text: r['livraison']?.toString() ?? 'Livraison rapide à Bamako en 2h. Expédition en région sous 24h.');
+  }
+
+  @override
+  void dispose() {
+    _descCtrl.dispose();
+    _telCtrl.dispose();
+    _whatsappCtrl.dispose();
+    _adresseCtrl.dispose();
+    _villeCtrl.dispose();
+    _facebookCtrl.dispose();
+    _instagramCtrl.dispose();
+    _tiktokCtrl.dispose();
+    _horairesCtrl.dispose();
+    _paiementCtrl.dispose();
+    _livraisonCtrl.dispose();
+    super.dispose();
+  }
+
+  void _remplirTexteType() {
+    final act = widget.vitrine.typeActivite;
+    final nom = widget.vitrine.nomBoutique.isNotEmpty ? widget.vitrine.nomBoutique : 'notre établissement';
+    if (act == TypeActivite.salonCoiffure || act == TypeActivite.beauteEsthetique) {
+      _descCtrl.text = 'Bienvenue chez $nom, votre salon de référence pour sublimer votre beauté. Nous sommes spécialisés dans les tresses soignées, la pose de perruques invisibles et les soins capillaires personnalisés avec des produits haut de gamme.';
+    } else if (act == TypeActivite.boutiqueTech) {
+      _descCtrl.text = 'Bienvenue chez $nom, votre expert en smartphones, accessoires high-tech et gadgets innovants à Bamako. Tous nos produits sont certifiés authentiques, garantis avec service après-vente dédié et livraison express.';
+    } else {
+      _descCtrl.text = 'Bienvenue chez $nom ! Découvrez notre large gamme d\'articles de qualité sélectionnés avec soin au meilleur prix. Service client à votre écoute 7j/7 et livraison rapide partout.';
+    }
+    setState(() {});
+  }
+
+  Future<void> _enregistrerInfos() async {
+    setState(() => _enSauvegarde = true);
+    final v = widget.vitrine;
+    final reseaux = Map<String, dynamic>.from(v.reseauxSociaux);
+    reseaux['facebook'] = _facebookCtrl.text.trim();
+    reseaux['instagram'] = _instagramCtrl.text.trim();
+    reseaux['tiktok'] = _tiktokCtrl.text.trim();
+    reseaux['horaires'] = _horairesCtrl.text.trim();
+    reseaux['paiement'] = _paiementCtrl.text.trim();
+    reseaux['livraison'] = _livraisonCtrl.text.trim();
+
+    final maj = v.copyWith(
+      description: _descCtrl.text.trim().isNotEmpty ? _descCtrl.text.trim() : null,
+      telephone: _telCtrl.text.trim().isNotEmpty ? _telCtrl.text.trim() : null,
+      contactWhatsapp: _whatsappCtrl.text.trim().isNotEmpty ? _whatsappCtrl.text.trim() : null,
+      adressePhysique: _adresseCtrl.text.trim().isNotEmpty ? _adresseCtrl.text.trim() : null,
+      ville: _villeCtrl.text.trim().isNotEmpty ? _villeCtrl.text.trim() : null,
+      reseauxSociaux: reseaux,
+    );
+
+    await ref.read(vitrineActuelleProvider.notifier).sauvegarder(maj);
+    if (mounted) {
+      setState(() => _enSauvegarde = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Informations de la boutique enregistrées avec succès !'),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Carte 1 : À propos de nous
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('À propos de votre boutique', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                    TextButton.icon(
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF4F46E5)),
+                      label: const Text('Texte type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF4F46E5))),
+                      onPressed: _remplirTexteType,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _descCtrl,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Présentation de votre entreprise',
+                    hintText: 'Racontez votre histoire, votre savoir-faire et vos engagements...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Carte 2 : Coordonnées directes & Réseaux
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Coordonnées & Réseaux Sociaux', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _whatsappCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'WhatsApp direct *',
+                          hintText: '+223 70 00 00 00',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF25D366)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _telCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'Téléphone direct',
+                          hintText: '+223 60 00 00 00',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: TextFormField(
+                        controller: _adresseCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Adresse physique',
+                          hintText: 'Quartier, Rue, Porte',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.location_on_outlined),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 4,
+                      child: TextFormField(
+                        controller: _villeCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Ville',
+                          hintText: 'Bamako',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _facebookCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Lien Page Facebook',
+                    hintText: 'https://facebook.com/maboutique',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _instagramCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Lien Profil Instagram',
+                    hintText: 'https://instagram.com/maboutique',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _tiktokCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Lien Compte TikTok',
+                    hintText: 'https://tiktok.com/@maboutique',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Carte 3 : Horaires, Paiement & Livraison
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Horaires, Paiement & Livraison', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _horairesCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Horaires d'ouverture',
+                    hintText: 'Ex: Lundi - Samedi : 08h30 - 20h00',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _paiementCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Moyens de paiement acceptés',
+                    hintText: 'Orange Money, Wave, Espèces à la livraison',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _livraisonCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Conditions & Zones de livraison',
+                    hintText: 'Livraison express à Bamako en 2h. Expédition sous 24h.',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Bouton d'enregistrement
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: _enSauvegarde
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Icon(Icons.check_circle_rounded),
+            label: Text(
+              _enSauvegarde ? 'Enregistrement en cours...' : 'Enregistrer les informations',
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+            ),
+            onPressed: _enSauvegarde ? null : _enregistrerInfos,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 
 // =============================================================================
 // ONGLET BIENS IMMOBILIERS (MODÈLE IMMOBILIER TYPE HAVENLY)
@@ -2871,96 +3913,46 @@ class _StudioPrevisualisationDialogState extends State<_StudioPrevisualisationDi
           ),
           child: Column(
             children: [
-              // 1. Barre d'outils du studio (Adaptive & Anti-débordement)
+              // 1. Barre supérieure compacte & anti-débordement
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isSmall = constraints.maxWidth < 620;
-
-                    if (isSmall) {
-                      return Column(
+                child: Row(
+                  children: [
+                    const Icon(Icons.preview_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Aperçu du site',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Boutons sélecteurs de format (icônes compactes)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.preview_rounded, color: Colors.white, size: 18),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  'Studio de Prévisualisation',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          SizedBox(
-                            width: double.infinity,
-                            child: SegmentedButton<int>(
-                              segments: const [
-                                ButtonSegment(value: 0, icon: Icon(Icons.smartphone_rounded, size: 14), label: Text('Mobile', style: TextStyle(fontSize: 10))),
-                                ButtonSegment(value: 1, icon: Icon(Icons.tablet_rounded, size: 14), label: Text('Tablette', style: TextStyle(fontSize: 10))),
-                                ButtonSegment(value: 2, icon: Icon(Icons.computer_rounded, size: 14), label: Text('PC', style: TextStyle(fontSize: 10))),
-                              ],
-                              selected: {_modeEcran},
-                              onSelectionChanged: (val) => setState(() => _modeEcran = val.first),
-                              style: SegmentedButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
-                                backgroundColor: const Color(0xFF1E293B),
-                                selectedBackgroundColor: AppColors.green,
-                                foregroundColor: Colors.white,
-                                selectedForegroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
+                          _buildDeviceBtn(0, Icons.smartphone_rounded, 'Mobile'),
+                          _buildDeviceBtn(1, Icons.tablet_rounded, 'Tablette'),
+                          _buildDeviceBtn(2, Icons.computer_rounded, 'PC'),
                         ],
-                      );
-                    }
-
-                    return Row(
-                      children: [
-                        const Icon(Icons.preview_rounded, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Studio de Prévisualisation • Vérifiez votre site avant de partager',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SegmentedButton<int>(
-                          segments: const [
-                            ButtonSegment(value: 0, icon: Icon(Icons.smartphone_rounded, size: 16), label: Text('Mobile', style: TextStyle(fontSize: 11))),
-                            ButtonSegment(value: 1, icon: Icon(Icons.tablet_rounded, size: 16), label: Text('Tablette', style: TextStyle(fontSize: 11))),
-                            ButtonSegment(value: 2, icon: Icon(Icons.computer_rounded, size: 16), label: Text('PC', style: TextStyle(fontSize: 11))),
-                          ],
-                          selected: {_modeEcran},
-                          onSelectionChanged: (val) => setState(() => _modeEcran = val.first),
-                          style: SegmentedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E293B),
-                            selectedBackgroundColor: AppColors.green,
-                            foregroundColor: Colors.white,
-                            selectedForegroundColor: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
                 ),
               ),
 
@@ -2995,107 +3987,51 @@ class _StudioPrevisualisationDialogState extends State<_StudioPrevisualisationDi
                 ),
               ),
 
-              // 3. Barre inférieure d'actions de partage (100% Anti-débordement)
+              // 3. Barre inférieure anti-débordement
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: const BoxDecoration(
                   color: Color(0xFF0F172A),
                   border: Border(top: BorderSide(color: Color(0xFF1E293B))),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isSmall = constraints.maxWidth < 620;
-
-                    if (isSmall) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Lien public : ${v.urlPublique}',
-                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: const BorderSide(color: Color(0xFF475569)),
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                                  ),
-                                  icon: const Icon(Icons.copy_rounded, size: 14),
-                                  label: const Text('Copier', style: TextStyle(fontSize: 12)),
-                                  onPressed: () {
-                                    Clipboard.setData(ClipboardData(text: v.urlPublique));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Lien copié dans le presse-papier !'), backgroundColor: AppColors.green),
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: FilledButton.icon(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFF25D366),
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                                  ),
-                                  icon: const Icon(Icons.share_rounded, size: 14),
-                                  label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    final texte = 'Bonjour ! Découvrez notre site officiel ici : ${v.urlPublique}';
-                                    launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}'), mode: LaunchMode.externalApplication);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }
-
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Lien public : ${v.urlPublique}',
-                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Color(0xFF475569)),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Color(0xFF475569)),
-                          ),
-                          icon: const Icon(Icons.copy_rounded, size: 16),
-                          label: const Text('Copier le lien'),
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: v.urlPublique));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Lien copié dans le presse-papier !'), backgroundColor: AppColors.green),
-                            );
-                          },
+                        icon: const Icon(Icons.copy_rounded, size: 14),
+                        label: const Text('Copier le lien', style: TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: v.urlPublique));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Lien copié dans le presse-papier !'), backgroundColor: AppColors.green),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF25D366),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        const SizedBox(width: 10),
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
-                          icon: const Icon(Icons.share_rounded, size: 16),
-                          label: const Text('Partager sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w800)),
-                          onPressed: () {
-                            Navigator.pop(context);
-                            final texte = 'Bonjour ! Découvrez notre site officiel ici : ${v.urlPublique}';
-                            launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}'), mode: LaunchMode.externalApplication);
-                          },
-                        ),
-                      ],
-                    );
-                  },
+                        icon: const Icon(Icons.share_rounded, size: 14),
+                        label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          final texte = 'Bonjour ! Découvrez notre site officiel ici : ${v.urlPublique}';
+                          launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(texte)}'), mode: LaunchMode.externalApplication);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -3104,5 +4040,20 @@ class _StudioPrevisualisationDialogState extends State<_StudioPrevisualisationDi
       ),
     );
   }
-}
 
+  Widget _buildDeviceBtn(int mode, IconData icone, String label) {
+    final actif = _modeEcran == mode;
+    return InkWell(
+      onTap: () => setState(() => _modeEcran = mode),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: actif ? AppColors.green : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(icone, size: 16, color: actif ? Colors.white : const Color(0xFF94A3B8)),
+      ),
+    );
+  }
+}

@@ -1006,11 +1006,11 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
       (Icons.local_shipping_outlined, 'Livraison Rapide', 'À domicile & points relais'),
       (Icons.security_outlined, 'Paiement Sécurisé', 'À la livraison, OM, Wave, Cash'),
       (Icons.published_with_changes_rounded, 'Retours Faciles', 'Échange garanti sous 48h'),
-      (Icons.headset_mic_outlined, 'Service Client 24/7', 'Assistance WhatsApp directe'),
+      (Icons.headset_mic_outlined, 'Service Client 7j/7', 'Assistance WhatsApp directe'),
     ];
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: style.secondaire.withValues(alpha: 0.15))),
@@ -1018,34 +1018,86 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1100),
-          child: Wrap(
-            spacing: 24,
-            runSpacing: 16,
-            alignment: WrapAlignment.spaceAround,
-            children: [
-              for (final it in items)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 680;
+              if (isSmall) {
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 2.4,
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (ctx, i) {
+                    final it = items[i];
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
-                        color: style.primaire.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: Icon(it.$1, color: style.primaire, size: 22),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: style.primaire.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(it.$1, color: style.primaire, size: 16),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(it.$2, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: style.texte), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                Text(it.$3, style: const TextStyle(color: Color(0xFF64748B), fontSize: 9), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }
+              return Row(
+                children: [
+                  for (final it in items)
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: style.primaire.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(it.$1, color: style.primaire, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(it.$2, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: style.texte)),
+                                Text(it.$3, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(it.$2, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: style.texte)),
-                        Text(it.$3, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
-                      ],
-                    ),
-                  ],
-                ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -1360,64 +1412,183 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
     );
   }
 
+  String _obtenirImageBanniereParDefaut(TypeActivite act) {
+    switch (act) {
+      case TypeActivite.salonCoiffure:
+        return 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1400&q=80';
+      case TypeActivite.cosmetiqueBeaute:
+        return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1400&q=80';
+      case TypeActivite.boutiqueTech:
+        return 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1400&q=80';
+      case TypeActivite.agenceImmobiliere:
+      case TypeActivite.immobilierLocation:
+      case TypeActivite.immobilierVente:
+        return 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1400&q=80';
+      case TypeActivite.prestataireServices:
+        return 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1400&q=80';
+      case TypeActivite.commerceGeneral:
+      case TypeActivite.boutiqueSpecialisee:
+      case TypeActivite.autre:
+        return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1400&q=80';
+    }
+  }
+
+  String _obtenirSloganParDefaut(TypeActivite act) {
+    switch (act) {
+      case TypeActivite.salonCoiffure:
+        return 'Salon de coiffure & soins capillaires d\'exception. Prenez rendez-vous en ligne ou contactez-nous sur WhatsApp.';
+      case TypeActivite.cosmetiqueBeaute:
+        return 'Institut de beauté & soins de la peau. Produits certifiés, rituels bien-être et conseils sur-mesure.';
+      case TypeActivite.boutiqueTech:
+        return 'Smartphones, accessoires & gadgets high-tech certifiés. Expédition express et garantie sur tous nos articles.';
+      case TypeActivite.agenceImmobiliere:
+      case TypeActivite.immobilierLocation:
+      case TypeActivite.immobilierVente:
+        return 'Achat, vente & location de prestige. Découvrez nos villas et appartements soigneusement sélectionnés.';
+      case TypeActivite.prestataireServices:
+        return 'Services professionnels, devis transparents et interventions soignées par des spécialistes qualifiés.';
+      case TypeActivite.commerceGeneral:
+      case TypeActivite.boutiqueSpecialisee:
+      case TypeActivite.autre:
+        return 'Découvrez notre sélection exclusive d\'articles de qualité certifiée avec livraison rapide partout au Mali.';
+    }
+  }
+
   Widget _buildHeroSection(VitrineConfig vitrine, ThemeStyle style, bool isDesktop) {
+    final String bgImage = (vitrine.banniereUrl != null && vitrine.banniereUrl!.isNotEmpty)
+        ? MediaHybridResolver.resolvePublicUrl(vitrine.banniereUrl!)
+        : _obtenirImageBanniereParDefaut(vitrine.typeActivite);
+
+    final nomBoutique = (vitrine.titreHero != null && vitrine.titreHero!.isNotEmpty)
+        ? vitrine.titreHero!
+        : 'DubaMali';
+
+    final sloganBoutique = (vitrine.slogan != null && vitrine.slogan!.isNotEmpty)
+        ? vitrine.slogan!
+        : _obtenirSloganParDefaut(vitrine.typeActivite);
+
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 280),
+      constraints: BoxConstraints(minHeight: isDesktop ? 480 : 380),
       decoration: BoxDecoration(
-        color: style.fond,
-        image: vitrine.banniereUrl != null && vitrine.banniereUrl!.isNotEmpty
-            ? DecorationImage(
-                image: NetworkImage(MediaHybridResolver.resolvePublicUrl(vitrine.banniereUrl!)),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.55), BlendMode.darken),
-              )
-            : null,
+        color: const Color(0xFF0F172A),
+        image: DecorationImage(
+          image: NetworkImage(bgImage),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.65), BlendMode.darken),
+        ),
       ),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-          constraints: const BoxConstraints(maxWidth: 800),
+          padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 20, vertical: isDesktop ? 60 : 36),
+          constraints: const BoxConstraints(maxWidth: 900),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: style.primaire.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: style.primaire.withValues(alpha: 0.5)),
-                ),
-                child: Text(
-                  vitrine.typeActivite.libelle.toUpperCase(),
-                  style: TextStyle(color: vitrine.banniereUrl != null ? Colors.white : style.primaire, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1),
-                ),
+              // 1. Badge d'activité et statut d'ouverture
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: style.primaire,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: style.primaire.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2)),
+                      ],
+                    ),
+                    child: Text(
+                      vitrine.typeActivite.libelle.toUpperCase(),
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.6)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.circle, color: Color(0xFF22C55E), size: 8),
+                        SizedBox(width: 5),
+                        Text(
+                          'Ouvert maintenant • WhatsApp 7j/7',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
-              Text(
-                vitrine.titreHero ?? 'Bienvenue',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isDesktop ? 36 : 28,
-                  fontWeight: FontWeight.w900,
-                  color: vitrine.banniereUrl != null ? Colors.white : style.texte,
-                  height: 1.2,
-                ),
-              ),
-              if (vitrine.slogan != null && vitrine.slogan!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  vitrine.slogan!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: vitrine.banniereUrl != null ? Colors.white.withValues(alpha: 0.9) : style.texte.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
+              const SizedBox(height: 18),
+
+              // 2. Logo ou initiale
+              if (vitrine.logoUrl != null && vitrine.logoUrl!.isNotEmpty)
+                Container(
+                  width: 72,
+                  height: 72,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2.5),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.network(
+                      MediaHybridResolver.resolvePublicUrl(vitrine.logoUrl!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Icon(Icons.storefront_rounded, size: 36, color: style.primaire),
+                    ),
                   ),
                 ),
-              ],
+
+              // 3. Grand Titre Hero
+              Text(
+                nomBoutique,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isDesktop ? 44 : 30,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                  height: 1.15,
+                  shadows: [
+                    Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 4. Slogan accrocheur et rassurant
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 650),
+                child: Text(
+                  sloganBoutique,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isDesktop ? 16 : 14,
+                    color: Colors.white.withValues(alpha: 0.92),
+                    fontWeight: FontWeight.w500,
+                    height: 1.45,
+                    shadows: [
+                      Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 4),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
+
+              // 5. Deux grands boutons d'action côte-à-côte
               Wrap(
                 spacing: 12,
                 runSpacing: 10,
@@ -1425,14 +1596,40 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                 children: [
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: style.primaire,
+                      backgroundColor: const Color(0xFF25D366),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 3,
+                    ),
+                    icon: const Icon(Icons.chat_rounded, size: 20),
+                    label: const Text('Commander sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                    onPressed: () {
+                      final clean = vitrine.whatsappContact.replaceAll(RegExp(r'[^0-9]'), '');
+                      final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour $nomBoutique ! Je visite votre site et souhaite commander.")}');
+                      launchUrl(uri, mode: LaunchMode.externalApplication);
+                    },
+                  ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white, width: 1.5),
+                      backgroundColor: Colors.white.withValues(alpha: 0.12),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-                    label: const Text('Commander nos produits', style: TextStyle(fontWeight: FontWeight.w800)),
-                    onPressed: () => _scrollTo(_keyProduits),
+                    label: Text(
+                      vitrine.sections.prestations ? 'Voir les prestations' : 'Voir nos produits',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                    ),
+                    onPressed: () {
+                      if (vitrine.sections.prestations) {
+                        _scrollTo(_keyPrestations);
+                      } else {
+                        _scrollTo(_keyProduits);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -2017,12 +2214,13 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                   maxCrossAxisExtent: 260,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 0.72,
+                  childAspectRatio: 0.65,
                 ),
                 itemCount: listeAffichee.length,
                 itemBuilder: (ctx, i) {
                   final p = listeAffichee[i];
                   final qte = _panier[p.id] ?? 0;
+                  final aVraiePromo = p.prixBarre != null && p.prixBarre! > p.prix;
 
                   return Container(
                     decoration: BoxDecoration(
@@ -2045,18 +2243,34 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                                 Image.network(
                                   MediaHybridResolver.resolvePublicUrl(p.photoPrincipale!),
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => const Icon(Icons.shopping_bag_outlined),
+                                  errorBuilder: (_, _, _) => Container(
+                                    color: const Color(0xFFF8FAFC),
+                                    child: Center(
+                                      child: Icon(Icons.shopping_bag_outlined, size: 36, color: style.primaire.withValues(alpha: 0.3)),
+                                    ),
+                                  ),
                                 )
                               else
-                                const Icon(Icons.shopping_bag_outlined, size: 48, color: Color(0xFF94A3B8)),
-                              if (p.prixBarre != null)
+                                Container(
+                                  color: const Color(0xFFF8FAFC),
+                                  child: Center(
+                                    child: Icon(Icons.shopping_bag_outlined, size: 40, color: style.primaire.withValues(alpha: 0.3)),
+                                  ),
+                                ),
+                              if (aVraiePromo)
                                 Positioned(
                                   top: 8,
                                   left: 8,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: const Color(0xFFDC2626), borderRadius: BorderRadius.circular(6)),
-                                    child: const Text('PROMO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDC2626),
+                                      borderRadius: BorderRadius.circular(6),
+                                      boxShadow: [
+                                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 4),
+                                      ],
+                                    ),
+                                    child: const Text('PROMO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.5)),
                                   ),
                                 ),
                             ],
@@ -2067,12 +2281,20 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 4),
+                              SizedBox(
+                                height: 36,
+                                child: Text(
+                                  p.nom,
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, height: 1.25),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Text('${p.prix} FCFA', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: style.primaire)),
-                                  if (p.prixBarre != null) ...[
+                                  Text('${p.prix} FCFA', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: style.primaire)),
+                                  if (aVraiePromo) ...[
                                     const SizedBox(width: 6),
                                     Text('${p.prixBarre} F', style: const TextStyle(decoration: TextDecoration.lineThrough, color: Color(0xFF94A3B8), fontSize: 11)),
                                   ],
@@ -2087,6 +2309,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                                       foregroundColor: style.primaire,
                                       side: BorderSide(color: style.primaire),
                                       padding: const EdgeInsets.symmetric(vertical: 8),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     ),
                                     icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
                                     label: const Text('Ajouter', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
