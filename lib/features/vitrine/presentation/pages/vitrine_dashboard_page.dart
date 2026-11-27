@@ -471,151 +471,360 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
   void _ouvrirSelecteurModeleRapide(BuildContext context, WidgetRef ref, VitrineConfig vitrine) {
     showModalBottomSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.sizeOf(context).height * 0.88,
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Barre de préhension
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 6),
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // En-tête
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.dashboard_customize_rounded, color: Color(0xFF16A34A), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Choisir le modèle de vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: Color(0xFF0F172A))),
+                        SizedBox(height: 2),
+                        Text('6 modèles e-commerce haute conversion & personnalisables', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Contenu défilant avec les cartes des modèles
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // 1. MobileX & TechVerse
+                  _buildCarteModeleSelection(
+                    context: context,
+                    ref: ref,
+                    vitrine: vitrine,
+                    modele: ModeleVitrine.modeleA,
+                    titre: 'Modèle 1 — MobileX & TechVerse',
+                    secteur: 'Smartphones, High-Tech, Apple & Samsung',
+                    description: 'Entête dynamique, vitrine smartphones carrée, bannières marques officielles, boutons WhatsApp & zéro overflow.',
+                    icone: Icons.phone_iphone_rounded,
+                    couleurAccent: const Color(0xFFEA580C),
+                    couleurFond: const Color(0xFFFFF7ED),
+                    activite: TypeActivite.boutiqueTech,
+                    style: ThemeStyle.commercialVert,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 2. TechNest
+                  _buildCarteModeleSelection(
+                    context: context,
+                    ref: ref,
+                    vitrine: vitrine,
+                    modele: ModeleVitrine.modeleB,
+                    titre: 'Modèle 2 — TechNest',
+                    secteur: 'Accessoires Intelligents & Électronique',
+                    description: 'Dark mode immersif, néon bleu, écouteurs, chargeurs rapides, hubs 8-en-1 et offres flash jusqu\'à -30%.',
+                    icone: Icons.headphones_rounded,
+                    couleurAccent: const Color(0xFF2563EB),
+                    couleurFond: const Color(0xFFEFF6FF),
+                    activite: TypeActivite.boutiqueTech,
+                    style: ThemeStyle.commercialVert,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 3. ASTERA
+                  _buildCarteModeleSelection(
+                    context: context,
+                    ref: ref,
+                    vitrine: vitrine,
+                    modele: ModeleVitrine.modeleD,
+                    titre: 'Modèle 3 — ASTERA',
+                    secteur: 'Mode Féminine & Prêt-à-Porter Chic',
+                    description: 'Tons pastel lilas & lavande, robes midi, tenues weekend et bureau, best sellers élégants et commande fluide.',
+                    icone: Icons.dry_cleaning_rounded,
+                    couleurAccent: const Color(0xFF7C3AED),
+                    couleurFond: const Color(0xFFF5F3FF),
+                    activite: TypeActivite.boutiqueSpecialisee,
+                    style: ThemeStyle.elegantBeige,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 4. AND SHOP
+                  _buildCarteModeleSelection(
+                    context: context,
+                    ref: ref,
+                    vitrine: vitrine,
+                    modele: ModeleVitrine.modeleE,
+                    titre: 'Modèle 4 — AND SHOP',
+                    secteur: 'Fashion Tendance & Maroquinerie',
+                    description: 'Teintes chaleureuses cognac/orange, sacs à main de qualité, vestes, prêt-à-porter coup de cœur et offres spéciales.',
+                    icone: Icons.shopping_bag_outlined,
+                    couleurAccent: const Color(0xFFEA580C),
+                    couleurFond: const Color(0xFFFFF7ED),
+                    activite: TypeActivite.boutiqueSpecialisee,
+                    style: ThemeStyle.naturelChaud,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 5. ShopEase
+                  _buildCarteModeleSelection(
+                    context: context,
+                    ref: ref,
+                    vitrine: vitrine,
+                    modele: ModeleVitrine.modeleG,
+                    titre: 'Modèle 5 — ShopEase',
+                    secteur: 'Grand Magasin & Commerce Général',
+                    description: 'Ambiance miel & sable, rayons Mode, Maison & Déco, Électronique, Beauté, Jouets et livraison locale sécurisée.',
+                    icone: Icons.storefront_rounded,
+                    couleurAccent: const Color(0xFFD97706),
+                    couleurFond: const Color(0xFFFEF3C7),
+                    activite: TypeActivite.commerceGeneral,
+                    style: ThemeStyle.naturelChaud,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 6. NovaTrend
+                  _buildCarteModeleSelection(
+                    context: context,
+                    ref: ref,
+                    vitrine: vitrine,
+                    modele: ModeleVitrine.modeleH,
+                    titre: 'Modèle 6 — NovaTrend',
+                    secteur: 'Streetwear, Sneakers & Lifestyle',
+                    description: 'Style urbain moderne noir et orange, sneakers Nike/Jordan, hoodies streetwear et promos choc.',
+                    icone: Icons.local_fire_department_rounded,
+                    couleurAccent: const Color(0xFF0F172A),
+                    couleurFond: const Color(0xFFF1F5F9),
+                    activite: TypeActivite.boutiqueSpecialisee,
+                    style: ThemeStyle.moderneMinimal,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Autres modèles (Services & Immobilier)
+                  ExpansionTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    collapsedShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    backgroundColor: Colors.white,
+                    collapsedBackgroundColor: Colors.white,
+                    leading: const Icon(Icons.room_service_outlined, color: Color(0xFF64748B)),
+                    title: const Text('Modèles Spécialisés (Services & Immobilier)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF334155))),
+                    children: [
+                      ListTile(
+                        leading: const CircleAvatar(backgroundColor: Color(0xFFFEF3C7), child: Icon(Icons.content_cut_rounded, color: Color(0xFFD97706))),
+                        title: const Text('The LUXE Studio (Salon Coiffure & Soins VIP)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                        subtitle: const Text('Prestations avec tarifs en FCFA et prise de rendez-vous'),
+                        selected: vitrine.modeleVisuel == ModeleVitrine.modeleC,
+                        trailing: OutlinedButton(
+                          onPressed: () async {
+                            Navigator.pop(ctx);
+                            await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                              activite: TypeActivite.salonCoiffure,
+                              modele: ModeleVitrine.modeleC,
+                              style: ThemeStyle.luxeOr,
+                            );
+                            if (context.mounted) _ouvrirPagePersonnalisation(context, vitrine.copyWith(modeleVisuel: ModeleVitrine.modeleC));
+                          },
+                          child: const Text('Choisir'),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const CircleAvatar(backgroundColor: Color(0xFFDCFCE7), child: Icon(Icons.apartment_rounded, color: Color(0xFF15803D))),
+                        title: const Text('Havenly (Agence & Biens Immobiliers)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                        subtitle: const Text('Villas, appartements et fiches immobilières détaillées'),
+                        selected: vitrine.modeleVisuel == ModeleVitrine.modeleF,
+                        trailing: OutlinedButton(
+                          onPressed: () async {
+                            Navigator.pop(ctx);
+                            await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                              activite: TypeActivite.agenceImmobiliere,
+                              modele: ModeleVitrine.modeleF,
+                              style: ThemeStyle.naturelChaud,
+                            );
+                            if (context.mounted) _ouvrirPagePersonnalisation(context, vitrine.copyWith(modeleVisuel: ModeleVitrine.modeleF));
+                          },
+                          child: const Text('Choisir'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCarteModeleSelection({
+    required BuildContext context,
+    required WidgetRef ref,
+    required VitrineConfig vitrine,
+    required ModeleVitrine modele,
+    required String titre,
+    required String secteur,
+    required String description,
+    required IconData icone,
+    required Color couleurAccent,
+    required Color couleurFond,
+    required TypeActivite activite,
+    required ThemeStyle style,
+  }) {
+    final estActif = vitrine.modeleVisuel == modele;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: estActif ? const Color(0xFFF0FDF4) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: estActif ? AppColors.green : const Color(0xFFE2E8F0),
+          width: estActif ? 2.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: estActif ? AppColors.green.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: couleurFond,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icone, color: couleurAccent, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Choisir le modèle de vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-                    SizedBox(height: 2),
-                    Text('6 modèles e-commerce haute conversion & modèles spécialisés', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                    Text(titre, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F172A))),
+                    const SizedBox(height: 2),
+                    Text(secteur, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: couleurAccent)),
                   ],
                 ),
               ),
-              const Divider(),
-              // 1. MobileX & TechVerse
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFFFF7ED), child: Icon(Icons.phone_iphone_rounded, color: Color(0xFFEA580C))),
-                title: const Text('Modèle 1 — MobileX & TechVerse', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Smartphones, Apple/Samsung, High-Tech & bannières marques'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleA,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.boutiqueTech,
-                    modele: ModeleVitrine.modeleA,
-                    style: ThemeStyle.commercialVert,
-                  );
-                },
+              if (estActif)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 14),
+                      SizedBox(width: 4),
+                      Text('ACTIF', style: TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w900, fontSize: 10)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(description, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, height: 1.3)),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: estActif ? AppColors.green : const Color(0xFF0F172A),
+                    foregroundColor: Colors.white,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.tune_rounded, size: 14),
+                  label: Text(
+                    estActif ? 'Personnaliser ce modèle' : 'Choisir & Personnaliser',
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                      activite: activite,
+                      modele: modele,
+                      style: style,
+                    );
+                    if (context.mounted) {
+                      _ouvrirPagePersonnalisation(context, vitrine.copyWith(modeleVisuel: modele, typeActivite: activite, themeStyle: style));
+                    }
+                  },
+                ),
               ),
-              // 2. TechNest
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFEFF6FF), child: Icon(Icons.headphones_rounded, color: Color(0xFF2563EB))),
-                title: const Text('Modèle 2 — TechNest', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Accessoires intelligents, dark mode néon bleu, trending accessories'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleB,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.boutiqueTech,
-                    modele: ModeleVitrine.modeleB,
-                    style: ThemeStyle.commercialVert,
-                  );
-                },
-              ),
-              // 3. ASTERA
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFF5F3FF), child: Icon(Icons.dry_cleaning_rounded, color: Color(0xFF7C3AED))),
-                title: const Text('Modèle 3 — ASTERA (Mode Féminine)', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Robes, tops, prêt-à-porter, teintes lilas/lavande pastel très chic'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleD,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.boutiqueSpecialisee,
-                    modele: ModeleVitrine.modeleD,
-                    style: ThemeStyle.elegantBeige,
-                  );
-                },
-              ),
-              // 4. AND SHOP
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFFFF7ED), child: Icon(Icons.shopping_bag_outlined, color: Color(0xFFEA580C))),
-                title: const Text('Modèle 4 — AND SHOP (Fashion & Maroquinerie)', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Chic urbain cognac, vestes, sacs à main, best sellers tendance'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleE,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.boutiqueSpecialisee,
-                    modele: ModeleVitrine.modeleE,
-                    style: ThemeStyle.naturelChaud,
-                  );
-                },
-              ),
-              // 5. ShopEase
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFFEF3C7), child: Icon(Icons.storefront_rounded, color: Color(0xFFD97706))),
-                title: const Text('Modèle 5 — ShopEase (Grand Magasin Général)', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Tons miel & sable, rayons Mode, Électronique, Maison & Déco, Jouets'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleG,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.commerceGeneral,
-                    modele: ModeleVitrine.modeleG,
-                    style: ThemeStyle.naturelChaud,
-                  );
-                },
-              ),
-              // 6. NovaTrend
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFF1F5F9), child: Icon(Icons.checkroom_rounded, color: Color(0xFF0F172A))),
-                title: const Text('Modèle 6 — NovaTrend (Streetwear & Sneakers)', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Streetwear moderne, sneakers, hoodies, vente flash chrono'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleH,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.boutiqueSpecialisee,
-                    modele: ModeleVitrine.modeleH,
-                    style: ThemeStyle.moderneMinimal,
-                  );
-                },
-              ),
-              const Divider(),
-              // Services & Immobilier
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFFEF3C7), child: Icon(Icons.content_cut_rounded, color: Color(0xFFD97706))),
-                title: const Text('The LUXE Studio (Salon Coiffure & Soins VIP)', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Prestations, tarifs en FCFA, rendez-vous WhatsApp, galerie avant/après'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleC,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.salonCoiffure,
-                    modele: ModeleVitrine.modeleC,
-                    style: ThemeStyle.luxeOr,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFDCFCE7), child: Icon(Icons.apartment_rounded, color: Color(0xFF15803D))),
-                title: const Text('Havenly (Agence & Biens Immobiliers)', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Villas, appartements, recherche par ville, demandes de visite'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleF,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.agenceImmobiliere,
-                    modele: ModeleVitrine.modeleF,
-                    style: ThemeStyle.naturelChaud,
-                  );
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  foregroundColor: const Color(0xFF334155),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.visibility_rounded, size: 14),
+                label: const Text('Aperçu', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                onPressed: () {
+                  _ouvrirStudioPrevisualisation(context, vitrine.copyWith(modeleVisuel: modele));
                 },
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
+  }
   }
 }
 // =============================================================================

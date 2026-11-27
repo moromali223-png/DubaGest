@@ -7,6 +7,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../domain/entities/vitrine_config.dart';
 import '../../domain/entities/vitrine_types.dart';
 import '../providers/vitrine_providers.dart';
+import 'vitrine_publique_page.dart';
 
 /// Page dédiée complète pour la personnalisation de la vitrine avec UI/UX moderne
 class VitrinePersonnalisationPage extends ConsumerStatefulWidget {
@@ -16,6 +17,124 @@ class VitrinePersonnalisationPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<VitrinePersonnalisationPage> createState() => _VitrinePersonnalisationPageState();
 }
+
+
+class _ModeleECommerceItem {
+  final ModeleVitrine modele;
+  final String titre;
+  final String nomCourt;
+  final String secteur;
+  final String description;
+  final IconData icone;
+  final Color couleurAccent;
+  final Color couleurFond;
+  final List<String> tags;
+  final String titreHeroDefaut;
+  final String sloganDefaut;
+  final ThemeStyle styleRecommande;
+
+  const _ModeleECommerceItem({
+    required this.modele,
+    required this.titre,
+    required this.nomCourt,
+    required this.secteur,
+    required this.description,
+    required this.icone,
+    required this.couleurAccent,
+    required this.couleurFond,
+    required this.tags,
+    required this.titreHeroDefaut,
+    required this.sloganDefaut,
+    required this.styleRecommande,
+  });
+}
+
+const List<_ModeleECommerceItem> _modelesECommerceDisponibles = [
+  _ModeleECommerceItem(
+    modele: ModeleVitrine.modeleA,
+    titre: 'Modèle 1 — MobileX & TechVerse',
+    nomCourt: 'MobileX & TechVerse',
+    secteur: 'Smartphones & High-Tech',
+    description: 'Spécialisé smartphones, tablettes, Apple & Samsung. Bannières marques officielles, badges de réassurance et commande WhatsApp rapide.',
+    icone: Icons.phone_iphone_rounded,
+    couleurAccent: Color(0xFFEA580C),
+    couleurFond: Color(0xFFFFF7ED),
+    tags: ['Apple & Samsung', 'Fiches Tech', 'Haute Performance'],
+    titreHeroDefaut: 'Derniers Smartphones & Haute Performance',
+    sloganDefaut: 'Vitesse exceptionnelle, design élégant et innovation au meilleur prix à Bamako.',
+    styleRecommande: ThemeStyle.commercialVert,
+  ),
+  _ModeleECommerceItem(
+    modele: ModeleVitrine.modeleB,
+    titre: 'Modèle 2 — TechNest',
+    nomCourt: 'TechNest',
+    secteur: 'Accessoires Intelligents & Électronique',
+    description: 'Dark mode immersif et néon bleu high-tech. Idéal pour écouteurs sans fil, chargeurs rapides, hubs USB-C et batteries externes.',
+    icone: Icons.headphones_rounded,
+    couleurAccent: Color(0xFF2563EB),
+    couleurFond: Color(0xFFEFF6FF),
+    tags: ['Dark Mode & Néon', 'Accessoires Tendance', 'Jusqu\'à -30%'],
+    titreHeroDefaut: 'Accessoires Intelligents pour Chaque Besoin',
+    sloganDefaut: 'Qualité premium et technologies de pointe conçues pour booster votre style de vie.',
+    styleRecommande: ThemeStyle.commercialVert,
+  ),
+  _ModeleECommerceItem(
+    modele: ModeleVitrine.modeleD,
+    titre: 'Modèle 3 — ASTERA',
+    nomCourt: 'ASTERA',
+    secteur: 'Mode Féminine & Prêt-à-Porter Chic',
+    description: 'Palette pastel lilas et lavande d\'une grande douceur. Robes de soirée, tenues de travail élégantes et looks décontractés du week-end.',
+    icone: Icons.dry_cleaning_rounded,
+    couleurAccent: Color(0xFF7C3AED),
+    couleurFond: Color(0xFFF5F3FF),
+    tags: ['Lilas & Pastel', 'Robes & Tops', 'Élégance Féminine'],
+    titreHeroDefaut: 'Style Moderne dans une Nuance Unique',
+    sloganDefaut: 'Des pièces raffinées et intemporelles pour sublimer votre quotidien.',
+    styleRecommande: ThemeStyle.elegantBeige,
+  ),
+  _ModeleECommerceItem(
+    modele: ModeleVitrine.modeleE,
+    titre: 'Modèle 4 — AND SHOP',
+    nomCourt: 'AND SHOP',
+    secteur: 'Fashion Urbain & Maroquinerie',
+    description: 'Ambiance chaleureuse aux tons cognac, vestes tendance, maroquinerie, sacs à main et tenues coup de cœur.',
+    icone: Icons.shopping_bag_outlined,
+    couleurAccent: Color(0xFFEA580C),
+    couleurFond: Color(0xFFFFF7ED),
+    tags: ['Cognac & Terracotta', 'Sacs & Maroquinerie', 'Meilleures Ventes'],
+    titreHeroDefaut: 'Vivez la Mode au Quotidien',
+    sloganDefaut: 'Jusqu\'à -50% sur une sélection exclusive de sacs et articles de mode tendance.',
+    styleRecommande: ThemeStyle.naturelChaud,
+  ),
+  _ModeleECommerceItem(
+    modele: ModeleVitrine.modeleG,
+    titre: 'Modèle 5 — ShopEase',
+    nomCourt: 'ShopEase',
+    secteur: 'Grand Magasin & Commerce Général',
+    description: 'Tons miel et sable très accueillants. Tous rayons : Mode, Maison & Déco, Électronique, Beauté, Jouets et promotions du jour.',
+    icone: Icons.storefront_rounded,
+    couleurAccent: Color(0xFFD97706),
+    couleurFond: Color(0xFFFEF3C7),
+    tags: ['Commerce Général', 'Miel & Sable', 'Multi-Catégories'],
+    titreHeroDefaut: 'Style, Qualité et Bonnes Affaires',
+    sloganDefaut: 'Tout ce dont vous avez besoin au quotidien réuni en un seul endroit au meilleur prix.',
+    styleRecommande: ThemeStyle.naturelChaud,
+  ),
+  _ModeleECommerceItem(
+    modele: ModeleVitrine.modeleH,
+    titre: 'Modèle 6 — NovaTrend',
+    nomCourt: 'NovaTrend',
+    secteur: 'Streetwear & Sneakers',
+    description: 'Style streetwear dynamique en noir et orange énergique. Sneakers Nike/Jordan, hoodies urbains, ventes flash et chrono promo.',
+    icone: Icons.local_fire_department_rounded,
+    couleurAccent: Color(0xFF0F172A),
+    couleurFond: Color(0xFFF1F5F9),
+    tags: ['Streetwear & Baskets', 'Ventes Flash', 'Noir & Orange'],
+    titreHeroDefaut: 'Streetwear Authentique & Baskets Tendance',
+    sloganDefaut: 'Les dernières sorties urbaines en exclusivité avec livraison rapide et authenticité garantie.',
+    styleRecommande: ThemeStyle.moderneMinimal,
+  ),
+];
 
 class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalisationPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
@@ -91,6 +210,81 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
     _paiementCtrl.dispose();
     _livraisonCtrl.dispose();
     super.dispose();
+  }
+
+
+  void _ouvrirApercuDirect() {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.sizeOf(context).height * 0.94,
+          constraints: const BoxConstraints(maxWidth: 480),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 25, offset: const Offset(0, 10)),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F172A),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.smartphone_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Aperçu du site — ${_modeleChoisi.titre}',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+                  child: VitrinePubliquePage(slug: widget.vitrine.slug),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _appliquerSuggestionsModele(_ModeleECommerceItem item) {
+    setState(() {
+      _modeleChoisi = item.modele;
+      _titreHeroCtrl.text = item.titreHeroDefaut;
+      _sloganCtrl.text = item.sloganDefaut;
+      _styleChoisi = item.styleRecommande;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Réglages recommandés pour ${item.nomCourt} appliqués ! Rendez-vous dans les onglets suivants pour continuer.'),
+        backgroundColor: AppColors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _choisirPresetBanniere(String url) {
@@ -245,9 +439,14 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
   }
 
   // ---------------------------------------------------------------------------
-  // ONGLET 1 : DESIGN & MODÈLE
+  // ONGLET 1 : DESIGN & MODÈLE (SÉLECTION DES 6 MODÈLES E-COMMERCE & STYLE)
   // ---------------------------------------------------------------------------
   Widget _buildOngletDesign() {
+    final itemActif = _modelesECommerceDisponibles.firstWhere(
+      (it) => it.modele == _modeleChoisi,
+      orElse: () => _modelesECommerceDisponibles.first,
+    );
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -306,7 +505,7 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
         ),
         const SizedBox(height: 14),
 
-        // Carte Partage du lien
+        // Carte Partage du lien & Aperçu direct
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -318,7 +517,23 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Lien officiel de votre site', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Lien officiel de votre site', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        foregroundColor: Colors.white,
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      ),
+                      icon: const Icon(Icons.visibility_rounded, size: 14),
+                      label: const Text('Aperçu direct', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                      onPressed: _ouvrirApercuDirect,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -372,9 +587,104 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
             ),
           ),
         ),
+        const SizedBox(height: 20),
+
+        // EN-TÊTE DE SÉLECTION DES 6 MODÈLES E-COMMERCE
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F5132), Color(0xFF198754)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: const Color(0xFF0F5132).withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.store_mall_directory_rounded, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('6 Modèles E-commerce Haute Conversion', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                    SizedBox(height: 2),
+                    Text('Sélectionnez votre type de boutique pour adapter immédiatement le design et personnaliser votre contenu.', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 14),
 
-        // Sélection du modèle visuel
+        // LISTE VISUELLE DES 6 MODÈLES E-COMMERCE
+        for (final item in _modelesECommerceDisponibles) ...[
+          _buildCarteModeleECommerce(item),
+          const SizedBox(height: 10),
+        ],
+
+        // SECTION MODÈLES SPÉCIALISÉS (SERVICES & IMMOBILIER)
+        const SizedBox(height: 10),
+        ExpansionTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          collapsedShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          backgroundColor: Colors.white,
+          collapsedBackgroundColor: Colors.white,
+          leading: const Icon(Icons.room_service_outlined, color: Color(0xFF64748B)),
+          title: const Text('Autres modèles (Services & Immobilier)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF334155))),
+          subtitle: const Text('The LUXE Studio (Salon VIP) & Havenly (Immobilier)', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  RadioListTile<ModeleVitrine>(
+                    value: ModeleVitrine.modeleC,
+                    groupValue: _modeleChoisi,
+                    activeColor: AppColors.green,
+                    title: const Text('The LUXE Studio (Salon Coiffure & Soins VIP)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    subtitle: const Text('Prestations avec tarifs en FCFA, réservation WhatsApp et galerie de réalisations', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _modeleChoisi = val);
+                    },
+                  ),
+                  RadioListTile<ModeleVitrine>(
+                    value: ModeleVitrine.modeleF,
+                    groupValue: _modeleChoisi,
+                    activeColor: AppColors.green,
+                    title: const Text('Havenly (Agence & Biens Immobiliers)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    subtitle: const Text('Catalogue de villas, appartements, recherche par ville et demandes de visite', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _modeleChoisi = val);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // CARTE DE PERSONNALISATION DE LA PALETTE DE COULEURS
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -386,36 +696,10 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Choisir le modèle visuel adapté', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                const Text('Palette de couleurs :', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
                 const SizedBox(height: 4),
-                const Text('Chaque modèle adapte la mise en page, les rayons et l\'ergonomie.', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
-                const SizedBox(height: 14),
-                for (final m in ModeleVitrine.values)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: _modeleChoisi == m ? const Color(0xFFF0FDF4) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _modeleChoisi == m ? AppColors.green : const Color(0xFFE2E8F0),
-                        width: _modeleChoisi == m ? 2 : 1,
-                      ),
-                    ),
-                    child: RadioListTile<ModeleVitrine>(
-                      value: m,
-                      groupValue: _modeleChoisi,
-                      activeColor: AppColors.green,
-                      title: Text(m.titre, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                      subtitle: Text(m.description, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _modeleChoisi = val);
-                      },
-                    ),
-                  ),
-                const Divider(),
-                const SizedBox(height: 6),
-                const Text('Palette de couleurs :', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                const SizedBox(height: 8),
+                const Text('Ajustez les teintes principales selon l\'identité visuelle de votre marque.', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -451,7 +735,190 @@ class _VitrinePersonnalisationPageState extends ConsumerState<VitrinePersonnalis
             ),
           ),
         ),
+
+        const SizedBox(height: 16),
+
+        // BOUTON POUR PASSER À LA SUITE DE LA PERSONNALISATION
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome_rounded, color: AppColors.green, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Modèle actuel : ${itemActif.nomCourt}',
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF15803D)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                label: const Text('Personnaliser le contenu (Titre, Slogan, Logo, Contacts) →', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                onPressed: () => _tabController.animateTo(1),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 30),
       ],
+    );
+  }
+
+  Widget _buildCarteModeleECommerce(_ModeleECommerceItem item) {
+    final estSelectionne = _modeleChoisi == item.modele;
+
+    return InkWell(
+      onTap: () => setState(() => _modeleChoisi = item.modele),
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: estSelectionne ? const Color(0xFFF0FDF4) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: estSelectionne ? AppColors.green : const Color(0xFFE2E8F0),
+            width: estSelectionne ? 2.5 : 1,
+          ),
+          boxShadow: estSelectionne
+              ? [
+                  BoxShadow(color: AppColors.green.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 3)),
+                ]
+              : [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 1)),
+                ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: item.couleurFond,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(item.icone, color: item.couleurAccent, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.titre,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.secteur,
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: item.couleurAccent),
+                      ),
+                    ],
+                  ),
+                ),
+                if (estSelectionne)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 14),
+                        SizedBox(width: 4),
+                        Text('SÉLECTIONNÉ', style: TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w900, fontSize: 10)),
+                      ],
+                    ),
+                  )
+                else
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    ),
+                    onPressed: () => setState(() => _modeleChoisi = item.modele),
+                    child: const Text('Choisir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.description,
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, height: 1.3),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final tag in item.tags)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: item.couleurFond,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      tag,
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: item.couleurAccent),
+                    ),
+                  ),
+              ],
+            ),
+            if (estSelectionne) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        side: const BorderSide(color: AppColors.green),
+                        foregroundColor: AppColors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      icon: const Icon(Icons.auto_fix_high_rounded, size: 14),
+                      label: const Text('Appliquer textes & couleurs suggérés', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      onPressed: () => _appliquerSuggestionsModele(item),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Aperçu direct',
+                    icon: const Icon(Icons.preview_rounded, color: Color(0xFF0F172A), size: 18),
+                    onPressed: _ouvrirApercuDirect,
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
