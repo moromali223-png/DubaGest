@@ -48,6 +48,21 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
   final _keyBiens = GlobalKey();
   final _keyContact = GlobalKey();
 
+  String _formaterPrix(int montant, [bool avecDevise = true]) {
+    final s = montant.toString();
+    final len = s.length;
+    if (len <= 3) return avecDevise ? '$s FCFA' : '$s F';
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = len - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i != 0) buffer.write(' ');
+    }
+    final formatted = buffer.toString().split('').reversed.join('');
+    return avecDevise ? '$formatted FCFA' : '$formatted F';
+  }
+
   void _scrollTo(GlobalKey key) {
     final ctx = key.currentContext;
     if (ctx != null) {
@@ -1469,179 +1484,340 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
         ? vitrine.slogan!
         : _obtenirSloganParDefaut(vitrine.typeActivite);
 
+    // Produits phares mis en avant dans le Hero (Style VIVA / TechVerse)
+    final produitsPharesHero = [
+      (
+        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&q=80',
+        'Casque Audio ANC Pro',
+        18500,
+        25000,
+      ),
+      (
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+        'Smartwatch Sport HD',
+        28000,
+        38000,
+      ),
+      (
+        'https://images.unsplash.com/photo-1609592806596-b38466632488?w=500&q=80',
+        'Power Bank 65W 20k',
+        14500,
+        19000,
+      ),
+      (
+        'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80',
+        'Sac Citadin Cuir',
+        25000,
+        35000,
+      ),
+    ];
+
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(minHeight: isDesktop ? 480 : 380),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        image: DecorationImage(
-          image: NetworkImage(bgImage),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.65), BlendMode.darken),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF064E3B), // Vert Forêt Émeraude profond
+            Color(0xFF0F172A), // Ardoise foncée élégante
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Center(
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 20, vertical: isDesktop ? 60 : 36),
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 1. Badge d'activité et statut d'ouverture
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: style.primaire,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: style.primaire.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2)),
-                      ],
-                    ),
-                    child: Text(
-                      vitrine.typeActivite.libelle.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.8),
-                    ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 48 : 20,
+              vertical: isDesktop ? 48 : 28,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Disposition responsive : 2 colonnes sur Desktop, 1 colonne sur Mobile
+                if (isDesktop)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Colonne Gauche : Textes & Call-to-actions
+                      Expanded(
+                        flex: 6,
+                        child: _buildHeroContenuGauche(vitrine, nomBoutique, sloganBoutique, style, isDesktop),
+                      ),
+                      const SizedBox(width: 40),
+                      // Colonne Droite : Showcase Produits Visuels VIVA
+                      Expanded(
+                        flex: 5,
+                        child: _buildHeroShowcaseDesktop(produitsPharesHero, vitrine),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeroContenuGauche(vitrine, nomBoutique, sloganBoutique, style, isDesktop),
+                      const SizedBox(height: 22),
+                      _buildHeroShowcaseMobile(produitsPharesHero, vitrine),
+                    ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.6)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.circle, color: Color(0xFF22C55E), size: 8),
-                        SizedBox(width: 5),
-                        Text(
-                          'Ouvert maintenant • WhatsApp 7j/7',
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
 
-              // 2. Logo ou initiale
-              if (vitrine.logoUrl != null && vitrine.logoUrl!.isNotEmpty)
+                const SizedBox(height: 18),
+                // Bandeau micro-rassurance intégré
                 Container(
-                  width: 72,
-                  height: 72,
-                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.5),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                   ),
-                  child: ClipOval(
-                    child: Image.network(
-                      MediaHybridResolver.resolvePublicUrl(vitrine.logoUrl!),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Icon(Icons.storefront_rounded, size: 36, color: style.primaire),
-                    ),
-                  ),
-                ),
-
-              // 3. Grand Titre Hero
-              Text(
-                nomBoutique,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isDesktop ? 44 : 30,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: -0.5,
-                  height: 1.15,
-                  shadows: [
-                    Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 8, offset: const Offset(0, 2)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // 4. Slogan accrocheur et rassurant
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 650),
-                child: Text(
-                  sloganBoutique,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: isDesktop ? 16 : 14,
-                    color: Colors.white.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w500,
-                    height: 1.45,
-                    shadows: [
-                      Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 4),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.start,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: const [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Color(0xFF22C55E), size: 14),
+                          SizedBox(width: 5),
+                          Text('Produits 100% Neufs & Testés', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.bolt_rounded, color: Color(0xFFFBBF24), size: 14),
+                          SizedBox(width: 5),
+                          Text('Livraison Express 2h à Bamako', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_rounded, color: Color(0xFF38BDF8), size: 14),
+                          SizedBox(width: 5),
+                          Text('Paiement OM / Wave / Cash', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              // 5. Deux grands boutons d'action côte-à-côte
-              Wrap(
-                spacing: 12,
-                runSpacing: 10,
-                alignment: WrapAlignment.center,
-                children: [
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF25D366),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 3,
-                    ),
-                    icon: const Icon(Icons.chat_rounded, size: 20),
-                    label: const Text('Commander sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                    onPressed: () {
-                      final clean = vitrine.whatsappContact.replaceAll(RegExp(r'[^0-9]'), '');
-                      final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour $nomBoutique ! Je visite votre site et souhaite commander.")}');
-                      launchUrl(uri, mode: LaunchMode.externalApplication);
-                    },
-                  ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white, width: 1.5),
-                      backgroundColor: Colors.white.withValues(alpha: 0.12),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 18),
-                    label: Text(
-                      vitrine.sections.prestations ? 'Voir les prestations' : 'Voir nos produits',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                    ),
-                    onPressed: () {
-                      if (vitrine.sections.prestations) {
-                        _scrollTo(_keyPrestations);
-                      } else {
-                        _scrollTo(_keyProduits);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  Widget _buildHeroContenuGauche(VitrineConfig vitrine, String nomBoutique, String sloganBoutique, ThemeStyle style, bool isDesktop) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Badge d'activité & pastille En Direct
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF22C55E).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.5)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.circle, color: Color(0xFF22C55E), size: 7),
+                  SizedBox(width: 5),
+                  Text(
+                    'DISPONIBLE EN DIRECT • WHATSAPP',
+                    style: TextStyle(color: Color(0xFF86EFAC), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.6),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Grand Titre E-Commerce
+        Text(
+          nomBoutique,
+          style: TextStyle(
+            fontSize: isDesktop ? 40 : 26,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+            letterSpacing: -0.5,
+            height: 1.15,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Slogan / Sous-titre orienté bénéfice
+        Text(
+          sloganBoutique,
+          style: TextStyle(
+            fontSize: isDesktop ? 15 : 13,
+            color: Colors.white.withValues(alpha: 0.88),
+            fontWeight: FontWeight.w500,
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Boutons d'action côte-à-côte (WhatsApp direct + Découvrir les offres)
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF25D366),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 2,
+              ),
+              icon: const Icon(Icons.chat_rounded, size: 18),
+              label: const Text('Commander sur WhatsApp', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+              onPressed: () {
+                final clean = vitrine.whatsappContact.replaceAll(RegExp(r'[^0-9]'), '');
+                final uri = Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent("Bonjour $nomBoutique ! Je souhaite commander depuis votre vitrine.")}');
+                launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white70, width: 1.2),
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+              label: const Text('Découvrir les offres', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              onPressed: () => _scrollTo(_keyProduits),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeroShowcaseDesktop(List<(String, String, int, int)> produits, VitrineConfig vitrine) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('PRODUITS POPULAIRES', style: TextStyle(color: Color(0xFF86EFAC), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              InkWell(
+                onTap: () => _scrollTo(_keyProduits),
+                child: const Text('Voir tout →', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.2,
+            ),
+            itemCount: produits.length,
+            itemBuilder: (ctx, i) {
+              final p = produits[i];
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(p.$1, width: 44, height: 44, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(p.$2, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 2),
+                          Text(_formaterPrix(p.$3), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF059669))),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroShowcaseMobile(List<(String, String, int, int)> produits, VitrineConfig vitrine) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final p in produits)
+            Container(
+              width: 175,
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(p.$1, width: 46, height: 46, fit: BoxFit.cover),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(p.$2, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text(_formaterPrix(p.$3), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF059669))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
   Widget _buildAudioPresentation(VitrineConfig vitrine, ThemeStyle style) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
