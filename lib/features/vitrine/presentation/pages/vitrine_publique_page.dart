@@ -1376,13 +1376,13 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
   // --- 4. Catégories Circulaires TechNest ---
   Widget _buildTechNestCategoryCircles() {
     final categories = [
-      ('Chargers', Icons.power_rounded),
+      ('Chargeurs', Icons.power_rounded),
       ('Cables', Icons.cable_rounded),
       ('Audio', Icons.headphones_rounded),
       ('Power Banks', Icons.battery_charging_full_rounded),
       ('Hubs & Docks', Icons.usb_rounded),
       ('Phone Cases', Icons.phone_android_rounded),
-      ('Accessories', Icons.category_rounded),
+      ('Accessoires', Icons.category_rounded),
     ];
 
     return Container(
@@ -2021,7 +2021,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
               // 1. Home
               _buildBottomNavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: 'Accueil',
                 actif: _ongletMobileIndex == 0,
                 onTap: () {
                   setState(() => _ongletMobileIndex = 0);
@@ -2032,7 +2032,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
               // 2. Categories
               _buildBottomNavItem(
                 icon: Icons.grid_view_rounded,
-                label: 'Categories',
+                label: 'Catégories',
                 actif: _ongletMobileIndex == 1,
                 onTap: () {
                   setState(() => _ongletMobileIndex = 1);
@@ -2081,7 +2081,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
               // 4. Deals
               _buildBottomNavItem(
                 icon: Icons.local_offer_outlined,
-                label: 'Deals',
+                label: 'Promos',
                 actif: _ongletMobileIndex == 2,
                 onTap: () {
                   setState(() => _ongletMobileIndex = 2);
@@ -2291,7 +2291,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                     style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A), letterSpacing: -0.3),
                   ),
                   const Text(
-                    'YOUR WORLD, CONNECTED',
+                    'VOTRE BOUTIQUE CONNECTÉE',
                     style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.6),
                   ),
                 ],
@@ -2302,12 +2302,12 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
           if (isDesktop) ...[
             const Spacer(),
             // Navigation Links Desktop
-            _buildNavTabItem('HOME', true, () => _scrollTo(_keyPrestations)),
-            _buildNavTabItem('SHOP', false, () => _scrollTo(_keyProduits)),
-            _buildNavTabItem('BRANDS', false, () => _scrollTo(_keyProduits)),
-            _buildNavTabItem('ACCESSORIES', false, () => _scrollTo(_keyProduits)),
-            _buildNavTabItem('DEALS', false, () => _scrollTo(_keyProduits)),
-            _buildNavTabItem('ABOUT US', false, () => _scrollTo(_keyContact)),
+            _buildNavTabItem('ACCUEIL', true, () => _scrollTo(_keyPrestations)),
+            _buildNavTabItem('BOUTIQUE', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('MARQUES', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('ACCESSOIRES', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('PROMOTIONS', false, () => _scrollTo(_keyProduits)),
+            _buildNavTabItem('À PROPOS', false, () => _scrollTo(_keyContact)),
             _buildNavTabItem('CONTACT', false, () => _scrollTo(_keyContact)),
           ],
 
@@ -2439,7 +2439,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
             border: Border.all(color: const Color(0xFFFDBA74)),
           ),
           child: const Text(
-            'NEW ARRIVAL',
+            'NOUVEL ARRIVAGE',
             style: TextStyle(color: Color(0xFFEA580C), fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.8),
           ),
         ),
@@ -2456,9 +2456,9 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
               letterSpacing: -0.5,
             ),
             children: [
-              TextSpan(text: 'Latest Smartphones.\n'),
+              TextSpan(text: 'Smartphones Dernier Cri.\n'),
               TextSpan(
-                text: 'Ultimate Performance.',
+                text: 'Performance Ultime.',
                 style: TextStyle(color: Color(0xFFEA580C)),
               ),
             ],
@@ -2484,7 +2484,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 2,
               ),
-              icon: const Text('SHOP NOW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, letterSpacing: 0.5)),
+              icon: const Text('COMMANDER', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, letterSpacing: 0.5)),
               label: const Icon(Icons.arrow_forward_rounded, size: 16),
               onPressed: () {
                 final clean = (vitrine.whatsapp ?? vitrine.whatsappContact).replaceAll(RegExp(r'[^0-9]'), '');
@@ -2502,7 +2502,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () => _scrollTo(_keyProduits),
-              child: const Text('EXPLORE MORE', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+              child: const Text('DÉCOUVRIR', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
             ),
           ],
         ),
@@ -2513,7 +2513,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
           spacing: 16,
           runSpacing: 8,
           children: const [
-            _MicroReassuranceItem(Icons.verified_rounded, '100% Original Products'),
+            _MicroReassuranceItem(Icons.verified_rounded, '100% Produits Neufs'),
             _MicroReassuranceItem(Icons.local_shipping_outlined, 'Livraison Express'),
             _MicroReassuranceItem(Icons.sync_rounded, 'Retours Garantis 48h'),
             _MicroReassuranceItem(Icons.security_rounded, 'Paiement Sécurisé'),
@@ -2564,9 +2564,9 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
             child: const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('UP TO', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
-                Text('25%', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFEA580C), height: 1)),
-                Text('OFF', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+                Text('JUSQU\'À', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+                Text('-25%', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFFEA580C), height: 1)),
+                Text('PROMO', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
               ],
             ),
           ),
@@ -2579,11 +2579,11 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
   Widget _buildMobileXShopByCategory(bool isDesktop) {
     final categories = [
       ('Smartphones', 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&q=80'),
-      ('Tablets', 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&q=80'),
-      ('Smartwatches', 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80'),
-      ('Accessories', 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=300&q=80'),
-      ('Cases & Covers', 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=300&q=80'),
-      ('Chargers', 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=300&q=80'),
+      ('Tablettes', 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&q=80'),
+      ('Montres', 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80'),
+      ('Accessoires', 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=300&q=80'),
+      ('Coques', 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=300&q=80'),
+      ('Chargeurs', 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=300&q=80'),
     ];
 
     return Container(
@@ -2596,14 +2596,14 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'SHOP BY CATEGORY',
+                'RAYONS & CATÉGORIES',
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.5),
               ),
               InkWell(
                 onTap: () => _scrollTo(_keyProduits),
                 child: const Row(
                   children: [
-                    Text('VIEW ALL CATEGORIES', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFFEA580C))),
+                    Text('Voir tout', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFFEA580C))),
                     SizedBox(width: 4),
                     Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFFEA580C)),
                   ],
@@ -2690,17 +2690,17 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'LIMITED TIME DEAL',
+                      'VENTE FLASH LIMITÉE',
                       style: TextStyle(color: Color(0xFFF97316), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.8),
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Best Deals on\nTop Brands',
+                      'Offres Spéciales\nGrandes Marques',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 19, height: 1.2),
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Grab amazing offers on your favorite smartphones.',
+                      'Profitez de réductions exclusives sur vos smartphones favoris.',
                       style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                       maxLines: 2,
                     ),
@@ -2720,7 +2720,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('SHOP DEALS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
+                          Text('VOIR LES OFFRES', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
                           SizedBox(width: 4),
                           Icon(Icons.arrow_forward_rounded, size: 13),
                         ],
@@ -2775,9 +2775,9 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('UP TO', style: TextStyle(fontSize: 8, color: Colors.white70)),
-                      Text('30%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFFEA580C), height: 1)),
-                      Text('OFF', style: TextStyle(fontSize: 8, color: Colors.white70)),
+                      Text('JUSQU\'À', style: TextStyle(fontSize: 7.5, color: Colors.white70)),
+                      Text('-30%', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFFEA580C), height: 1)),
+                      Text('PROMO', style: TextStyle(fontSize: 7.5, color: Colors.white70)),
                     ],
                   ),
                 ),
@@ -2798,19 +2798,24 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'POPULAR PRODUCTS',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.5),
+              const Expanded(
+                child: Text(
+                  'PRODUITS POPULAIRES',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF0F172A), letterSpacing: 0.3),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => _scrollTo(_keyProduits),
                 child: const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('VIEW ALL PRODUCTS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFFEA580C))),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFFEA580C)),
+                    Text('Voir tout', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFFEA580C))),
+                    SizedBox(width: 3),
+                    Icon(Icons.arrow_forward_rounded, size: 13, color: Color(0xFFEA580C)),
                   ],
                 ),
               ),
@@ -2924,66 +2929,114 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
     );
   }
 
-  // --- 7. "WHY CHOOSE US?" MobileX ---
+  // --- 7. "POURQUOI NOUS CHOISIR ?" MobileX (Anti-Troncature & 100% Français) ---
   Widget _buildMobileXWhyChooseUs(bool isDesktop) {
     final items = [
-      (Icons.people_alt_outlined, 'Trusted by Thousands', '50,000+ happy customers trust our service.'),
-      (Icons.verified_outlined, 'Best Prices Guaranteed', 'Find the best prices on the latest mobiles.'),
-      (Icons.support_agent_rounded, 'Expert Support', 'Get help from our experts anytime you need.'),
-      (Icons.shield_outlined, 'Warranty & Genuine', 'Official warranty on all products.'),
+      (Icons.people_alt_outlined, 'Clients 100% Satisfaits', 'Une communauté fidèle qui nous fait confiance à Bamako.'),
+      (Icons.verified_outlined, 'Meilleurs Prix Garantis', 'Les tarifs les plus avantageux sur les smartphones et accessoires.'),
+      (Icons.support_agent_rounded, 'Service Client 7j/7', 'Assistance rapide et conseils personnalisés via WhatsApp.'),
+      (Icons.shield_outlined, 'Garantie & Authenticité', 'Produits neufs certifiés, vérifiés avec échange sous 48h.'),
     ];
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 32),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 28),
       color: Colors.white,
       child: Column(
         children: [
           const Text(
-            'WHY CHOOSE US?',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.8),
+            'POURQUOI NOUS CHOISIR ?',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF0F172A), letterSpacing: 0.5),
           ),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isDesktop ? 4 : 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: isDesktop ? 2.2 : 1.8,
-            ),
-            itemCount: items.length,
-            itemBuilder: (ctx, i) {
-              final it = items[i];
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+          const SizedBox(height: 18),
+          if (!isDesktop)
+            Column(
+              children: [
+                for (final it in items)
                   Container(
-                    width: 44,
-                    height: 44,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF7ED),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFDBA74)),
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                    child: Icon(it.$1, color: const Color(0xFFEA580C), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(it.$2, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 2),
-                        Text(it.$3, style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7ED),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFFDBA74)),
+                          ),
+                          child: Icon(it.$1, color: const Color(0xFFEA580C), size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                it.$2,
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0F172A)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                it.$3,
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.3),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              );
-            },
-          ),
+              ],
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 2.2,
+              ),
+              itemCount: items.length,
+              itemBuilder: (ctx, i) {
+                final it = items[i];
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFFDBA74)),
+                      ),
+                      child: Icon(it.$1, color: const Color(0xFFEA580C), size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(it.$2, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 2),
+                          Text(it.$3, style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );
@@ -3004,11 +3057,11 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text('STAY UPDATED', style: TextStyle(color: Color(0xFFEA580C), fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                    Text('RESTEZ INFORMÉ', style: TextStyle(color: Color(0xFFEA580C), fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
                     SizedBox(height: 4),
-                    Text('Subscribe to our Newsletter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                    Text('Inscrivez-vous aux Nouveautés', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
                     SizedBox(height: 2),
-                    Text('Get the latest updates on new arrivals, exclusive deals and special offers.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5)),
+                    Text('Recevez en priorité nos promotions, arrivages et remises exclusives.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5)),
                   ],
                 ),
               ),
@@ -3028,7 +3081,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                         child: const TextField(
                           style: TextStyle(fontSize: 11),
                           decoration: InputDecoration(
-                            hintText: 'Enter your email',
+                            hintText: 'Votre adresse e-mail',
                             hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
                             border: InputBorder.none,
                             isDense: true,
@@ -3044,7 +3097,7 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                       ),
                       onPressed: () {},
-                      child: const Text('SUBSCRIBE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
+                      child: const Text('S\'INSCRIRE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900)),
                     ),
                   ],
                 ),
