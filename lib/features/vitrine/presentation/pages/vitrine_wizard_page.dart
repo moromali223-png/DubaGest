@@ -335,9 +335,13 @@ class _VitrineWizardPageState extends ConsumerState<VitrineWizardPage> {
       case ModeleVitrine.modeleD:
         return Icons.auto_awesome_rounded;
       case ModeleVitrine.modeleE:
-        return Icons.work_outline_rounded;
+        return Icons.shopping_bag_outlined;
       case ModeleVitrine.modeleF:
         return Icons.apartment_rounded;
+      case ModeleVitrine.modeleG:
+        return Icons.storefront_rounded;
+      case ModeleVitrine.modeleH:
+        return Icons.checkroom_rounded;
     }
   }
 

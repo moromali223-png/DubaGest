@@ -220,11 +220,19 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
       return _buildModeleHavenlyImmobilier(data, isDesktop, width);
     } else if (vitrine.modeleVisuel == ModeleVitrine.modeleC || vitrine.typeActivite == TypeActivite.salonCoiffure) {
       return _buildModeleLuxeStudioCoiffure(data, isDesktop, width);
-    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleD || vitrine.typeActivite == TypeActivite.cosmetiqueBeaute) {
-      return _buildModeleHollisCosmetique(data, isDesktop, width);
+    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleB) {
+      return _buildModeleTechNestMobile(data, width);
+    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleD) {
+      return _buildModeleAsteraMode(data, isDesktop, width);
+    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleE) {
+      return _buildModeleAndShopFashion(data, isDesktop, width);
+    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleG) {
+      return _buildModeleShopEaseGeneral(data, isDesktop, width);
+    } else if (vitrine.modeleVisuel == ModeleVitrine.modeleH) {
+      return _buildModeleNovaTrendStreetwear(data, isDesktop, width);
     }
 
-    // Modèle MobileX de référence (Smartphones, Tech & Accessoires haute conversion)
+    // Par défaut : Modèle 1 — MobileX (Smartphones, High-Tech & Accessoires)
     return _buildModeleMobileX(data, isDesktop, width);
   }
 
@@ -3218,6 +3226,798 @@ class _VitrinePubliquePageState extends ConsumerState<VitrinePubliquePage> {
         prix: 420000,
         photos: ['https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=500&q=80'],
       ),
+    ];
+  }
+
+
+  // ===========================================================================
+  // MODÈLE 3 : ASTERA (MODE FÉMININE & ROBES PASTEL)
+  // ===========================================================================
+
+  Widget _buildModeleAsteraMode(VitrinePubliqueData data, bool isDesktop, double width) {
+    final vitrine = data.vitrine;
+    final style = vitrine.themeStyle;
+    final tousProduits = data.produits.isNotEmpty ? data.produits : _obtenirProduitsModelesAstera(vitrine);
+    final nomBoutique = (vitrine.titreHero != null && vitrine.titreHero!.isNotEmpty) ? vitrine.titreHero! : 'ASTERA';
+
+    return Container(
+      color: const Color(0xFFFBFBFE),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Barre d'annonce pastel
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              color: const Color(0xFF1E1B4B),
+              child: const Center(
+                child: Text(
+                  'LIVRAISON GRATUITE DÈS 25 000 FCFA • NOUVELLE COLLECTION FEMME • WHATSAPP DIRECT',
+                  style: TextStyle(color: Color(0xFFDDD6FE), fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            // En-tête ASTERA
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 14),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  Text(
+                    nomBoutique.toUpperCase(),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Color(0xFF1E1B4B), letterSpacing: 2),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.search_rounded, size: 22, color: Color(0xFF4C1D95)),
+                    onPressed: () => _scrollTo(_keyProduits),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 22, color: Color(0xFF4C1D95)),
+                    onPressed: () => _scrollTo(_keyProduits),
+                  ),
+                ],
+              ),
+            ),
+
+            // Hero Banner ASTERA (Modern Style In A New Hue)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 12),
+              padding: EdgeInsets.all(isDesktop ? 36 : 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEDE9FE),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: isDesktop
+                  ? Row(
+                      children: [
+                        Expanded(flex: 6, child: _buildAsteraHeroLeft(vitrine, nomBoutique)),
+                        const SizedBox(width: 24),
+                        Expanded(flex: 5, child: _buildAsteraHeroRight()),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAsteraHeroLeft(vitrine, nomBoutique),
+                        const SizedBox(height: 18),
+                        _buildAsteraHeroRight(),
+                      ],
+                    ),
+            ),
+
+            // 6 Catégories Circulaires ASTERA (Robes, Tops, Pantalons, Co-ords, Vestes, Sacs)
+            _buildAsteraCategories(),
+
+            // 3 Bannières Inspirations (Nouveautés, Workwear, Weekend)
+            _buildAsteraBanners(isDesktop),
+
+            // Grille Best Sellers ASTERA
+            _buildAsteraBestSellers(tousProduits, vitrine, isDesktop),
+
+            // Réassurance & Footer
+            _buildMobileXWhyChooseUs(isDesktop),
+            _buildMobileXFooter(vitrine, isDesktop),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAsteraHeroLeft(VitrineConfig vitrine, String nomBoutique) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'A FRESH PERSPECTIVE ON STYLE',
+          style: TextStyle(color: Color(0xFF6D28D9), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Modern Style\nIn A New Hue',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1E1B4B), height: 1.15),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Des pièces intemporelles pour chaque instant de votre journée. Moderne, féminine et authentique.',
+          style: TextStyle(color: Color(0xFF4C1D95), fontSize: 13, height: 1.45),
+        ),
+        const SizedBox(height: 18),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF5B21B6),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          ),
+          onPressed: () => _scrollTo(_keyProduits),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('SHOP NOUVEAUTÉS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5)),
+              SizedBox(width: 6),
+              Icon(Icons.arrow_forward_rounded, size: 14),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAsteraHeroRight() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Image.network(
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80',
+        height: 220,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  Widget _buildAsteraCategories() {
+    final cats = [
+      ('Robes', 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&q=80'),
+      ('Tops', 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=300&q=80'),
+      ('Pantalons', 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=300&q=80'),
+      ('Ensembles', 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=300&q=80'),
+      ('Vestes', 'https://images.unsplash.com/photo-1544441893-675973e31985?w=300&q=80'),
+      ('Sacs', 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=300&q=80'),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      color: Colors.white,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            for (final c in cats)
+              Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: const BoxDecoration(shape: BoxShape.circle),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.network(c.$2, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(c.$1, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF1E1B4B))),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAsteraBanners(bool isDesktop) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Stack(
+                children: [
+                  Image.network('https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=500&q=80', height: 130, width: double.infinity, fit: BoxFit.cover),
+                  Container(
+                    height: 130,
+                    color: Colors.black.withValues(alpha: 0.35),
+                    padding: const EdgeInsets.all(12),
+                    alignment: Alignment.bottomLeft,
+                    child: const Text('Nouveautés\nSaison', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Stack(
+                children: [
+                  Image.network('https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&q=80', height: 130, width: double.infinity, fit: BoxFit.cover),
+                  Container(
+                    height: 130,
+                    color: Colors.black.withValues(alpha: 0.35),
+                    padding: const EdgeInsets.all(12),
+                    alignment: Alignment.bottomLeft,
+                    child: const Text('Workwear\nChic', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAsteraBestSellers(List<ProduitCataloguePublic> produits, VitrineConfig vitrine, bool isDesktop) {
+    return Container(
+      key: _keyProduits,
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Best Sellers', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Color(0xFF1E1B4B))),
+          const SizedBox(height: 14),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isDesktop ? 4 : 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.62,
+            ),
+            itemCount: produits.length,
+            itemBuilder: (ctx, i) {
+              final p = produits[i];
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFEDE9FE)),
+                ),
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: (p.photoPrincipale != null && p.photoPrincipale!.isNotEmpty)
+                            ? Image.network(MediaHybridResolver.resolvePublicUrl(p.photoPrincipale!), fit: BoxFit.cover, width: double.infinity)
+                            : Container(color: const Color(0xFFF5F3FF), child: const Center(child: Icon(Icons.dry_cleaning_rounded, color: Color(0xFF7C3AED)))),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF1E1B4B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Text(_formaterPrix(p.prix), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF6D28D9))),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF6D28D9),
+                          side: const BorderSide(color: Color(0xFFDDD6FE)),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => _ajouterAuPanier(p.id),
+                        child: const Text('Commander', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // MODÈLE 4 : AND SHOP (FASHION TENDANCE & MAROQUINERIE)
+  // ===========================================================================
+
+  Widget _buildModeleAndShopFashion(VitrinePubliqueData data, bool isDesktop, double width) {
+    final vitrine = data.vitrine;
+    final tousProduits = data.produits.isNotEmpty ? data.produits : _obtenirProduitsModelesAndShop(vitrine);
+    final nomBoutique = (vitrine.titreHero != null && vitrine.titreHero!.isNotEmpty) ? vitrine.titreHero! : 'AND SHOP';
+
+    return Container(
+      color: Colors.white,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Bar orange
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              color: const Color(0xFFC2410C),
+              child: const Center(
+                child: Text(
+                  'LIVRAISON GRATUITE DÈS 30 000 FCFA • RETOURS 48H • NOUVELLE SAISON FASHION',
+                  style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            // Header AND SHOP
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 14),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(color: const Color(0xFFEA580C), borderRadius: BorderRadius.circular(6)),
+                    child: const Text('AND', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    nomBoutique,
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A)),
+                  ),
+                  const Spacer(),
+                  IconButton(icon: const Icon(Icons.shopping_bag_outlined), onPressed: () => _scrollTo(_keyProduits)),
+                ],
+              ),
+            ),
+
+            // Hero AND SHOP (Live For Fashion)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 10),
+              padding: EdgeInsets.all(isDesktop ? 32 : 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFED7AA)),
+              ),
+              child: isDesktop
+                  ? Row(
+                      children: [
+                        Expanded(flex: 6, child: _buildAndShopHeroContent(vitrine, nomBoutique)),
+                        const SizedBox(width: 24),
+                        Expanded(flex: 5, child: _buildAndShopHeroImage()),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAndShopHeroContent(vitrine, nomBoutique),
+                        const SizedBox(height: 16),
+                        _buildAndShopHeroImage(),
+                      ],
+                    ),
+            ),
+
+            // Best Sellers
+            Container(
+              key: _keyProduits,
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('BEST SELLERS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A), letterSpacing: 0.5)),
+                  const SizedBox(height: 14),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isDesktop ? 4 : 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.62,
+                    ),
+                    itemCount: tousProduits.length,
+                    itemBuilder: (ctx, i) {
+                      final p = tousProduits[i];
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: (p.photoPrincipale != null && p.photoPrincipale!.isNotEmpty)
+                                    ? Image.network(MediaHybridResolver.resolvePublicUrl(p.photoPrincipale!), fit: BoxFit.cover, width: double.infinity)
+                                    : Container(color: const Color(0xFFFFF7ED), child: const Center(child: Icon(Icons.shopping_bag_outlined, color: Color(0xFFEA580C)))),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            const SizedBox(height: 4),
+                            Text(_formaterPrix(p.prix), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFFEA580C))),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFFEA580C),
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: () => _ajouterAuPanier(p.id),
+                                child: const Text('Commander', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // Footer
+            _buildMobileXWhyChooseUs(isDesktop),
+            _buildMobileXFooter(vitrine, isDesktop),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAndShopHeroContent(VitrineConfig vitrine, String nomBoutique) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('NOUVELLE SAISON', style: TextStyle(color: Color(0xFFEA580C), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+        const SizedBox(height: 6),
+        const Text('LIVE FOR\nFASHION', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), height: 1.15)),
+        const SizedBox(height: 6),
+        const Text('JUSQU\'À -50% SUR LES SÉLECTIONS TENDANCES', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFFC2410C))),
+        const SizedBox(height: 14),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEA580C), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10)),
+          onPressed: () => _scrollTo(_keyProduits),
+          child: const Text('SHOP NOW →', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAndShopHeroImage() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Image.network('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80', height: 200, width: double.infinity, fit: BoxFit.cover),
+    );
+  }
+
+  // ===========================================================================
+  // MODÈLE 5 : SHOPEASE (GRAND MAGASIN & COMMERCE GÉNÉRAL)
+  // ===========================================================================
+
+  Widget _buildModeleShopEaseGeneral(VitrinePubliqueData data, bool isDesktop, double width) {
+    final vitrine = data.vitrine;
+    final tousProduits = data.produits.isNotEmpty ? data.produits : _obtenirProduitsModelesShopEase(vitrine);
+    final nomBoutique = (vitrine.titreHero != null && vitrine.titreHero!.isNotEmpty) ? vitrine.titreHero! : 'ShopEase';
+
+    return Container(
+      color: const Color(0xFFFDFBF7),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              color: const Color(0xFF78350F),
+              child: const Center(
+                child: Text(
+                  'TOUT CE DONT VOUS AVEZ BESOIN • PAIEMENT SÉCURISÉ & LIVRAISON RAPIDE',
+                  style: TextStyle(color: Color(0xFFFEF3C7), fontSize: 10.5, fontWeight: FontWeight.w800),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            // Header avec recherche
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 14),
+              color: Colors.white,
+              child: Row(
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.storefront_rounded, color: Color(0xFFB45309), size: 26),
+                      const SizedBox(width: 8),
+                      Text(nomBoutique, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 19, color: Color(0xFF451A03))),
+                    ],
+                  ),
+                  const Spacer(),
+                  IconButton(icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF78350F)), onPressed: () => _scrollTo(_keyProduits)),
+                ],
+              ),
+            ),
+
+            // Hero ShopEase
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 12),
+              padding: EdgeInsets.all(isDesktop ? 32 : 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5EBE1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('NOUVELLE COLLECTION', style: TextStyle(color: Color(0xFFB45309), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.8)),
+                  const SizedBox(height: 6),
+                  const Text('Style, qualité et\nbonnes affaires', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Color(0xFF451A03), height: 1.15)),
+                  const SizedBox(height: 6),
+                  const Text('Découvrez notre sélection de produits tendance pour tous vos besoins au meilleur prix.', style: TextStyle(color: Color(0xFF78350F), fontSize: 12)),
+                  const SizedBox(height: 14),
+                  FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB45309), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10)),
+                    onPressed: () => _scrollTo(_keyProduits),
+                    child: const Text('Magasiner maintenant →', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+
+            // Grille Produits
+            Container(
+              key: _keyProduits,
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Les plus populaires', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF451A03))),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isDesktop ? 5 : 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.64,
+                    ),
+                    itemCount: tousProduits.length,
+                    itemBuilder: (ctx, i) {
+                      final p = tousProduits[i];
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5D5C5)),
+                        ),
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: (p.photoPrincipale != null && p.photoPrincipale!.isNotEmpty)
+                                    ? Image.network(MediaHybridResolver.resolvePublicUrl(p.photoPrincipale!), fit: BoxFit.cover, width: double.infinity)
+                                    : Container(color: const Color(0xFFF5EBE1), child: const Center(child: Icon(Icons.shopping_bag_outlined, color: Color(0xFFB45309)))),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF451A03)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            const SizedBox(height: 4),
+                            Text(_formaterPrix(p.prix), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: Color(0xFFB45309))),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB45309), padding: const EdgeInsets.symmetric(vertical: 6), visualDensity: VisualDensity.compact),
+                                onPressed: () => _ajouterAuPanier(p.id),
+                                child: const Text('Ajouter', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            _buildMobileXWhyChooseUs(isDesktop),
+            _buildMobileXFooter(vitrine, isDesktop),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // MODÈLE 6 : NOVATREND (STREETWEAR, SNEAKERS & LIFESTYLE)
+  // ===========================================================================
+
+  Widget _buildModeleNovaTrendStreetwear(VitrinePubliqueData data, bool isDesktop, double width) {
+    final vitrine = data.vitrine;
+    final tousProduits = data.produits.isNotEmpty ? data.produits : _obtenirProduitsModelesNovaTrend(vitrine);
+    final nomBoutique = (vitrine.titreHero != null && vitrine.titreHero!.isNotEmpty) ? vitrine.titreHero! : 'NovaTrend';
+
+    return Container(
+      color: Colors.white,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              color: Colors.black,
+              child: const Center(
+                child: Text(
+                  'LIVRAISON RAPIDE PARTOUT • SOLDES D\'ÉTÉ JUSQU\'À -70% • STOCK LIMITÉ',
+                  style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            // Header NovaTrend
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 14),
+              child: Row(
+                children: [
+                  Text(nomBoutique, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.black, letterSpacing: -0.5)),
+                  const Spacer(),
+                  IconButton(icon: const Icon(Icons.shopping_bag_outlined), onPressed: () => _scrollTo(_keyProduits)),
+                ],
+              ),
+            ),
+
+            // Hero NovaTrend (Discover Products You'll Love)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 10),
+              padding: EdgeInsets.all(isDesktop ? 32 : 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('TRENDING NOW', style: TextStyle(color: Color(0xFFEA580C), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1)),
+                  const SizedBox(height: 6),
+                  const Text('Discover Products\nYou\'ll Love', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), height: 1.15)),
+                  const SizedBox(height: 6),
+                  const Text('Les articles streetwear & lifestyle les plus tendances du moment sélectionnés pour vous.', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                  const SizedBox(height: 14),
+                  FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEA580C), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10)),
+                    onPressed: () => _scrollTo(_keyProduits),
+                    child: const Text('Shop Now →', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+
+            // Grille Produits
+            Container(
+              key: _keyProduits,
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 40 : 16, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('New Arrivals & Best Sellers', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F172A))),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isDesktop ? 4 : 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.62,
+                    ),
+                    itemCount: tousProduits.length,
+                    itemBuilder: (ctx, i) {
+                      final p = tousProduits[i];
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: (p.photoPrincipale != null && p.photoPrincipale!.isNotEmpty)
+                                    ? Image.network(MediaHybridResolver.resolvePublicUrl(p.photoPrincipale!), fit: BoxFit.cover, width: double.infinity)
+                                    : Container(color: const Color(0xFFF1F5F9), child: const Center(child: Icon(Icons.checkroom_rounded, color: Color(0xFF0F172A)))),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(p.nom, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            const SizedBox(height: 4),
+                            Text(_formaterPrix(p.prix), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5, color: Color(0xFFEA580C))),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F172A), padding: const EdgeInsets.symmetric(vertical: 6), visualDensity: VisualDensity.compact),
+                                onPressed: () => _ajouterAuPanier(p.id),
+                                child: const Text('Commander', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            _buildMobileXWhyChooseUs(isDesktop),
+            _buildMobileXFooter(vitrine, isDesktop),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Données Modèles démo pour chaque nouveau modèle ---
+  List<ProduitCataloguePublic> _obtenirProduitsModelesAstera(VitrineConfig v) {
+    return const [
+      ProduitCataloguePublic(id: 'ast_1', nom: 'Robe Midi Florale Seraphina', prix: 28000, prixBarre: 35000, photos: ['https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&q=80']),
+      ProduitCataloguePublic(id: 'ast_2', nom: 'Top Tricot Lilas Luna', prix: 15000, photos: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&q=80']),
+      ProduitCataloguePublic(id: 'ast_3', nom: 'Pantalon Large Élégant Elara', prix: 22000, photos: ['https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&q=80']),
+      ProduitCataloguePublic(id: 'ast_4', nom: 'Ensemble Blazer & Jupe Valen', prix: 38000, prixBarre: 45000, photos: ['https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=500&q=80']),
+    ];
+  }
+
+  List<ProduitCataloguePublic> _obtenirProduitsModelesAndShop(VitrineConfig v) {
+    return const [
+      ProduitCataloguePublic(id: 'and_1', nom: 'Veste Fausse Fourrure Cognac', prix: 35000, prixBarre: 45000, photos: ['https://images.unsplash.com/photo-1544441893-675973e31985?w=500&q=80']),
+      ProduitCataloguePublic(id: 'and_2', nom: 'Sac à Main Cuir Prestige', prix: 24000, photos: ['https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&q=80']),
+      ProduitCataloguePublic(id: 'and_3', nom: 'Robe Soirée Rouge Glamour', prix: 30000, photos: ['https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=500&q=80']),
+      ProduitCataloguePublic(id: 'and_4', nom: 'Sweat à Capuche Street Urban', prix: 18000, photos: ['https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&q=80']),
+    ];
+  }
+
+  List<ProduitCataloguePublic> _obtenirProduitsModelesShopEase(VitrineConfig v) {
+    return const [
+      ProduitCataloguePublic(id: 'se_1', nom: 'Baskets Urbaines Confort Pro', prix: 18000, photos: ['https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&q=80']),
+      ProduitCataloguePublic(id: 'se_2', nom: 'Montre Connectée Fitness HD', prix: 22000, photos: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80']),
+      ProduitCataloguePublic(id: 'se_3', nom: 'Écouteurs Sans Fil Pro Bass', prix: 14000, photos: ['https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&q=80']),
+      ProduitCataloguePublic(id: 'se_4', nom: 'Sac à Dos Multifonction Étanche', prix: 16000, photos: ['https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80']),
+    ];
+  }
+
+  List<ProduitCataloguePublic> _obtenirProduitsModelesNovaTrend(VitrineConfig v) {
+    return const [
+      ProduitCataloguePublic(id: 'nt_1', nom: 'Sneakers Street Air Max 270', prix: 32000, photos: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80']),
+      ProduitCataloguePublic(id: 'nt_2', nom: 'Hoodie Oversized Beige Sable', prix: 19000, photos: ['https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&q=80']),
+      ProduitCataloguePublic(id: 'nt_3', nom: 'Casque Wireless Bass Boost', prix: 24000, photos: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80']),
+      ProduitCataloguePublic(id: 'nt_4', nom: 'Montre Sport Series 9 Black', prix: 27000, photos: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80']),
     ];
   }
 

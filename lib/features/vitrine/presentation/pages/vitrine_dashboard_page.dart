@@ -481,12 +481,112 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
             children: [
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Text('Choisir le modèle de vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Choisir le modèle de vitrine', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+                    SizedBox(height: 2),
+                    Text('6 modèles e-commerce haute conversion & modèles spécialisés', style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                  ],
+                ),
               ),
+              const Divider(),
+              // 1. MobileX & TechVerse
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFFFF7ED), child: Icon(Icons.phone_iphone_rounded, color: Color(0xFFEA580C))),
+                title: const Text('Modèle 1 — MobileX & TechVerse', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Smartphones, Apple/Samsung, High-Tech & bannières marques'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleA,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.boutiqueTech,
+                    modele: ModeleVitrine.modeleA,
+                    style: ThemeStyle.commercialVert,
+                  );
+                },
+              ),
+              // 2. TechNest
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFEFF6FF), child: Icon(Icons.headphones_rounded, color: Color(0xFF2563EB))),
+                title: const Text('Modèle 2 — TechNest', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Accessoires intelligents, dark mode néon bleu, trending accessories'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleB,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.boutiqueTech,
+                    modele: ModeleVitrine.modeleB,
+                    style: ThemeStyle.commercialVert,
+                  );
+                },
+              ),
+              // 3. ASTERA
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFF5F3FF), child: Icon(Icons.dry_cleaning_rounded, color: Color(0xFF7C3AED))),
+                title: const Text('Modèle 3 — ASTERA (Mode Féminine)', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Robes, tops, prêt-à-porter, teintes lilas/lavande pastel très chic'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleD,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.boutiqueSpecialisee,
+                    modele: ModeleVitrine.modeleD,
+                    style: ThemeStyle.elegantBeige,
+                  );
+                },
+              ),
+              // 4. AND SHOP
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFFFF7ED), child: Icon(Icons.shopping_bag_outlined, color: Color(0xFFEA580C))),
+                title: const Text('Modèle 4 — AND SHOP (Fashion & Maroquinerie)', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Chic urbain cognac, vestes, sacs à main, best sellers tendance'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleE,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.boutiqueSpecialisee,
+                    modele: ModeleVitrine.modeleE,
+                    style: ThemeStyle.naturelChaud,
+                  );
+                },
+              ),
+              // 5. ShopEase
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFFEF3C7), child: Icon(Icons.storefront_rounded, color: Color(0xFFD97706))),
+                title: const Text('Modèle 5 — ShopEase (Grand Magasin Général)', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Tons miel & sable, rayons Mode, Électronique, Maison & Déco, Jouets'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleG,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.commerceGeneral,
+                    modele: ModeleVitrine.modeleG,
+                    style: ThemeStyle.naturelChaud,
+                  );
+                },
+              ),
+              // 6. NovaTrend
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFF1F5F9), child: Icon(Icons.checkroom_rounded, color: Color(0xFF0F172A))),
+                title: const Text('Modèle 6 — NovaTrend (Streetwear & Sneakers)', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Streetwear moderne, sneakers, hoodies, vente flash chrono'),
+                selected: vitrine.modeleVisuel == ModeleVitrine.modeleH,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
+                    activite: TypeActivite.boutiqueSpecialisee,
+                    modele: ModeleVitrine.modeleH,
+                    style: ThemeStyle.moderneMinimal,
+                  );
+                },
+              ),
+              const Divider(),
+              // Services & Immobilier
               ListTile(
                 leading: const CircleAvatar(backgroundColor: Color(0xFFFEF3C7), child: Icon(Icons.content_cut_rounded, color: Color(0xFFD97706))),
-                title: const Text('Modèle C — Salon de Coiffure', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Coiffures, tarifs en FCFA, rendez-vous WhatsApp, galerie avant/après'),
+                title: const Text('The LUXE Studio (Salon Coiffure & Soins VIP)', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Prestations, tarifs en FCFA, rendez-vous WhatsApp, galerie avant/après'),
                 selected: vitrine.modeleVisuel == ModeleVitrine.modeleC,
                 onTap: () async {
                   Navigator.pop(ctx);
@@ -498,50 +598,8 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
                 },
               ),
               ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFEEF2FF), child: Icon(Icons.shopping_bag_rounded, color: Color(0xFF4F46E5))),
-                title: const Text('Modèle B — Boutique Spécialisée', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Cosmétiques, vêtements, accessoires, collections et nouveautés'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleB,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.boutiqueSpecialisee,
-                    modele: ModeleVitrine.modeleB,
-                    style: ThemeStyle.commercialVert,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFDCFCE7), child: Icon(Icons.storefront_rounded, color: Color(0xFF15803D))),
-                title: const Text('Modèle A — Commerce Général', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Alimentation, quincaillerie, magasin, tous produits'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleA,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.commerceGeneral,
-                    modele: ModeleVitrine.modeleA,
-                    style: ThemeStyle.commercialVert,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFFCE7F3), child: Icon(Icons.spa_rounded, color: Color(0xFFDB2777))),
-                title: const Text('Modèle D — Beauté & Esthétique', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Instituts, manucure, maquillage, soins du visage'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleD,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.beauteEsthetique,
-                    modele: ModeleVitrine.modeleD,
-                    style: ThemeStyle.elegantBeige,
-                  );
-                },
-              ),
-              ListTile(
                 leading: const CircleAvatar(backgroundColor: Color(0xFFDCFCE7), child: Icon(Icons.apartment_rounded, color: Color(0xFF15803D))),
-                title: const Text('Modèle F — Havenly (Agence & Biens Immobiliers)', style: TextStyle(fontWeight: FontWeight.w800)),
+                title: const Text('Havenly (Agence & Biens Immobiliers)', style: TextStyle(fontWeight: FontWeight.w800)),
                 subtitle: const Text('Villas, appartements, recherche par ville, demandes de visite'),
                 selected: vitrine.modeleVisuel == ModeleVitrine.modeleF,
                 onTap: () async {
@@ -550,20 +608,6 @@ class _VitrineDashboardPageState extends ConsumerState<VitrineDashboardPage> {
                     activite: TypeActivite.agenceImmobiliere,
                     modele: ModeleVitrine.modeleF,
                     style: ThemeStyle.naturelChaud,
-                  );
-                },
-              ),
-              ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFFF1F5F9), child: Icon(Icons.handyman_rounded, color: Color(0xFF475569))),
-                title: const Text('Modèle E — Prestataire de Services', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Artisans, consultants, interventions techniques'),
-                selected: vitrine.modeleVisuel == ModeleVitrine.modeleE,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ref.read(vitrineActuelleProvider.notifier).changerModele(
-                    activite: TypeActivite.prestataireServices,
-                    modele: ModeleVitrine.modeleE,
-                    style: ThemeStyle.moderneMinimal,
                   );
                 },
               ),
